@@ -20,10 +20,11 @@
     {
       "path": "docs/diagrams/library-uml.drawio",
       "source": "https://drive.google.com/file/d/1vSIbDUjE65ajxkSRIzZU6nlsjdSooSkn/view",
-      "sourceModifiedAt": "2026-10-06T08:34:12.260Z",
-      "sha256": "6c79d7c73d1bd343711b7617e7c22bc2a8bea5fa03d668ca36538a4e04b67e95",
-      "sizeBytes": 727292,
-      "downloadedOn": "2026-10-06"
+      "sourceModifiedAt": "2026-10-06T09:39:49.147Z",
+      "sha256": "a8caf53cc43c0b4412fbcb516a2fa734db06e3fe7e33ef29ee61fe7813936236",
+      "sizeBytes": 1161608,
+      "downloadedOn": "2026-10-06",
+      "note": "Single canvas: 80 diagram cards, 10 system overviews, per-diagram explanations; 74 source pages consolidated."
     },
     {
       "path": "docs/references/library-thesis-reference.pdf",

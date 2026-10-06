@@ -5,7 +5,7 @@
 | Thư mục | Nội dung |
 | --- | --- |
 | [design](design/) | [Tài liệu thiết kế phần mềm](design/library-software-design.docx), xuất từ Google Docs |
-| [diagrams](diagrams/) | [Bộ UML chỉnh sửa được](diagrams/library-uml.drawio), mở bằng diagrams.net |
+| [diagrams](diagrams/) | [Bộ UML chỉnh sửa được](diagrams/library-uml.drawio): 80 sơ đồ trên một trang canvas, mở bằng diagrams.net |
 | [plan](plan/) | [Kế hoạch Markdown](plan/PLAN.md), [bản DOCX](plan/implementation-plan.docx) và [lệnh ECC từng bước](plan/ORCHESTRATE.md) |
 | [ui](ui/) | [Quy tắc giao diện](ui/DESIGN.md), token JSON/CSS và [prototype HTML](ui/design-preview.html) |
 | [references](references/) | Tài liệu tham khảo ban đầu để đối chiếu |
@@ -34,7 +34,7 @@ Ba bản Google Docs nguồn trong `references` được lưu từ lần rà so�
 ## Cách sử dụng
 
 1. Đọc `plan/PLAN.md` để xem thứ tự, phụ thuộc và tiêu chí nghiệm thu của 20 bước.
-2. Mở file `.drawio` bằng [diagrams.net](https://app.diagrams.net/) để sửa các trang UML.
+2. Mở file `.drawio` bằng [diagrams.net](https://app.diagrams.net/). Tệp có **một trang canvas duy nhất**, gồm 10 loại sơ đồ có tổng quát, 24 State và 24 Activity theo chức năng, 6 Sequence chi tiết cùng phần chú giải cho từng sơ đồ. Vùng cuối giữ sơ đồ gốc để đối chiếu. Phóng to để đọc từng vùng; canvas lớn không theo khổ A4. Mục lục và tọa độ Y của các vùng nằm trên cùng trang.
 3. Mở `ui/design-preview.html` trong trình duyệt để xem prototype. Dữ liệu chỉ là minh họa; chưa kết nối API.
 4. Lệnh trong `plan/ORCHESTRATE.md` dùng từ thư mục gốc repository trong môi trường ECC hỗ trợ slash command; không chạy như lệnh shell thông thường.
 5. Khi cập nhật tài liệu, ghi cùng PR với thay đổi yêu cầu hoặc mã nguồn và cập nhật manifest của tệp thay đổi.

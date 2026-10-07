@@ -1,15 +1,23 @@
 {
   "name": "Lib-management — Python + PostgreSQL",
   "initializeCommand": [
-    "python3",
-    ".devcontainer/prepare.py"
+    "docker",
+    "run",
+    "--rm",
+    "--mount",
+    "type=bind,source=${localWorkspaceFolder},target=/workspace",
+    "--env",
+    "LOCAL_WORKSPACE_HOST=${localWorkspaceFolder}",
+    "python:3.13-slim-bookworm@sha256:a1165e272e578941b84abc79e4ab38a0305cd12803a5c4247979ac7655f4d641",
+    "python",
+    "/workspace/.devcontainer/prepare.py"
   ],
   "dockerComposeFile": [
     "compose.yaml",
     "workspace.generated.json"
   ],
   "service": "workspace",
-  "workspaceFolder": "${localWorkspaceFolder}",
+  "workspaceFolder": "/workspaces/lib-management",
   "remoteUser": "developer",
   "overrideCommand": false,
   "shutdownAction": "stopCompose",
@@ -25,8 +33,9 @@
         "charliermarsh.ruff"
       ],
       "settings": {
-        "python.defaultInterpreterPath": "/opt/venv/bin/python"
+        "python.defaultInterpreterPath": "/home/developer/.venv/bin/python"
       }
     }
-  }
+  },
+  "updateRemoteUserUID": true
 }

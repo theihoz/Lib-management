@@ -5,6 +5,11 @@ services:
       context: ..
       dockerfile: .devcontainer/Dockerfile
     init: true
+    working_dir: /workspaces/lib-management
+    volumes:
+      - type: bind
+        source: ..
+        target: /workspaces/lib-management
     env_file: .env
     environment:
       DB_HOST: db

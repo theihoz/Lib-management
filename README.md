@@ -12,8 +12,8 @@ cd Lib-management
 ```
 
 **Code trong Dev Container (khuyến nghị):** cài Docker Desktop/Engine, Git,
-Python host >=3.9 và VS Code với extension Dev Containers. Mở thư mục repository,
-chọn **Dev Containers: Reopen in Container**. Toàn bộ dự án được mount vào workspace;
+VS Code với extension Dev Containers. Windows dùng Docker Desktop Linux containers/WSL2. Mở thư mục repository,
+chọn **Dev Containers: Rebuild and Reopen in Container** khi cập nhật cấu hình. Toàn bộ dự án được mount vào workspace;
 Python, uv, Git và dependencies Linux có sẵn. Trong terminal container:
 
 ```bash

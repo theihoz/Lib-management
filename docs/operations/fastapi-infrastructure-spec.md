@@ -51,6 +51,6 @@ Readiness hiện chỉ chứng minh kết nối DB. Khi có migration nghiệp v
 
 ## Dev Container cho team
 
-`.devcontainer/compose.yaml` tách workspace và PostgreSQL khỏi Compose app. Toàn bộ repository được bind mount; Git worktree mount thêm metadata chung. Dependencies Linux ở `/opt/venv`, không dùng venv host. Xem [hướng dẫn team](team-development.md) và [Docker/CI](containers-ci.md).
+`.devcontainer/compose.yaml` tách workspace và PostgreSQL khỏi Compose app. Toàn bộ repository được bind mount; Git worktree mount thêm metadata chung. Dependencies workspace Linux ở `/home/developer/.venv`, không dùng venv host. Workspace dùng đường dẫn cố định `/workspaces/lib-management`; initialize chạy qua Docker để không phụ thuộc Python host trên Windows. Xem [hướng dẫn team](team-development.md) và [Docker/CI](containers-ci.md).
 
 Build backend pin Hatchling 1.32.4; dependencies build gián tiếp vẫn do isolated builder giải quyết, chưa bảo đảm build tái lập hoàn toàn.

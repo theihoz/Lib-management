@@ -7,7 +7,7 @@ chưa có schema nghiệp vụ, CRUD hoặc migration. Frontend/Nginx chưa đư
 
 | Cấu hình | Dùng khi | Mount / dependencies | Khởi động | Dữ liệu |
 | --- | --- | --- | --- | --- |
-| `.devcontainer/compose.yaml` + override sinh tự động | Team code toàn bộ repository | Toàn repo + Git metadata worktree; Linux venv `/opt/venv` | workspace chờ terminal; API chạy thủ công | `lib-management-devcontainer_devcontainer-pgdata` |
+| `.devcontainer/compose.yaml` + override sinh tự động | Team code toàn bộ repository | Toàn repo + Git metadata worktree; Linux venv workspace `/home/developer/.venv` | workspace chờ terminal; API chạy thủ công | `lib-management-devcontainer_devcontainer-pgdata` |
 | `compose.yaml` | Chạy app local / reload API | Chỉ `apps/api/src` → `/app/src`; dependencies trong image | API tự chạy; DB healthy trước | `lib-management_pgdata` |
 | `docker/api.Dockerfile --target production` | CI / xuất bản image runtime | Không mount source; wheel và runtime deps | Uvicorn một worker, không reload | DB phải cung cấp riêng lúc deploy |
 
@@ -17,9 +17,8 @@ API cùng cổng host 8000. Dev Container DB không publish cổng host; workspa
 khởi động API, reconnect và dừng. Không dùng `down -v` khi cần giữ dữ liệu.
 
 `.devcontainer/prepare.py` tạo mật khẩu ngẫu nhiên local vào `.devcontainer/.env`
-và override chứa đường dẫn máy hiện tại; cả hai bị gitignore. Máy mới chạy script
-hoặc để Dev Containers gọi `initializeCommand`; yêu cầu Python host >=3.9 và Git.
-Sau khi di chuyển repo chạy lại prepare và recreate workspace. Venv ở filesystem
+và override chứa đường dẫn máy hiện tại; cả hai bị gitignore. Máy mới bootstrap bằng Docker hoặc để Dev Containers gọi `initializeCommand`; không cần Python host. Workspace luôn `/workspaces/lib-management`; override chỉ chọn UID/GID và mount metadata linked worktree nếu có.
+Sau khi di chuyển repo chạy lại prepare và recreate workspace. Venv workspace ở home developer trong filesystem
 container, recreate cần sync lại; PostgreSQL ở named volume vẫn được giữ.
 Git worktree mount thêm metadata chung nên thao tác Git trong container tác động
 repository host. Không tự mount SSH keys, Docker socket hoặc credentials host.

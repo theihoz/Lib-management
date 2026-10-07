@@ -10,7 +10,7 @@
       "downloadedOn": "2026-10-06"
     },
     {
-      "path": "docs/plan/implementation-plan.docx",
+      "path": "docs/archive/planning/implementation-plan.docx",
       "source": "https://drive.google.com/file/d/1hivkkX9RcD3ashGMO3jt0byRqNn9wDm8pCnG-dAWWEM/view",
       "sourceModifiedAt": "2026-10-06T09:06:19.361Z",
       "sha256": "0a989b30bf1edf2063d82a1fa885dc47780029eb0cd90d3985ff63b283bcbf1d",
@@ -27,19 +27,19 @@
       "note": "Single canvas: 80 diagram cards, 10 system overviews, per-diagram explanations; 74 source pages consolidated."
     },
     {
-      "path": "docs/references/library-thesis-reference.pdf",
+      "path": "docs/archive/references/library-thesis-reference.pdf",
       "source": "existing project document",
       "sha256": "3bfcdf6cf372ff3334ce22d35495c07ef2ea4c4aed6b9fb10de9ba6c8cf1124b",
       "sizeBytes": 16300434
     },
     {
-      "path": "docs/references/original-architecture.docx",
+      "path": "docs/archive/references/original-architecture.docx",
       "source": "existing project document",
       "sha256": "0f022ed61a8adc11612ee2bef386db9678021a85d9f5c7e08a4cee2c5a438ab8",
       "sizeBytes": 1064096
     },
     {
-      "path": "docs/references/original-uml.drawio",
+      "path": "docs/archive/references/original-uml.drawio",
       "source": "existing project document",
       "sha256": "11d147e718f4f3ec0643e0493948c3622aac8bf129f92c5fc250c805c262a8e9",
       "sizeBytes": 28868
@@ -69,21 +69,21 @@
       "sizeBytes": 6106
     },
     {
-      "path": "docs/references/source-1.docx",
+      "path": "docs/archive/references/source-1.docx",
       "source": "https://docs.google.com/document/d/1Dio7YudemqoVkzgHp6QNtwlJFf2eNKh2PzeZH2IZxqg/edit",
       "sha256": "db2d1cc708552b7ee1f0ff24c852a22f7c8e29184b95eb67970f12a634dd32a9",
       "sizeBytes": 1167940,
       "note": "reference downloaded during design review"
     },
     {
-      "path": "docs/references/source-2.docx",
+      "path": "docs/archive/references/source-2.docx",
       "source": "https://docs.google.com/document/d/1MHOaa_OTs3FRoGSJXGSDWaA2KhHtVfsdRCXYMV0MsPI/edit",
       "sha256": "bf15a60aeb22ffae3a5376f2a8301f42e7b17ceb94f0b8bc82c47d1f63b36644",
       "sizeBytes": 2567450,
       "note": "reference downloaded during design review"
     },
     {
-      "path": "docs/references/source-3.docx",
+      "path": "docs/archive/references/source-3.docx",
       "source": "https://docs.google.com/document/d/1UZsEh4NGKM_OBGHocXhkOOpvqz3SDKbG/edit",
       "sha256": "8959a87584590ce4f7f314efa7fa33e746148594541bb943240a1640a1dbbc79",
       "sizeBytes": 16487,

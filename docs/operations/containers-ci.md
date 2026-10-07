@@ -181,4 +181,4 @@ Build backend pin Hatchling 1.32.4; dependencies build gián tiếp chưa đư�
 | Lock stale / thiếu package sau pull | `uv sync --locked --group dev` trong workspace; lock mismatch cần PR cập nhật manifest/lock, không bỏ --locked |
 | Compose app không nhận dependency mới | `docker compose up --build -d api` |
 | API ready503, live200 | Kiểm tra DB_HOST/PORT/USER/NAME và DB logs; không in password; readiness chỉ SELECT1 |
-| Main clone chưa có scaffold | Checkout `codex/fastapi-ci-docker` trong khi chưa merge nhánh hạ tầng |
+| Clone cũ chưa có scaffold | `git switch main` rồi `git pull --ff-only origin main` sau khi PR hạ tầng đã merge |

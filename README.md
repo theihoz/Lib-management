@@ -9,8 +9,6 @@ Hiện có scaffold, health endpoints, Docker và CI; chưa có CRUD, schema ngh
 ```bash
 git clone https://github.com/theihoz/Lib-management.git
 cd Lib-management
-# Trong khi nhánh hạ tầng chưa merge về main:
-git switch codex/fastapi-ci-docker
 ```
 
 **Code trong Dev Container (khuyến nghị):** cài Docker Desktop/Engine, Git,
@@ -50,4 +48,22 @@ CI kiểm tra source/lock, lint, format, types, tests, wheel và production imag
 Workflow `Publish API image` xuất bản GHCR thủ công từ default branch sau CI cùng SHA;
 **publish image chưa triển khai server**. Frontend, auth provider và hosting chưa chốt.
 Maintainer cần bật review PR, required check `ci-result` và environment `image-publish`
-trên GitHub. Các thiết lập này chưa được xác nhận đã bật.
+trên GitHub. Bảo vệ main đang bị GitHub Free/private chặn; xem [trạng thái và cấu hình rule](docs/operations/branch-protection.md). Environment image-publish chưa được xác nhận đã bật.
+
+## Cấu trúc repository
+
+```text
+.devcontainer/       Workspace Linux cho team; mount toàn bộ project
+.github/             CI, publish, Dependabot, PR template và payload bảo vệ main
+apps/api/            FastAPI src, tests, pyproject.toml, uv.lock
+docker/              Dockerfile API dev/build/production
+compose.yaml         Chạy API + PostgreSQL local
+PROJECT-CONTEXT.md   Mục đích, phạm vi và quyết định hiện hành
+docs/
+  design/            DOCX thiết kế đã có
+  diagrams/          UML một canvas, chỉnh sửa bằng diagrams.net
+  ui/                Prototype và design tokens (chưa là frontend app)
+  operations/        Onboarding, Docker/CI, bảo vệ main, bằng chứng kiểm tra
+  archive/           Kế hoạch và nguồn tham khảo lịch sử
+  source-manifest.json  Nguồn, thời điểm tải và hash binary
+```

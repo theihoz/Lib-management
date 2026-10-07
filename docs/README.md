@@ -29,9 +29,9 @@ Giữ nguyên DOCX/UML/PDF/prototype và kế hoạch nghiệp vụ cũ để đ
 | --- | --- |
 | [design](design/) | [Tài liệu thiết kế phần mềm](design/library-software-design.docx), xuất từ Google Docs |
 | [diagrams](diagrams/) | [Bộ UML chỉnh sửa được](diagrams/library-uml.drawio): 80 sơ đồ trên một trang canvas, mở bằng diagrams.net |
-| [plan](plan/) | [Kế hoạch Markdown](plan/PLAN.md), [bản DOCX](plan/implementation-plan.docx) (bản lịch sử) |
+| [archive/planning](archive/planning/) | [Kế hoạch Markdown](archive/planning/PLAN.md), [bản DOCX](archive/planning/implementation-plan.docx) (bản lịch sử) |
 | [ui](ui/) | [Quy tắc giao diện](ui/DESIGN.md), token JSON/CSS và [prototype HTML](ui/design-preview.html) |
-| [references](references/) | Tài liệu tham khảo ban đầu để đối chiếu |
+| [archive/references](archive/references/) | Tài liệu tham khảo ban đầu để đối chiếu |
 
 Google Docs thiết kế và kế hoạch được tải về ngày 06/10/2026. Đây là snapshot; thay đổi trên Google Docs sau thời điểm tải sẽ không tự cập nhật trong Git.
 
@@ -41,23 +41,27 @@ Google Docs thiết kế và kế hoạch được tải về ngày 06/10/2026. 
 
 ## Tài liệu tham khảo
 
-Các tài liệu trong `references` là nguồn lịch sử, có thể chứa quy tắc mâu thuẫn hoặc sơ đồ chưa được sửa. DOCX và UML là nguồn tham khảo chính đã có. Người dùng đã đồng ý áp dụng C01–C09; snapshot cũ có thể vẫn ghi “cần duyệt”. Backend hiện hành là Python/FastAPI/PostgreSQL; đề xuất TypeScript/NestJS trong plan DOCX/Markdown cũ chỉ giữ làm lịch sử. Không coi bản xuất ngày 06/10 là bản cập nhật live của Google Docs.
+Các tài liệu trong `archive/references` là nguồn lịch sử, có thể chứa quy tắc mâu thuẫn hoặc sơ đồ chưa được sửa. DOCX và UML là nguồn tham khảo chính đã có. Người dùng đã đồng ý áp dụng C01–C09; snapshot cũ có thể vẫn ghi “cần duyệt”. Backend hiện hành là Python/FastAPI/PostgreSQL; đề xuất TypeScript/NestJS trong plan DOCX/Markdown cũ chỉ giữ làm lịch sử. Không coi bản xuất ngày 06/10 là bản cập nhật live của Google Docs.
 
 | Tệp | Nguồn và mục đích |
 | --- | --- |
-| [library-thesis-reference.pdf](references/library-thesis-reference.pdf) | PDF tham khảo đã dùng khi rà soát thiết kế |
-| [original-architecture.docx](references/original-architecture.docx) | Bản kiến trúc DOCX ban đầu |
-| [original-uml.drawio](references/original-uml.drawio) | Bản UML gốc trước chỉnh sửa |
-| [source-1.docx](references/source-1.docx) | Google Docs nguồn về DFD và thuật toán |
-| [source-2.docx](references/source-2.docx) | Google Docs nguồn về UML và use case |
-| [source-3.docx](references/source-3.docx) | Google Docs nguồn về yêu cầu và QĐ01–QĐ08 |
+| [library-thesis-reference.pdf](archive/references/library-thesis-reference.pdf) | PDF tham khảo đã dùng khi rà soát thiết kế |
+| [original-architecture.docx](archive/references/original-architecture.docx) | Bản kiến trúc DOCX ban đầu |
+| [original-uml.drawio](archive/references/original-uml.drawio) | Bản UML gốc trước chỉnh sửa |
+| [source-1.docx](archive/references/source-1.docx) | Google Docs nguồn về DFD và thuật toán |
+| [source-2.docx](archive/references/source-2.docx) | Google Docs nguồn về UML và use case |
+| [source-3.docx](archive/references/source-3.docx) | Google Docs nguồn về yêu cầu và QĐ01–QĐ08 |
 
-Ba bản Google Docs nguồn trong `references` được lưu từ lần rà soát thiết kế trước. Các liên kết nguồn, thời điểm sửa của ba tài liệu hiện hành và SHA256 nằm trong [source-manifest.json](source-manifest.json).
+Ba bản Google Docs nguồn trong `archive/references` được lưu từ lần rà soát thiết kế trước. Các liên kết nguồn, thời điểm sửa của ba tài liệu hiện hành và SHA256 nằm trong [source-manifest.json](source-manifest.json).
 
 ## Cách sử dụng
 
-1. Đọc `plan/PLAN.md` để xem thứ tự, phụ thuộc và tiêu chí nghiệm thu của 20 bước.
+1. Đọc `archive/planning/PLAN.md` để xem thứ tự, phụ thuộc và tiêu chí nghiệm thu của 20 bước.
 2. Mở file `.drawio` bằng [diagrams.net](https://app.diagrams.net/). Tệp có **một trang canvas duy nhất**, gồm 10 loại sơ đồ có tổng quát, 24 State và 24 Activity theo chức năng, 6 Sequence chi tiết cùng phần chú giải cho từng sơ đồ. Vùng cuối giữ sơ đồ gốc để đối chiếu. Phóng to để đọc từng vùng; canvas lớn không theo khổ A4. Mục lục và tọa độ Y của các vùng nằm trên cùng trang.
 3. Mở `ui/design-preview.html` trong trình duyệt để xem prototype. Dữ liệu chỉ là minh họa; chưa kết nối API.
 4. Dùng [quy trình team](operations/team-development.md) cho môi trường và Git; lệnh điều phối agent cũ đã được dọn.
 5. Khi cập nhật tài liệu, ghi cùng PR với thay đổi yêu cầu hoặc mã nguồn và cập nhật manifest của tệp thay đổi.
+
+## Bảo vệ và merge
+
+[Rule main và trạng thái GitHub](operations/branch-protection.md). Các quy tắc quy trình không thay thế branch protection phía GitHub.

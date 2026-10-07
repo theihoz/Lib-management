@@ -26,8 +26,7 @@ cũng mount cùng thư mục, nhưng không tự chuyển terminal host vào con
 
 Áp dụng GitHub Flow: `main` → `feature/<chuc-nang>` hoặc `fix/<loi>` → PR → review
 và CI → merge. `main` hiện là nền hạ tầng, chưa phải sản phẩm production đầy đủ.
-Trong khi PR hạ tầng chưa merge, công việc phụ thuộc scaffold tạo nhánh từ
-`codex/fastapi-ci-docker`; ghi dependency này trong PR. Sau merge, tạo nhánh từ main.
+Tạo nhánh từ main đã đồng bộ để làm từng chức năng.
 
 ```bash
 git switch main

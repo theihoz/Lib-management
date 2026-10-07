@@ -1,4 +1,4 @@
-> **Tài liệu lịch sử (06/10/2026).** Giữ để tham khảo phạm vi nghiệp vụ và 20 bước. Backend hiện đã chốt Python/FastAPI/PostgreSQL; đề xuất NestJS/Drizzle/TypeScript cho backend và trạng thái C01–C09 chưa duyệt trong bản này đã cũ. C01–C09 đã được người dùng đồng ý áp dụng. Dùng [hướng dẫn team](../operations/team-development.md), [đặc tả hiện hành](../operations/fastapi-infrastructure-spec.md) và [mục lục nguồn](../README.md) để triển khai. Frontend/auth/hosting vẫn chưa chốt.
+> **Tài liệu lịch sử (06/10/2026).** Giữ để tham khảo phạm vi nghiệp vụ và 20 bước. Backend hiện đã chốt Python/FastAPI/PostgreSQL; đề xuất NestJS/Drizzle/TypeScript cho backend và trạng thái C01–C09 chưa duyệt trong bản này đã cũ. C01–C09 đã được người dùng đồng ý áp dụng. Dùng [hướng dẫn team](../../operations/team-development.md), [đặc tả hiện hành](../../operations/fastapi-infrastructure-spec.md) và [mục lục nguồn](../../README.md) để triển khai. Frontend/auth/hosting vẫn chưa chốt.
 
 # Kế hoạch triển khai phần mềm quản lý thư viện
 
@@ -404,7 +404,7 @@ Repository dự án là https://github.com/theihoz/Lib-management.git. Đã clon
 
 Đặt tài liệu vào docs/plan; khi bắt đầu triển khai, tạo commit khởi tạo rồi dùng nhánh ngắn feat, fix hoặc docs và PR vào main. Gắn PR với bước kế hoạch và tiêu chí nghiệm thu. Sau khi có CI, cấu hình required checks và review theo quyền/gói tài khoản. GitHub Actions nằm ở .github/workflows; tách quyền secrets staging và production.
 
-File docs/plan/PLAN.md là kế hoạch có anchor step 1–20. Các lệnh điều phối agent cũ đã được loại bỏ; áp dụng quy trình dành cho team trong docs/operations/team-development.md.
+File docs/archive/planning/PLAN.md là kế hoạch có anchor step 1–20. Các lệnh điều phối agent cũ đã được loại bỏ; áp dụng quy trình dành cho team trong docs/operations/team-development.md.
 
 Những việc cần chủ dự án cung cấp trước phát hành: quyết định C01–C09, số thành viên và mức kinh nghiệm, thời hạn, ngân sách hosting, provider OIDC, kênh email, quyền GitHub và dữ liệu khởi tạo được phép dùng.
 

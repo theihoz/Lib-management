@@ -1,0 +1,2325 @@
+{
+  "sourceName": "Thiết kế phần mềm Quản lý thư viện — UML và kiến trúc 2026.docx",
+  "tables": [
+    {
+      "ordinal": 1,
+      "entity": "Publisher",
+      "label": "Nhà xuất bản",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "name": "name",
+          "type": "varchar(200)",
+          "nullable": false,
+          "constraint": "CHECK không rỗng",
+          "description": "Tên nhà xuất bản"
+        },
+        {
+          "name": "address",
+          "type": "text",
+          "nullable": true,
+          "constraint": "—",
+          "description": "Địa chỉ liên hệ"
+        },
+        {
+          "name": "status",
+          "type": "varchar(16)",
+          "nullable": false,
+          "constraint": "ACTIVE/INACTIVE",
+          "description": "Trạng thái danh mục"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ],
+      "rules": "Truy vết: F05. Quy tắc: Không xóa khi còn ấn bản tham chiếu."
+    },
+    {
+      "ordinal": 2,
+      "entity": "Author",
+      "label": "Tác giả",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "name": "name",
+          "type": "varchar(200)",
+          "nullable": false,
+          "constraint": "CHECK không rỗng",
+          "description": "Tên tác giả"
+        },
+        {
+          "name": "biography",
+          "type": "text",
+          "nullable": true,
+          "constraint": "—",
+          "description": "Giới thiệu"
+        },
+        {
+          "name": "status",
+          "type": "varchar(16)",
+          "nullable": false,
+          "constraint": "ACTIVE/INACTIVE",
+          "description": "Trạng thái"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ],
+      "rules": "Truy vết: F04. Quy tắc: Tên không phải định danh duy nhất."
+    },
+    {
+      "ordinal": 3,
+      "entity": "Category",
+      "label": "Thể loại",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "name": "code",
+          "type": "varchar(32)",
+          "nullable": false,
+          "constraint": "UQ",
+          "description": "Mã thể loại"
+        },
+        {
+          "name": "name",
+          "type": "varchar(120)",
+          "nullable": false,
+          "constraint": "—",
+          "description": "Tên thể loại"
+        },
+        {
+          "name": "parent_id",
+          "type": "uuid",
+          "nullable": true,
+          "constraint": "FK Category.id",
+          "description": "Thể loại cha"
+        },
+        {
+          "name": "is_root",
+          "type": "boolean",
+          "nullable": false,
+          "constraint": "DEFAULT false",
+          "description": "Cờ gốc được bảo vệ"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ],
+      "rules": "Truy vết: F03. Quy tắc: Cấm chu trình; giữ các thể loại gốc theo QĐ04."
+    },
+    {
+      "ordinal": 4,
+      "entity": "BookEdition",
+      "label": "Ấn bản sách",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "name": "isbn",
+          "type": "varchar(13)",
+          "nullable": true,
+          "constraint": "UQ",
+          "description": "ISBN chuẩn hóa"
+        },
+        {
+          "name": "title",
+          "type": "varchar(300)",
+          "nullable": false,
+          "constraint": "CHECK không rỗng",
+          "description": "Nhan đề"
+        },
+        {
+          "name": "publication_year",
+          "type": "smallint",
+          "nullable": false,
+          "constraint": "—",
+          "description": "Năm xuất bản"
+        },
+        {
+          "name": "publisher_id",
+          "type": "uuid",
+          "nullable": true,
+          "constraint": "FK Publisher.id",
+          "description": "Nhà xuất bản"
+        },
+        {
+          "name": "language",
+          "type": "varchar(32)",
+          "nullable": true,
+          "constraint": "—",
+          "description": "Ngôn ngữ"
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "nullable": true,
+          "constraint": "—",
+          "description": "Mô tả nội dung"
+        },
+        {
+          "name": "status",
+          "type": "varchar(16)",
+          "nullable": false,
+          "constraint": "ACTIVE/INACTIVE",
+          "description": "Trạng thái"
+        },
+        {
+          "name": "version",
+          "type": "integer",
+          "nullable": false,
+          "constraint": "DEFAULT 1; >0",
+          "description": "Phiên bản cập nhật"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ],
+      "rules": "Truy vết: F01,F18. Quy tắc: ISBN chuẩn hóa, unique khi có; năm theo C09; version dùng optimistic concurrency."
+    },
+    {
+      "ordinal": 5,
+      "entity": "BookAuthor",
+      "label": "Tác giả của ấn bản",
+      "fields": [
+        {
+          "name": "edition_id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "PK ghép; FK BookEdition.id",
+          "description": "Ấn bản"
+        },
+        {
+          "name": "author_id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "PK ghép; FK Author.id",
+          "description": "Tác giả"
+        },
+        {
+          "name": "ordinal",
+          "type": "smallint",
+          "nullable": false,
+          "constraint": ">0; UQ edition_id+ordinal",
+          "description": "Thứ tự trình bày"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ],
+      "rules": "Truy vết: F01,F04. Quy tắc: Quan hệ N:N, không có id riêng."
+    },
+    {
+      "ordinal": 6,
+      "entity": "BookCategory",
+      "label": "Thể loại của ấn bản",
+      "fields": [
+        {
+          "name": "edition_id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "PK ghép; FK BookEdition.id",
+          "description": "Ấn bản"
+        },
+        {
+          "name": "category_id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "PK ghép; FK Category.id",
+          "description": "Thể loại"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ],
+      "rules": "Truy vết: F01,F03. Quy tắc: Quan hệ N:N."
+    },
+    {
+      "ordinal": 7,
+      "entity": "Location",
+      "label": "Vị trí kho",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "name": "code",
+          "type": "varchar(32)",
+          "nullable": false,
+          "constraint": "UQ",
+          "description": "Mã kệ/vị trí"
+        },
+        {
+          "name": "name",
+          "type": "varchar(120)",
+          "nullable": false,
+          "constraint": "—",
+          "description": "Tên vị trí"
+        },
+        {
+          "name": "status",
+          "type": "varchar(16)",
+          "nullable": false,
+          "constraint": "ACTIVE/INACTIVE",
+          "description": "Khả dụng"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ],
+      "rules": "Truy vết: F02. Quy tắc: Mã kệ duy nhất trong thư viện."
+    },
+    {
+      "ordinal": 8,
+      "entity": "BookCopy",
+      "label": "Bản sao vật lý",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "name": "edition_id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "FK BookEdition.id",
+          "description": "Ấn bản"
+        },
+        {
+          "name": "barcode",
+          "type": "varchar(64)",
+          "nullable": false,
+          "constraint": "UQ",
+          "description": "Mã vạch"
+        },
+        {
+          "name": "location_id",
+          "type": "uuid",
+          "nullable": true,
+          "constraint": "FK Location.id",
+          "description": "Vị trí hiện tại"
+        },
+        {
+          "name": "status",
+          "type": "varchar(16)",
+          "nullable": false,
+          "constraint": "AVAILABLE/ON_LOAN/HELD/REPAIR/LOST/RETIRED",
+          "description": "Trạng thái vật lý"
+        },
+        {
+          "name": "acquired_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "constraint": "—",
+          "description": "Ngày tiếp nhận"
+        },
+        {
+          "name": "source_receipt_item_id",
+          "type": "uuid",
+          "nullable": true,
+          "constraint": "FK AcquisitionReceiptItem.id (mở rộng)",
+          "description": "Dòng nhập nguồn"
+        },
+        {
+          "name": "version",
+          "type": "integer",
+          "nullable": false,
+          "constraint": "DEFAULT 1; >0",
+          "description": "Phiên bản"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ],
+      "rules": "Truy vết: F02,F07,F08,F10. Quy tắc: Không lưu tổng tồn; không đổi trạng thái ngoài lệnh nghiệp vụ."
+    },
+    {
+      "ordinal": 9,
+      "entity": "MediaAsset",
+      "label": "Tệp và ảnh bìa",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "name": "edition_id",
+          "type": "uuid",
+          "nullable": true,
+          "constraint": "FK BookEdition.id",
+          "description": "Ấn bản nếu là bìa"
+        },
+        {
+          "name": "object_key",
+          "type": "text",
+          "nullable": false,
+          "constraint": "UQ",
+          "description": "Khóa object storage"
+        },
+        {
+          "name": "mime_type",
+          "type": "varchar(100)",
+          "nullable": false,
+          "constraint": "—",
+          "description": "MIME đã kiểm tra"
+        },
+        {
+          "name": "byte_size",
+          "type": "bigint",
+          "nullable": false,
+          "constraint": ">0",
+          "description": "Dung lượng"
+        },
+        {
+          "name": "sha256",
+          "type": "char(64)",
+          "nullable": false,
+          "constraint": "—",
+          "description": "Hash nội dung"
+        },
+        {
+          "name": "visibility",
+          "type": "varchar(16)",
+          "nullable": false,
+          "constraint": "PUBLIC/PRIVATE",
+          "description": "Phạm vi tải"
+        },
+        {
+          "name": "status",
+          "type": "varchar(16)",
+          "nullable": false,
+          "constraint": "PENDING/READY/REJECTED/DELETED",
+          "description": "Vòng đời tệp"
+        },
+        {
+          "name": "uploaded_by",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "FK Account.id",
+          "description": "Người tải"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ],
+      "rules": "Truy vết: F15,F20. Quy tắc: Chỉ lưu metadata; bìa công khai, export riêng tư; không lưu secret."
+    },
+    {
+      "ordinal": 10,
+      "entity": "Reader",
+      "label": "Độc giả",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "name": "reader_code",
+          "type": "varchar(32)",
+          "nullable": false,
+          "constraint": "UQ",
+          "description": "Mã độc giả"
+        },
+        {
+          "name": "full_name",
+          "type": "varchar(200)",
+          "nullable": false,
+          "constraint": "—",
+          "description": "Họ tên"
+        },
+        {
+          "name": "birth_date",
+          "type": "date",
+          "nullable": false,
+          "constraint": "—",
+          "description": "Ngày sinh, tuổi tính khi cấp thẻ"
+        },
+        {
+          "name": "reader_type",
+          "type": "varchar(8)",
+          "nullable": false,
+          "constraint": "X/Y/Z dự thảo",
+          "description": "Loại độc giả"
+        },
+        {
+          "name": "email",
+          "type": "varchar(254)",
+          "nullable": true,
+          "constraint": "—",
+          "description": "Email liên hệ"
+        },
+        {
+          "name": "phone",
+          "type": "varchar(32)",
+          "nullable": true,
+          "constraint": "—",
+          "description": "Điện thoại"
+        },
+        {
+          "name": "address",
+          "type": "text",
+          "nullable": true,
+          "constraint": "—",
+          "description": "Địa chỉ"
+        },
+        {
+          "name": "status",
+          "type": "varchar(16)",
+          "nullable": false,
+          "constraint": "ACTIVE/SUSPENDED/INACTIVE",
+          "description": "Trạng thái"
+        },
+        {
+          "name": "version",
+          "type": "integer",
+          "nullable": false,
+          "constraint": "DEFAULT 1",
+          "description": "Phiên bản"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ],
+      "rules": "Truy vết: F06,F17,F18. Quy tắc: Không xóa cứng khi có lịch sử; không lưu dư nợ tổng."
+    },
+    {
+      "ordinal": 11,
+      "entity": "ReaderCard",
+      "label": "Thẻ thư viện",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "name": "reader_id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "FK Reader.id",
+          "description": "Chủ thẻ"
+        },
+        {
+          "name": "card_no",
+          "type": "varchar(64)",
+          "nullable": false,
+          "constraint": "UQ",
+          "description": "Số thẻ"
+        },
+        {
+          "name": "issued_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "constraint": "—",
+          "description": "Thời điểm cấp"
+        },
+        {
+          "name": "expires_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "constraint": "—",
+          "description": "Hết hiệu lực"
+        },
+        {
+          "name": "status",
+          "type": "varchar(16)",
+          "nullable": false,
+          "constraint": "ACTIVE/BLOCKED/REVOKED",
+          "description": "Trạng thái; hết hạn tính từ thời gian"
+        },
+        {
+          "name": "issued_by",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "FK Account.id",
+          "description": "Người cấp"
+        },
+        {
+          "name": "policy_version_id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "FK PolicyVersion.id",
+          "description": "Quy định cấp thẻ"
+        },
+        {
+          "name": "version",
+          "type": "integer",
+          "nullable": false,
+          "constraint": "DEFAULT 1",
+          "description": "Phiên bản"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ],
+      "rules": "Truy vết: F06,F12. Quy tắc: expires_at>issued_at; thẻ hợp lệ khi ACTIVE và trong khoảng hiệu lực; giữ lịch sử cấp lại."
+    },
+    {
+      "ordinal": 12,
+      "entity": "Account",
+      "label": "Tài khoản",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "name": "issuer",
+          "type": "text",
+          "nullable": false,
+          "constraint": "—",
+          "description": "Nhà phát hành định danh"
+        },
+        {
+          "name": "subject",
+          "type": "text",
+          "nullable": false,
+          "constraint": "UQ ghép issuer+subject",
+          "description": "Định danh bên IdP"
+        },
+        {
+          "name": "reader_id",
+          "type": "uuid",
+          "nullable": true,
+          "constraint": "FK Reader.id; UQ",
+          "description": "Ánh xạ độc giả"
+        },
+        {
+          "name": "display_name",
+          "type": "varchar(200)",
+          "nullable": false,
+          "constraint": "—",
+          "description": "Tên hiển thị"
+        },
+        {
+          "name": "status",
+          "type": "varchar(16)",
+          "nullable": false,
+          "constraint": "ACTIVE/LOCKED/DISABLED",
+          "description": "Trạng thái"
+        },
+        {
+          "name": "auth_version",
+          "type": "integer",
+          "nullable": false,
+          "constraint": "DEFAULT 1",
+          "description": "Thu hồi phiên khi tăng"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ],
+      "rules": "Truy vết: F16,F21*; kiểm quyền F01–F20. Quy tắc: OIDC: UQ issuer+subject; reader_id UQ khi có. Local auth là lựa chọn riêng, không lưu mật khẩu rõ."
+    },
+    {
+      "ordinal": 13,
+      "entity": "Role",
+      "label": "Vai trò",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "name": "code",
+          "type": "varchar(64)",
+          "nullable": false,
+          "constraint": "UQ",
+          "description": "Mã vai trò"
+        },
+        {
+          "name": "name",
+          "type": "varchar(120)",
+          "nullable": false,
+          "constraint": "—",
+          "description": "Tên vai trò"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ],
+      "rules": "Truy vết: F21*; quyền F01–F20. Quy tắc: Bốn vai trò trong tài liệu; không cấp quyền chỉ từ UI."
+    },
+    {
+      "ordinal": 14,
+      "entity": "Permission",
+      "label": "Quyền",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "name": "code",
+          "type": "varchar(100)",
+          "nullable": false,
+          "constraint": "UQ",
+          "description": "Mã quyền"
+        },
+        {
+          "name": "description",
+          "type": "text",
+          "nullable": false,
+          "constraint": "—",
+          "description": "Ý nghĩa quyền"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ],
+      "rules": "Truy vết: F21*; quyền F01–F20. Quy tắc: Mã quyền ổn định theo hành động."
+    },
+    {
+      "ordinal": 15,
+      "entity": "AccountRole",
+      "label": "Gán vai trò",
+      "fields": [
+        {
+          "name": "account_id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "PK ghép; FK Account.id",
+          "description": "Tài khoản"
+        },
+        {
+          "name": "role_id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "PK ghép; FK Role.id",
+          "description": "Vai trò"
+        },
+        {
+          "name": "granted_by",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "FK Account.id",
+          "description": "Người cấp"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ],
+      "rules": "Truy vết: F21*. Quy tắc: Ghi audit khi cấp/thu hồi; tài khoản nhân viên không dùng chung."
+    },
+    {
+      "ordinal": 16,
+      "entity": "RolePermission",
+      "label": "Quyền của vai trò",
+      "fields": [
+        {
+          "name": "role_id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "PK ghép; FK Role.id",
+          "description": "Vai trò"
+        },
+        {
+          "name": "permission_id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "PK ghép; FK Permission.id",
+          "description": "Quyền"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ],
+      "rules": "Truy vết: F21*. Quy tắc: Quan hệ N:N; kiểm quyền trên máy chủ."
+    },
+    {
+      "ordinal": 17,
+      "entity": "PolicyVersion",
+      "label": "Phiên bản quy định",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "name": "version_no",
+          "type": "integer",
+          "nullable": false,
+          "constraint": "UQ; >0",
+          "description": "Số phiên bản"
+        },
+        {
+          "name": "effective_from",
+          "type": "timestamptz",
+          "nullable": false,
+          "constraint": "—",
+          "description": "Bắt đầu hiệu lực"
+        },
+        {
+          "name": "effective_to",
+          "type": "timestamptz",
+          "nullable": true,
+          "constraint": "—",
+          "description": "Kết thúc độc quyền"
+        },
+        {
+          "name": "status",
+          "type": "varchar(16)",
+          "nullable": false,
+          "constraint": "DRAFT/ACTIVE/SUPERSEDED",
+          "description": "Trạng thái"
+        },
+        {
+          "name": "rules",
+          "type": "jsonb",
+          "nullable": false,
+          "constraint": "Schema validation",
+          "description": "Hạn mức, tuổi, phí, thời hạn"
+        },
+        {
+          "name": "rules_schema_version",
+          "type": "integer",
+          "nullable": false,
+          "constraint": ">0",
+          "description": "Phiên bản schema JSON"
+        },
+        {
+          "name": "approved_by",
+          "type": "uuid",
+          "nullable": true,
+          "constraint": "FK Account.id",
+          "description": "Bắt buộc khi ACTIVE"
+        },
+        {
+          "name": "approved_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "constraint": "—",
+          "description": "Thời điểm duyệt"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ],
+      "rules": "Truy vết: F14; áp dụng F06–F12. Quy tắc: Không sửa rules đã ACTIVE/SUPERSEDED; hiệu lực không chồng lấn; C01–C09 vẫn OPEN."
+    },
+    {
+      "ordinal": 18,
+      "entity": "Loan",
+      "label": "Phiếu mượn",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "name": "loan_no",
+          "type": "varchar(64)",
+          "nullable": false,
+          "constraint": "UQ",
+          "description": "Số phiếu"
+        },
+        {
+          "name": "reader_id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "FK Reader.id",
+          "description": "Độc giả"
+        },
+        {
+          "name": "card_id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "FK ReaderCard.id",
+          "description": "Thẻ đã dùng"
+        },
+        {
+          "name": "issued_by",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "FK Account.id",
+          "description": "Thủ thư"
+        },
+        {
+          "name": "issued_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "constraint": "—",
+          "description": "Ngày mượn"
+        },
+        {
+          "name": "renewal_count",
+          "type": "integer",
+          "nullable": false,
+          "constraint": ">=0; DEFAULT 0",
+          "description": "Số lần gia hạn phiếu"
+        },
+        {
+          "name": "version",
+          "type": "integer",
+          "nullable": false,
+          "constraint": "DEFAULT 1",
+          "description": "Phiên bản"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ],
+      "rules": "Truy vết: F07,F09,F18. Quy tắc: Trạng thái phiếu tính từ LoanItem; gia hạn toàn bộ mục OPEN hoặc rollback toàn bộ."
+    },
+    {
+      "ordinal": 19,
+      "entity": "LoanItem",
+      "label": "Chi tiết mượn",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "name": "loan_id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "FK Loan.id",
+          "description": "Phiếu mượn"
+        },
+        {
+          "name": "copy_id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "FK BookCopy.id",
+          "description": "Bản sao"
+        },
+        {
+          "name": "issued_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "constraint": "—",
+          "description": "Bắt đầu mượn"
+        },
+        {
+          "name": "due_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "constraint": "—",
+          "description": "Hạn trả hiện hành"
+        },
+        {
+          "name": "closed_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "constraint": "—",
+          "description": "Đóng mục"
+        },
+        {
+          "name": "closure_reason",
+          "type": "varchar(16)",
+          "nullable": true,
+          "constraint": "RETURNED/LOST/VOIDED",
+          "description": "Lý do đóng"
+        },
+        {
+          "name": "policy_version_id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "FK PolicyVersion.id",
+          "description": "Policy ban đầu"
+        },
+        {
+          "name": "applied_rules",
+          "type": "jsonb",
+          "nullable": false,
+          "constraint": "—",
+          "description": "Snapshot quy tắc ban đầu"
+        },
+        {
+          "name": "version",
+          "type": "integer",
+          "nullable": false,
+          "constraint": "DEFAULT 1",
+          "description": "Phiên bản"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ],
+      "rules": "Truy vết: F07,F08,F09,F19. Quy tắc: OPEN=closed_at NULL; partial UQ copy_id cho OPEN; due_at>=issued_at; closed_at>=issued_at; closure_reason đồng bộ closed_at."
+    },
+    {
+      "ordinal": 20,
+      "entity": "RenewalEvent",
+      "label": "Lần gia hạn phiếu",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "name": "loan_id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "FK Loan.id",
+          "description": "Phiếu gia hạn"
+        },
+        {
+          "name": "sequence_no",
+          "type": "integer",
+          "nullable": false,
+          "constraint": ">0",
+          "description": "Thứ tự gia hạn"
+        },
+        {
+          "name": "actor_id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "FK Account.id",
+          "description": "Người thực hiện"
+        },
+        {
+          "name": "renewed_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "constraint": "—",
+          "description": "Thời điểm"
+        },
+        {
+          "name": "policy_version_id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "FK PolicyVersion.id",
+          "description": "Policy quyết định gia hạn"
+        },
+        {
+          "name": "request_id",
+          "type": "varchar(100)",
+          "nullable": false,
+          "constraint": "—",
+          "description": "Mã tương quan yêu cầu"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ],
+      "rules": "Truy vết: F09. Quy tắc: Một event gồm các RenewalItem; append-only; UQ loan_id+sequence_no."
+    },
+    {
+      "ordinal": 21,
+      "entity": "RenewalItem",
+      "label": "Hạn trước sau gia hạn",
+      "fields": [
+        {
+          "name": "renewal_event_id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "PK ghép; FK RenewalEvent.id",
+          "description": "Lần gia hạn"
+        },
+        {
+          "name": "loan_item_id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "PK ghép; FK LoanItem.id",
+          "description": "Mục mượn"
+        },
+        {
+          "name": "old_due_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "constraint": "—",
+          "description": "Hạn trước"
+        },
+        {
+          "name": "new_due_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "constraint": "—",
+          "description": "Hạn sau"
+        },
+        {
+          "name": "applied_rules",
+          "type": "jsonb",
+          "nullable": false,
+          "constraint": "—",
+          "description": "Quy tắc gia hạn đã dùng"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ],
+      "rules": "Truy vết: F09. Quy tắc: new_due_at>old_due_at; item thuộc loan của event; kiểm trong transaction."
+    },
+    {
+      "ordinal": 22,
+      "entity": "ReturnEvent",
+      "label": "Sự kiện đóng mục mượn",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "name": "loan_item_id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "FK LoanItem.id; UQ",
+          "description": "Mục được đóng"
+        },
+        {
+          "name": "return_kind",
+          "type": "varchar(16)",
+          "nullable": false,
+          "constraint": "RETURNED/LOST/VOIDED",
+          "description": "Kiểu xử lý"
+        },
+        {
+          "name": "condition",
+          "type": "varchar(16)",
+          "nullable": true,
+          "constraint": "GOOD/DAMAGED",
+          "description": "Tình trạng khi nhận"
+        },
+        {
+          "name": "returned_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "constraint": "—",
+          "description": "Thời điểm xử lý trả/mất"
+        },
+        {
+          "name": "processed_by",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "FK Account.id",
+          "description": "Người xử lý"
+        },
+        {
+          "name": "notes",
+          "type": "text",
+          "nullable": true,
+          "constraint": "—",
+          "description": "Biên bản/lý do"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ],
+      "rules": "Truy vết: F08. Quy tắc: UQ loan_item_id; append-only; mất ghi LOST và condition NULL, không giả định đã nhận sách."
+    },
+    {
+      "ordinal": 23,
+      "entity": "Reservation",
+      "label": "Đặt trước",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "name": "reader_id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "FK Reader.id",
+          "description": "Độc giả"
+        },
+        {
+          "name": "edition_id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "FK BookEdition.id",
+          "description": "Ấn bản xếp hàng"
+        },
+        {
+          "name": "copy_id",
+          "type": "uuid",
+          "nullable": true,
+          "constraint": "FK BookCopy.id",
+          "description": "Copy phân bổ khi READY"
+        },
+        {
+          "name": "fulfilled_loan_item_id",
+          "type": "uuid",
+          "nullable": true,
+          "constraint": "FK LoanItem.id; UQ",
+          "description": "Mục đã nhận"
+        },
+        {
+          "name": "status",
+          "type": "varchar(16)",
+          "nullable": false,
+          "constraint": "QUEUED/READY/FULFILLED/CANCELLED/EXPIRED",
+          "description": "Trạng thái"
+        },
+        {
+          "name": "ready_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "constraint": "—",
+          "description": "Bắt đầu giữ"
+        },
+        {
+          "name": "ready_expires_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "constraint": "—",
+          "description": "Hạn nhận"
+        },
+        {
+          "name": "cancellation_reason",
+          "type": "text",
+          "nullable": true,
+          "constraint": "—",
+          "description": "Lý do hủy"
+        },
+        {
+          "name": "policy_version_id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "FK PolicyVersion.id",
+          "description": "Policy đặt chỗ"
+        },
+        {
+          "name": "applied_rules",
+          "type": "jsonb",
+          "nullable": false,
+          "constraint": "—",
+          "description": "Snapshot; hạn READY chốt khi phân bổ"
+        },
+        {
+          "name": "version",
+          "type": "integer",
+          "nullable": false,
+          "constraint": "DEFAULT 1",
+          "description": "Phiên bản"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ],
+      "rules": "Truy vết: F10. Quy tắc: FIFO created_at+id; READY cần copy/ready_at/expiry; UQ copy READY; UQ reader+edition QUEUED/READY; copy phải cùng edition; policy thời hạn snapshot."
+    },
+    {
+      "ordinal": 24,
+      "entity": "FineCharge",
+      "label": "Khoản phí phạt",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "name": "reader_id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "FK Reader.id",
+          "description": "Người chịu phí"
+        },
+        {
+          "name": "loan_item_id",
+          "type": "uuid",
+          "nullable": true,
+          "constraint": "FK LoanItem.id",
+          "description": "Mục gây phí"
+        },
+        {
+          "name": "policy_version_id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "FK PolicyVersion.id",
+          "description": "Policy tính phí"
+        },
+        {
+          "name": "reason",
+          "type": "varchar(16)",
+          "nullable": false,
+          "constraint": "LATE/DAMAGE/LOST/MANUAL",
+          "description": "Loại phí"
+        },
+        {
+          "name": "assessed_amount",
+          "type": "numeric(14,0)",
+          "nullable": false,
+          "constraint": ">0",
+          "description": "Số tiền phát sinh VND"
+        },
+        {
+          "name": "late_days",
+          "type": "integer",
+          "nullable": true,
+          "constraint": ">=0",
+          "description": "Ngày trễ snapshot theo C08"
+        },
+        {
+          "name": "unit_rate",
+          "type": "numeric(14,0)",
+          "nullable": true,
+          "constraint": ">=0",
+          "description": "Đơn giá snapshot"
+        },
+        {
+          "name": "calculation",
+          "type": "jsonb",
+          "nullable": false,
+          "constraint": "—",
+          "description": "Công thức và dữ liệu tính"
+        },
+        {
+          "name": "manual_reason",
+          "type": "text",
+          "nullable": true,
+          "constraint": "—",
+          "description": "Lý do thủ công"
+        },
+        {
+          "name": "assessed_by",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "FK Account.id",
+          "description": "Người ghi phí"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ],
+      "rules": "Truy vết: F08,F11,F12. Quy tắc: assessed_amount>0; 0 không tạo khoản; VND; ghi manual_reason nếu thủ công; dư nợ là projection."
+    },
+    {
+      "ordinal": 25,
+      "entity": "Payment",
+      "label": "Chứng từ thu",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "name": "reader_id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "FK Reader.id",
+          "description": "Người nộp"
+        },
+        {
+          "name": "receipt_no",
+          "type": "varchar(64)",
+          "nullable": false,
+          "constraint": "UQ",
+          "description": "Số biên nhận"
+        },
+        {
+          "name": "amount",
+          "type": "numeric(14,0)",
+          "nullable": false,
+          "constraint": ">0",
+          "description": "Tiền thu VND"
+        },
+        {
+          "name": "method",
+          "type": "varchar(24)",
+          "nullable": false,
+          "constraint": "CASH/TRANSFER_RECORD",
+          "description": "Phương thức ghi nhận"
+        },
+        {
+          "name": "received_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "constraint": "—",
+          "description": "Ngày thu"
+        },
+        {
+          "name": "received_by",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "FK Account.id",
+          "description": "Người thu"
+        },
+        {
+          "name": "reference",
+          "type": "text",
+          "nullable": true,
+          "constraint": "—",
+          "description": "Tham chiếu chuyển khoản"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ],
+      "rules": "Truy vết: F11. Quy tắc: Số tiền thu khác phí phát sinh; append-only; không tích hợp thanh toán online trong phạm vi này."
+    },
+    {
+      "ordinal": 26,
+      "entity": "PaymentAllocation",
+      "label": "Phân bổ tiền thu",
+      "fields": [
+        {
+          "name": "payment_id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "PK ghép; FK Payment.id",
+          "description": "Chứng từ thu"
+        },
+        {
+          "name": "charge_id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "PK ghép; FK FineCharge.id",
+          "description": "Khoản phí"
+        },
+        {
+          "name": "amount",
+          "type": "numeric(14,0)",
+          "nullable": false,
+          "constraint": ">0",
+          "description": "Số tiền phân bổ VND"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ],
+      "rules": "Truy vết: F11. Quy tắc: Cùng reader; net phân bổ không vượt payment/charge; PK ghép đúng từ điển cũ; thêm phân bổ bằng chứng từ mới."
+    },
+    {
+      "ordinal": 27,
+      "entity": "Waiver",
+      "label": "Miễn giảm",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "name": "charge_id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "FK FineCharge.id",
+          "description": "Khoản phí"
+        },
+        {
+          "name": "amount",
+          "type": "numeric(14,0)",
+          "nullable": false,
+          "constraint": ">0",
+          "description": "Tiền miễn VND"
+        },
+        {
+          "name": "approved_by",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "FK Account.id",
+          "description": "Người duyệt"
+        },
+        {
+          "name": "reason",
+          "type": "text",
+          "nullable": false,
+          "constraint": "Không rỗng",
+          "description": "Lý do"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ],
+      "rules": "Truy vết: F11. Quy tắc: Append-only; không vượt dư nợ sau khóa charge; người duyệt có permission."
+    },
+    {
+      "ordinal": 28,
+      "entity": "PaymentReversal",
+      "label": "Đảo chứng từ thu",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "name": "payment_id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "FK Payment.id",
+          "description": "Chứng từ gốc"
+        },
+        {
+          "name": "amount",
+          "type": "numeric(14,0)",
+          "nullable": false,
+          "constraint": ">0",
+          "description": "Tiền đảo VND"
+        },
+        {
+          "name": "actor_id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "FK Account.id",
+          "description": "Người duyệt"
+        },
+        {
+          "name": "reason",
+          "type": "text",
+          "nullable": false,
+          "constraint": "—",
+          "description": "Lý do"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ],
+      "rules": "Truy vết: F11. Quy tắc: Tổng đảo<=Payment.amount; đảo phân bổ cần ghi đồng thời; net phân bổ<=net thu."
+    },
+    {
+      "ordinal": 29,
+      "entity": "AllocationReversal",
+      "label": "Đảo phân bổ",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "name": "payment_id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "FK ghép PaymentAllocation.payment_id",
+          "description": "Chứng từ gốc"
+        },
+        {
+          "name": "charge_id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "FK ghép PaymentAllocation.charge_id",
+          "description": "Khoản phí gốc"
+        },
+        {
+          "name": "amount",
+          "type": "numeric(14,0)",
+          "nullable": false,
+          "constraint": ">0",
+          "description": "Tiền đảo VND"
+        },
+        {
+          "name": "actor_id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "FK Account.id",
+          "description": "Người duyệt"
+        },
+        {
+          "name": "reason",
+          "type": "text",
+          "nullable": false,
+          "constraint": "—",
+          "description": "Lý do"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ],
+      "rules": "Truy vết: F11. Quy tắc: FK ghép bảo đảm giao dịch gốc tồn tại; tổng đảo<=allocation.amount; khóa cả payment và charge."
+    },
+    {
+      "ordinal": 30,
+      "entity": "WaiverReversal",
+      "label": "Đảo miễn giảm",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "name": "waiver_id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "FK Waiver.id",
+          "description": "Miễn giảm gốc"
+        },
+        {
+          "name": "amount",
+          "type": "numeric(14,0)",
+          "nullable": false,
+          "constraint": ">0",
+          "description": "Tiền đảo VND"
+        },
+        {
+          "name": "actor_id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "FK Account.id",
+          "description": "Người duyệt"
+        },
+        {
+          "name": "reason",
+          "type": "text",
+          "nullable": false,
+          "constraint": "—",
+          "description": "Lý do"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ],
+      "rules": "Truy vết: F11. Quy tắc: Tổng đảo<=Waiver.amount; hoàn dư nợ có audit, không sửa khoản cũ."
+    },
+    {
+      "ordinal": 31,
+      "entity": "IdempotencyRecord",
+      "label": "Chống giao dịch trùng",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "name": "actor_id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "FK Account.id",
+          "description": "Chủ yêu cầu"
+        },
+        {
+          "name": "operation",
+          "type": "varchar(64)",
+          "nullable": false,
+          "constraint": "—",
+          "description": "Loại lệnh"
+        },
+        {
+          "name": "key",
+          "type": "varchar(128)",
+          "nullable": false,
+          "constraint": "—",
+          "description": "Khóa retry"
+        },
+        {
+          "name": "payload_hash",
+          "type": "char(64)",
+          "nullable": false,
+          "constraint": "—",
+          "description": "Hash payload chuẩn hóa"
+        },
+        {
+          "name": "response_status",
+          "type": "smallint",
+          "nullable": true,
+          "constraint": "—",
+          "description": "HTTP status sau hoàn tất"
+        },
+        {
+          "name": "response_body",
+          "type": "jsonb",
+          "nullable": true,
+          "constraint": "—",
+          "description": "Kết quả đã redaction"
+        },
+        {
+          "name": "state",
+          "type": "varchar(16)",
+          "nullable": false,
+          "constraint": "PENDING/COMPLETED",
+          "description": "Trạng thái"
+        },
+        {
+          "name": "expires_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "constraint": "—",
+          "description": "Hạn giữ"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ],
+      "rules": "Truy vết: F07–F11,F20. Quy tắc: UQ actor+operation+key; payload khác trả 409; kết quả commit cùng nghiệp vụ; hạn giữ bao phủ retry."
+    },
+    {
+      "ordinal": 32,
+      "entity": "OutboxEvent",
+      "label": "Sự kiện sau commit",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "name": "aggregate_type",
+          "type": "varchar(64)",
+          "nullable": false,
+          "constraint": "—",
+          "description": "Loại aggregate"
+        },
+        {
+          "name": "aggregate_id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "—",
+          "description": "Tham chiếu logic, không FK đa hình"
+        },
+        {
+          "name": "event_type",
+          "type": "varchar(100)",
+          "nullable": false,
+          "constraint": "—",
+          "description": "Loại sự kiện"
+        },
+        {
+          "name": "payload",
+          "type": "jsonb",
+          "nullable": false,
+          "constraint": "—",
+          "description": "Dữ liệu tối thiểu đã redaction"
+        },
+        {
+          "name": "processed_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "constraint": "—",
+          "description": "Đã hoàn tất dispatch"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ],
+      "rules": "Truy vết: F19,F24*. Quy tắc: Ghi cùng transaction; không gọi mạng khi giữ khóa; event id cũng là dedupe key cho consumer."
+    },
+    {
+      "ordinal": 33,
+      "entity": "Job",
+      "label": "Tác vụ nền",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "name": "outbox_event_id",
+          "type": "uuid",
+          "nullable": true,
+          "constraint": "FK OutboxEvent.id",
+          "description": "Nguồn event"
+        },
+        {
+          "name": "dedupe_key",
+          "type": "varchar(200)",
+          "nullable": false,
+          "constraint": "UQ",
+          "description": "Khóa chống tạo trùng"
+        },
+        {
+          "name": "job_type",
+          "type": "varchar(64)",
+          "nullable": false,
+          "constraint": "—",
+          "description": "Loại tác vụ"
+        },
+        {
+          "name": "payload",
+          "type": "jsonb",
+          "nullable": false,
+          "constraint": "—",
+          "description": "Dữ liệu handler"
+        },
+        {
+          "name": "status",
+          "type": "varchar(16)",
+          "nullable": false,
+          "constraint": "QUEUED/RUNNING/SUCCEEDED/FAILED/DEAD",
+          "description": "Trạng thái"
+        },
+        {
+          "name": "attempt",
+          "type": "integer",
+          "nullable": false,
+          "constraint": ">=0; DEFAULT 0",
+          "description": "Lần thử"
+        },
+        {
+          "name": "lease_owner",
+          "type": "varchar(100)",
+          "nullable": true,
+          "constraint": "—",
+          "description": "Worker nhận"
+        },
+        {
+          "name": "lease_until",
+          "type": "timestamptz",
+          "nullable": true,
+          "constraint": "—",
+          "description": "Hạn lease"
+        },
+        {
+          "name": "next_attempt_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "constraint": "—",
+          "description": "Lịch thử lại"
+        },
+        {
+          "name": "last_error_code",
+          "type": "varchar(100)",
+          "nullable": true,
+          "constraint": "—",
+          "description": "Lỗi không chứa secret"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ],
+      "rules": "Truy vết: F19,F20,F24*. Quy tắc: Lease/attempt/retry hữu hạn; expired lease được nhận lại; unique dedupe_key."
+    },
+    {
+      "ordinal": 34,
+      "entity": "ReportJob",
+      "label": "Báo cáo và xuất dữ liệu",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "name": "job_id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "FK Job.id; UQ",
+          "description": "Tác vụ thực thi"
+        },
+        {
+          "name": "requested_by",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "FK Account.id",
+          "description": "Người yêu cầu"
+        },
+        {
+          "name": "report_type",
+          "type": "varchar(64)",
+          "nullable": false,
+          "constraint": "—",
+          "description": "Loại báo cáo"
+        },
+        {
+          "name": "filter_snapshot",
+          "type": "jsonb",
+          "nullable": false,
+          "constraint": "—",
+          "description": "Bộ lọc và scope đã kiểm quyền"
+        },
+        {
+          "name": "as_of",
+          "type": "timestamptz",
+          "nullable": false,
+          "constraint": "—",
+          "description": "Mốc snapshot báo cáo"
+        },
+        {
+          "name": "artifact_id",
+          "type": "uuid",
+          "nullable": true,
+          "constraint": "FK MediaAsset.id",
+          "description": "Tệp riêng tư"
+        },
+        {
+          "name": "expires_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "constraint": "—",
+          "description": "Hạn tải"
+        },
+        {
+          "name": "row_count",
+          "type": "bigint",
+          "nullable": true,
+          "constraint": ">=0",
+          "description": "Số dòng xuất"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ],
+      "rules": "Truy vết: F13,F20. Quy tắc: Gộp Report/ExportJob theo job_type; không tạo bảng thứ hai đồng nghĩa; kiểm quyền lúc yêu cầu và tải."
+    },
+    {
+      "ordinal": 35,
+      "entity": "AuditLog",
+      "label": "Nhật ký kiểm toán",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "name": "actor_id",
+          "type": "uuid",
+          "nullable": true,
+          "constraint": "FK Account.id",
+          "description": "Người thao tác"
+        },
+        {
+          "name": "actor_type",
+          "type": "varchar(16)",
+          "nullable": false,
+          "constraint": "USER/SYSTEM/ANONYMOUS",
+          "description": "Loại chủ thể"
+        },
+        {
+          "name": "action",
+          "type": "varchar(100)",
+          "nullable": false,
+          "constraint": "—",
+          "description": "Hành động"
+        },
+        {
+          "name": "permission_code",
+          "type": "varchar(100)",
+          "nullable": true,
+          "constraint": "—",
+          "description": "Quyền đã kiểm"
+        },
+        {
+          "name": "target_type",
+          "type": "varchar(64)",
+          "nullable": false,
+          "constraint": "—",
+          "description": "Loại đối tượng"
+        },
+        {
+          "name": "target_id",
+          "type": "uuid",
+          "nullable": true,
+          "constraint": "—",
+          "description": "ID logic, không FK đa hình"
+        },
+        {
+          "name": "request_id",
+          "type": "varchar(100)",
+          "nullable": false,
+          "constraint": "—",
+          "description": "Tương quan"
+        },
+        {
+          "name": "outcome",
+          "type": "varchar(16)",
+          "nullable": false,
+          "constraint": "SUCCESS/DENIED/FAILED",
+          "description": "Kết quả"
+        },
+        {
+          "name": "metadata",
+          "type": "jsonb",
+          "nullable": false,
+          "constraint": "—",
+          "description": "Before/after đã redaction"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ],
+      "rules": "Truy vết: F01–F24. Quy tắc: Append-only, quyền ghi riêng; actor NULL chỉ cho hệ thống/khách có actor_type; target là tham chiếu logic."
+    },
+    {
+      "ordinal": 36,
+      "entity": "AcquisitionReceipt",
+      "label": "Phiếu tiếp nhận *",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "name": "receipt_no",
+          "type": "varchar(64)",
+          "nullable": false,
+          "constraint": "UQ",
+          "description": "Số phiếu"
+        },
+        {
+          "name": "supplier",
+          "type": "varchar(200)",
+          "nullable": false,
+          "constraint": "—",
+          "description": "Nhà cung cấp"
+        },
+        {
+          "name": "received_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "constraint": "—",
+          "description": "Ngày nhận"
+        },
+        {
+          "name": "status",
+          "type": "varchar(16)",
+          "nullable": false,
+          "constraint": "DRAFT/POSTED/CANCELLED",
+          "description": "Trạng thái"
+        },
+        {
+          "name": "approved_by",
+          "type": "uuid",
+          "nullable": true,
+          "constraint": "FK Account.id",
+          "description": "Bắt buộc khi POSTED"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ],
+      "rules": "Truy vết: F22*. Quy tắc: DRAFT/POSTED/CANCELLED; POSTED bất biến, tạo copy đúng số lượng; tổng tiền tính từ dòng."
+    },
+    {
+      "ordinal": 37,
+      "entity": "AcquisitionReceiptItem",
+      "label": "Chi tiết tiếp nhận *",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "name": "receipt_id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "FK AcquisitionReceipt.id",
+          "description": "Phiếu nhập"
+        },
+        {
+          "name": "edition_id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "FK BookEdition.id",
+          "description": "Ấn bản"
+        },
+        {
+          "name": "quantity",
+          "type": "integer",
+          "nullable": false,
+          "constraint": ">0",
+          "description": "Số cuốn"
+        },
+        {
+          "name": "unit_price",
+          "type": "numeric(14,0)",
+          "nullable": false,
+          "constraint": ">=0",
+          "description": "Giá VND snapshot"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ],
+      "rules": "Truy vết: F22*. Quy tắc: quantity>0; unit_price>=0; total=quantity×unit_price; source FK BookCopy chỉ có khi triển khai F22."
+    },
+    {
+      "ordinal": 38,
+      "entity": "BackupManifest",
+      "label": "Hồ sơ sao lưu *",
+      "fields": [
+        {
+          "name": "id",
+          "type": "uuid",
+          "nullable": false,
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "name": "schema_version",
+          "type": "varchar(64)",
+          "nullable": false,
+          "constraint": "—",
+          "description": "Version migration"
+        },
+        {
+          "name": "snapshot_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "constraint": "—",
+          "description": "Mốc dữ liệu"
+        },
+        {
+          "name": "encrypted_object_key",
+          "type": "text",
+          "nullable": false,
+          "constraint": "UQ",
+          "description": "Vị trí backup mã hóa"
+        },
+        {
+          "name": "sha256",
+          "type": "char(64)",
+          "nullable": false,
+          "constraint": "—",
+          "description": "Hash"
+        },
+        {
+          "name": "verified_at",
+          "type": "timestamptz",
+          "nullable": true,
+          "constraint": "—",
+          "description": "Ngày kiểm chứng"
+        },
+        {
+          "name": "restore_drill_result",
+          "type": "jsonb",
+          "nullable": true,
+          "constraint": "—",
+          "description": "Kết quả RPO/RTO và toàn vẹn"
+        },
+        {
+          "name": "created_by",
+          "type": "uuid",
+          "nullable": true,
+          "constraint": "FK Account.id",
+          "description": "Người/worker tạo"
+        },
+        {
+          "name": "created_at",
+          "type": "timestamptz",
+          "nullable": false,
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ],
+      "rules": "Truy vết: F23*. Quy tắc: Metadata backup không phải file backup; không chứa khóa giải mã; restore drill ghi bằng chứng."
+    }
+  ]
+}

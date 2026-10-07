@@ -40,15 +40,16 @@ Có thể [chạy API trên host](apps/api/README.md) bằng uv và DB Compose.
 - [Onboarding, chia công việc, Git và review](docs/operations/team-development.md)
 - [Docker, biến môi trường, dữ liệu, CI/CD, xử lý lỗi](docs/operations/containers-ci.md)
 - [Hợp đồng hạ tầng hiện hành](docs/operations/fastapi-infrastructure-spec.md)
-- [Thiết kế DOCX, UML một trang, PDF và kế hoạch đã có](docs/README.md)
+- [Thiết kế hiện hành: DB/API/quyền/UML và báo cáo đồng bộ](docs/design/README.md)
+- [Nguồn DOCX/PDF và chỉ mục tài liệu](docs/README.md)
 - [Bối cảnh và phạm vi dự án](PROJECT-CONTEXT.md)
 - [Bằng chứng kiểm tra đã thực hiện](docs/operations/verification.md)
 
 CI kiểm tra source/lock, lint, format, types, tests, wheel và production image.
 Workflow `Publish API image` xuất bản GHCR thủ công từ default branch sau CI cùng SHA;
-**publish image chưa triển khai server**. Frontend, auth provider và hosting chưa chốt.
+**publish image chưa triển khai server**. Frontend React/TypeScript/Vite và Keycloak OIDC/PKCE đã chốt ở thiết kế; hosting còn cần quyết định.
 Maintainer cần bật review PR, required check `ci-result` và environment `image-publish`
-trên GitHub. Bảo vệ main đang bị GitHub Free/private chặn; xem [trạng thái và cấu hình rule](docs/operations/branch-protection.md). Environment image-publish chưa được xác nhận đã bật.
+trên GitHub. Trạng thái bảo vệ main cần xem trực tiếp trên GitHub; tài liệu lịch sử tại [trạng thái và cấu hình rule](docs/operations/branch-protection.md). Environment image-publish chưa được xác nhận đã bật.
 
 ## Cấu trúc repository
 
@@ -60,9 +61,10 @@ docker/              Dockerfile API dev/build/production
 compose.yaml         Chạy API + PostgreSQL local
 PROJECT-CONTEXT.md   Mục đích, phạm vi và quyết định hiện hành
 docs/
-  design/            DOCX thiết kế đã có
+  design/            DOCX, DB, API/OpenAPI, quyền, identity, events và bảo mật
   diagrams/          UML một canvas, chỉnh sửa bằng diagrams.net
-  ui/                Prototype và design tokens (chưa là frontend app)
+  plan/              Kế hoạch nhỏ backend/frontend/tích hợp, wireframes và motion
+  quality/           Ma trận nghiệm thu F01–F24 (chưa chạy)
   operations/        Onboarding, Docker/CI, bảo vệ main, bằng chứng kiểm tra
   archive/           Kế hoạch và nguồn tham khảo lịch sử
   source-manifest.json  Nguồn, thời điểm tải và hash binary

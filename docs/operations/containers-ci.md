@@ -1,128 +1,184 @@
-# Docker và CI/CD — giai đoạn chuẩn bị code
+# Docker và CI/CD cho FastAPI
 
-## Trạng thái
+Backend là Python 3.13 + FastAPI + PostgreSQL 17. Chỉ có health endpoints;
+chưa có schema nghiệp vụ, CRUD hoặc migration. Frontend/Nginx chưa được cấu hình; template Node cũ đã được dọn.
 
-Repo hiện chưa có mã nguồn API/web hoặc migration. PostgreSQL là dịch vụ dùng được ngay sau khi cấu hình mật khẩu và khởi động Docker. Dockerfile ứng dụng là hợp đồng chuẩn bị theo React/Vite + NestJS trong README; N02 vẫn chưa chốt lựa chọn .NET/NestJS. Nếu chọn .NET, thay API Dockerfile và job quality API trước khi thêm code.
+## Ba cấu hình Docker — chọn theo mục đích
 
-Thiết kế nghiệp vụ chuẩn: [Google Docs Lib-management](https://docs.google.com/document/d/15pEvPMM7t_oiO0zzggZ_9K-RyN3LqzC4hEaFk2rc1J8/edit). C01–C09 đã được chấp nhận. Không tạo schema 38 bảng bằng các init SQL giả trong nhiệm vụ này.
+| Cấu hình | Dùng khi | Mount / dependencies | Khởi động | Dữ liệu |
+| --- | --- | --- | --- | --- |
+| `.devcontainer/compose.yaml` + override sinh tự động | Team code toàn bộ repository | Toàn repo + Git metadata worktree; Linux venv `/opt/venv` | workspace chờ terminal; API chạy thủ công | `lib-management-devcontainer_devcontainer-pgdata` |
+| `compose.yaml` | Chạy app local / reload API | Chỉ `apps/api/src` → `/app/src`; dependencies trong image | API tự chạy; DB healthy trước | `lib-management_pgdata` |
+| `docker/api.Dockerfile --target production` | CI / xuất bản image runtime | Không mount source; wheel và runtime deps | Uvicorn một worker, không reload | DB phải cung cấp riêng lúc deploy |
 
-## 1. Chạy PostgreSQL local
+Hai Compose project có DB/volume riêng, không tự chia sẻ dữ liệu. Không chạy hai
+API cùng cổng host 8000. Dev Container DB không publish cổng host; workspace kết nối
+`db:5432`. [Dev Container README](../../.devcontainer/README.md) có lệnh mở shell,
+khởi động API, reconnect và dừng. Không dùng `down -v` khi cần giữ dữ liệu.
 
-Yêu cầu Docker Engine/Desktop với Compose v2. Node local theo `.nvmrc` nếu chạy script bằng máy host.
+`.devcontainer/prepare.py` tạo mật khẩu ngẫu nhiên local vào `.devcontainer/.env`
+và override chứa đường dẫn máy hiện tại; cả hai bị gitignore. Máy mới chạy script
+hoặc để Dev Containers gọi `initializeCommand`; yêu cầu Python host >=3.9 và Git.
+Sau khi di chuyển repo chạy lại prepare và recreate workspace. Venv ở filesystem
+container, recreate cần sync lại; PostgreSQL ở named volume vẫn được giữ.
+Git worktree mount thêm metadata chung nên thao tác Git trong container tác động
+repository host. Không tự mount SSH keys, Docker socket hoặc credentials host.
+
+## Local với Docker
+
+Yêu cầu Docker Engine/Desktop và Docker Compose.
 
 ```bash
 cp .env.example .env
-# Sửa POSTGRES_PASSWORD trong .env thành mật khẩu local của bạn.
-docker compose up -d --wait db
+# Sửa POSTGRES_PASSWORD trước khi chạy.
+docker compose up --build
+# Hoặc chạy nền:
+docker compose up --build -d --wait
 docker compose ps
-docker compose logs --tail=50 db
-```
-
-Kết nối từ host: `127.0.0.1:5432`, database `lib_management`, user `lib_dev`, mật khẩu trong `.env`. Từ API container dùng `db:5432`. Nếu đổi cổng, sửa `POSTGRES_PORT`.
-
-```bash
-docker compose exec db psql -U lib_dev -d lib_management
+docker compose logs -f api db
 docker compose down
 ```
 
-`down` giữ volume `pgdata`. `down -v` xóa dữ liệu nên chỉ dùng khi chủ động bỏ database local. Đổi POSTGRES_PASSWORD sau khi volume đã khởi tạo không tự đổi mật khẩu role PostgreSQL; đổi role trong DB hoặc chủ động tạo môi trường local mới.
+API trên `127.0.0.1:8000`, tài liệu tại `/docs`; DB trên `127.0.0.1:5432`.
+Có thể đổi API_PORT và POSTGRES_PORT. Trong mạng container, API dùng `db:5432`.
+Mật khẩu chứa `$` phải được đặt trong dấu nháy đơn trong `.env` để giữ nguyên
+ký tự. POSTGRES_PASSWORD bắt buộc, được truyền thành DB_PASSWORD riêng;
+SQLAlchemy URL.create xử lý mật khẩu có `@`, `:`, `/`, khoảng trắng và `$`.
 
-Ảnh PostgreSQL dùng nhánh `17-bookworm` để nhận cập nhật bản vá; tag này không bất biến. API dùng Node `24.21.0-bookworm-slim`, web runtime `nginx-unprivileged:1.28-alpine`. Trước khi phát hành production, chốt base image digest và chính sách cập nhật; image ứng dụng xuất GHCR được ghi digest riêng. Dependabot theo dõi Dockerfiles và GitHub Actions; tag Compose cần maintainer theo dõi.
+Project mặc định `lib-management`, volume `pgdata` (tên thực tế
+`lib-management_pgdata`). `down` giữ volume; tránh `down -v` khi cần giữ dữ liệu.
+Đổi mật khẩu trong env không đổi mật khẩu role của DB đã khởi tạo: cập nhật
+role trong PostgreSQL trước khi đổi cấu hình. Không nâng major DB tự động.
 
-## 2. Hợp đồng khi thêm code
+Stage dev chỉ bind `apps/api/src` vào `/app/src`, reload nguồn Python; thư viện
+trong `/opt/venv` không bị mount host che mất. Sau khi đổi lockfile, rebuild API.
+API chạy UID/GID 10001, drop capabilities, no-new-privileges và tmpfs `/tmp`.
+DB healthcheck thành công trước khi API khởi động.
 
-Tạo cả hai app cùng một PR bootstrap. Thư mục `apps/api` hoặc `apps/web` xuất hiện mà chưa đủ hợp đồng sẽ làm CI thất bại; không tạo thư mục app rỗng chỉ để giữ chỗ.
+## Chạy API bằng uv trên host
 
-| Thuộc tính | API | Web |
-| --- | --- | --- |
-| Thư mục | `apps/api` | `apps/web` |
-| Package | package.json + package-lock.json độc lập | package.json + package-lock.json độc lập |
-| Scripts bắt buộc | dev, lint, typecheck, test:ci, build | dev, lint, typecheck, test:ci, build |
-| Dev | Bind 0.0.0.0:3000 | Vite 0.0.0.0:5173 |
-| Build output | dist/main.js, dependencies runtime trong dependencies | dist/index.html và assets |
-| Runtime | node dist/main.js, user node | nginx nonroot cổng 8080 |
-| Health | GET /health/live và /health/ready ngoài prefix /api/v1 | GET /health/live ở nginx |
-
-`test:ci` chạy một lần, không watch; ban đầu là suite tự chứa, không cần DB ngoài. Integration test có PostgreSQL riêng sẽ được thêm khi code/migration có thật. Không dùng `echo success`, `--if-present` hoặc bỏ kiểm tra để làm CI xanh.
-
-API đọc `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_NAME`, `DB_PASSWORD` riêng, không ghép mật khẩu bằng nội suy URL. Readiness trả 200 khi DB và migration sẵn sàng, 503 nếu chưa sẵn sàng. API xử lý SIGTERM để đóng kết nối. Migration chạy bằng bước riêng có quyền thích hợp, không tự chạy cạnh tranh trong mỗi replica.
-
-Web đọc `import.meta.env.VITE_API_BASE_URL`. Dev mặc định `http://localhost:3000/api/v1`; API CORS chỉ cho origin cấu hình. Production build dùng `/api/v1`, nginx giữ nguyên đường dẫn `/api/` khi proxy tới `api:3000`. Deployment sau này phải cung cấp DNS service `api`; chạy riêng image web cần cấu hình upstream phù hợp. Không đặt khóa bí mật vào biến VITE vì chúng nằm trong JavaScript tải về trình duyệt.
-
-Build context là repo root. `.dockerignore` loại env, node_modules, tài liệu và Git trước khi COPY. `.env` được Git ignore; cấu hình local không chứa khóa R2 hoặc OIDC thật.
-
-## 3. Bật ứng dụng khi đã có code
+Cài Python 3.13 và uv 0.12.21, chạy DB với Compose rồi:
 
 ```bash
-node scripts/ci/app-contract.mjs --strict
-docker compose --profile app up --build
+docker compose up -d --wait db
+cd apps/api
+uv sync --locked
+# Dùng mật khẩu đã cấu hình cho DB; uv không tự đọc .env của repository.
+export DB_PASSWORD='your-local-password'
+export DB_USER=lib_dev DB_NAME=lib_management
+uv run --locked uvicorn lib_management.main:create_app --factory --reload --host 127.0.0.1 --port 8000
 ```
 
-Web: `http://localhost:5173`. API: `http://localhost:3000`. DB chỉ bind localhost; web không được nối mạng backend của DB.
+Để cập nhật dependency có chủ đích, sửa pyproject.toml, chạy `uv lock`, xem diff
+lockfile, rồi `uv sync --locked`. Không sửa uv.lock thủ công.
+Quality commands có trong [API README](../../apps/api/README.md).
 
-Hai named volume node_modules tránh dùng thư viện host trong container. Sau khi đổi package-lock, cập nhật thư viện trong volume trước khi chạy lại:
-
-```bash
-docker compose --profile app build api web
-docker compose run --rm --no-deps api npm ci
-docker compose run --rm --no-deps web npm ci
-docker compose --profile app up
-```
-
-Dockerfile có stages `dev`, `build`, `production`. Build production từ repo root:
+## Production image và health
 
 ```bash
 docker build --target production -f docker/api.Dockerfile -t lib-management-api:local .
-docker build --target production -f docker/web.Dockerfile -t lib-management-web:local .
 ```
 
-Compose hiện chỉ dành cho development. Production cần đích deploy, HTTPS, secret manager, DB role không superuser, migration, backup/restore và cấu hình runtime; các phần này chưa được quyết định.
+Build context là repo root. Dockerignore loại env, Git, venv, cache, docs và
+worktrees. Các stage deps/build dùng `uv sync --locked`, build wheel; production
+chỉ chứa runtime dependencies và wheel cài noneditable trong `/opt/venv`,
+không chứa uv, source bind mount hoặc dev tools. Process Uvicorn exec-form,
+factory `lib_management.main:create_app`, một worker, `0.0.0.0:8000`, không reload.
+Mật khẩu chỉ được cung cấp lúc chạy container, không qua build args.
 
-## 4. GitHub Actions
+Python `3.13-slim-bookworm`, PostgreSQL `17-bookworm`, uv `0.12.21` được pin
+multi-platform index digest trong Dockerfile/Compose. Cập nhật digest cần đọc
+metadata registry, review thay đổi và build/smoke lại, không dùng latest.
 
-### CI
+`GET /health/live` trả 200 `{"status":"ok"}` độc lập DB.
+`GET /health/ready` chạy SELECT 1, trả 200 `{"status":"ready"}` hoặc
+503 `{"status":"not_ready"}`. Readiness chưa kiểm tra 38 bảng hoặc revision
+migration. Readiness có deadline client 2 giây gồm chờ slot, connect và đọc; tối đa 4 probe async. Kết nối được đóng trước khi hủy task hết hạn. Liveness async không dùng DB hoặc worker đồng bộ. SQLAlchemy pool dành cho nghiệp vụ tương lai không tham gia readiness. DB connect timeout 2 giây, statement timeout 2000 ms.
 
-Chạy trên PR, push main hoặc thủ công:
+## CI và publish
 
-1. Kiểm tra mô hình Compose với `.env.example`, không bật container.
-2. Nếu cả hai app chưa tồn tại: báo **BOOTSTRAP**, bỏ qua job ứng dụng rõ ràng.
-3. Nếu app xuất hiện nhưng thiếu package/lock/script: thất bại, không bỏ qua.
-4. Nếu đủ: mỗi app chạy npm ci → lint → typecheck → test:ci → build → build production image.
-5. Job `ci-result` tổng hợp kết quả; dùng làm required check khi maintainer bật branch protection.
+CI `.github/workflows/ci.yml` chạy khi PR, push main, dispatch hoặc được gọi
+qua workflow_call. Backend luôn bắt buộc: thiếu pyproject.toml, uv.lock,
+main.py hoặc .python-version làm job configuration thất bại. Không có detector
+Node hoặc chế độ bootstrap. Ba job configuration → quality → container phải
+đều thành công để required check `ci-result` pass; skipped/cancelled/failure
+đều làm check thất bại. Concurrency của CI dùng prefix riêng với caller publish.
 
-CI bootstrap xanh chỉ chứng minh cấu hình hạ tầng vượt qua kiểm tra cấu hình, chưa chứng minh ứng dụng chạy. CI không có packages/write; checkout không giữ credentials. Action được pin SHA, Dependabot đề xuất cập nhật.
+Quality dùng Python từ .python-version và uv 0.12.21, `uv sync --locked --group dev`,
+Ruff check/format, mypy, 10 unit tests độc lập DB, 5 integration tests, build wheel.
+PostgreSQL service disposable dùng cùng digest PostgreSQL 17 như Compose,
+credentials fixture công khai, không có volume hoặc secret production. Integration
+chỉ chạy khi `RUN_DB_INTEGRATION=1` và DB_HOST/DB_PORT/DB_USER/DB_NAME/DB_PASSWORD
+trỏ vào fixture riêng; mặc định các tests này skip để unit tests không cần DB.
+CI bật rõ flag và chạy integration file riêng, nên fixture hỏng làm CI fail.
+Tests kiểm tra SELECT 1/readiness thành công, sai mật khẩu và port không lắng nghe
+trả 503 trong dưới 5 giây, liveness vẫn 200. Sau quality, container chỉ build
+production image, không push. PR từ fork chỉ có contents/read, checkout không giữ
+credentials; không pull_request_target hoặc production secrets.
+Dependabot theo dõi uv ở apps/api, github-actions và Dockerfile.
 
-### Publish image — bước CD chuẩn bị
+## Publish API thủ công lên GHCR
 
-Maintainer vào Actions → **Publish container images** → Run workflow từ default branch:
+Workflow `Publish API image` (`.github/workflows/publish-images.yml`) chỉ có
+`workflow_dispatch`, không có input ref hoặc shell. Chọn default branch trong
+GitHub Actions khi chạy; job branch từ chối mọi ref khác. Job quality gọi reusable
+CI trong cùng commit `github.sha`, không nhận secret production. Publish chỉ chạy
+khi quality thành công, gồm cả production image build và required check ci-result.
+Concurrency publish có prefix `api-image-publish`, riêng với `python-ci`.
 
-1. Chặn nhánh khác default branch.
-2. Gọi CI với `require_app=true`, nên repo chưa code bị chặn.
-3. Job publish dùng environment `image-publish`. Maintainer cần tạo environment và bật required reviewers nếu muốn có approval gate; file YAML không tự thiết lập reviewers.
-4. Build thành công **cả API và web** trước khi login/push.
-5. Dùng GITHUB_TOKEN với packages/write chỉ trong job publish; tag `sha-<full commit SHA>` và OCI source/revision.
-6. Ghi digest mỗi image trong run summary. Không dùng latest; deployment sau này dùng digest.
+Job publish dùng environment `image-publish`; chỉ job này có `packages: write`,
+các job khác chỉ `contents: read`. Checkout pin action SHA và ref `github.sha`,
+không giữ credentials. Workflow build API production trước khi login; build lỗi
+không thể tới login/push. Login GHCR dùng GITHUB_TOKEN qua `--password-stdin`,
+logout chạy với `always()`. Không build hoặc publish web.
 
-Tên package: `ghcr.io/theihoz/lib-management-api` và `ghcr.io/theihoz/lib-management-web` trên repo hiện tại. Workflow tính owner lowercase nên vẫn dùng được sau khi chuyển repo.
+Tag là `ghcr.io/<owner viết thường>/lib-management-api:sha-<full commit SHA>`
+(với repository hiện tại: `ghcr.io/theihoz/lib-management-api:sha-<full commit SHA>`),
+không dùng `latest`. OCI labels `org.opencontainers.image.source` và
+`org.opencontainers.image.revision` ghi repository URL và commit SHA. Job summary
+ghi tag và RepoDigest sau push; dùng digest để chọn chính xác image cho deployment.
+Việc publish cần yêu cầu riêng của người dùng; lượt triển khai này không chạy
+workflow trên GitHub, login hoặc push registry.
 
-Hai lần push registry không phải giao dịch nguyên tử: nếu lần thứ hai lỗi, run thất bại và lần đầu có thể đã tồn tại. Không deploy một cặp chưa hoàn tất; chỉ chọn hai digest từ một run thành công. Image push chưa phải deploy máy chủ. Chưa cấu hình SSH/server/cloud do chưa có đích deploy.
+Maintainer phải tạo/cấu hình environment `image-publish` trên GitHub, đặt required
+reviewers và deployment branch rule chỉ default branch trước lần publish thật.
+Cấu hình branch protection/ruleset cho default branch: required CI check
+`ci-result`, review PR và hạn chế bypass theo chính sách nhóm. Những cài đặt này
+nằm ngoài repository; YAML không chứng minh reviewers hoặc branch protection đã bật.
+Kiểm tra quyền GITHUB_TOKEN được phép publish GHCR và package gắn với repository.
 
-## 5. Kế hoạch xác minh
+## Trước production deployment
 
-Các lệnh dưới đây được chuẩn bị, chưa chạy trong lần tạo cấu hình này:
+Publish package chưa tạo server hoặc triển khai production. Cần hoàn thành:
 
-```bash
-docker compose --env-file .env.example --profile app config --quiet
-node scripts/ci/app-contract.mjs
-node scripts/ci/app-contract.mjs --strict
-```
-
-Kỳ vọng hiện tại: Compose config exit 0; contract thường báo BOOTSTRAP; strict exit 1. Sau khi có code, chạy CI và smoke health/SPA deep links. Kiểm tra restart DB giữ dữ liệu, missing lock/script chặn CI, và fork PR không có quyền publish.
+- Chọn hosting/container runtime, network, tài nguyên, health probes và cách rollback
+  về image digest đã biết; chưa chốt hosting, frontend hoặc auth provider.
+- Cấu hình domain, TLS/HTTPS và reverse proxy/load balancer, gia hạn chứng chỉ.
+- Cấp runtime secrets bằng secret manager của hosting; truyền DB_HOST, DB_PORT,
+  DB_USER, DB_NAME, DB_PASSWORD lúc chạy, không đưa mật khẩu vào Git, image hoặc log.
+- Tạo DB role ứng dụng riêng với quyền tối thiểu, tách role migration/admin;
+  hạn chế network truy cập PostgreSQL và cấu hình kết nối theo hosting.
+- Khi có schema nghiệp vụ, thêm Alembic migrations, review và chạy migration bằng
+  bước riêng trước rollout; bổ sung readiness kiểm tra revision phù hợp.
+- Lập lịch backup, retention và vị trí lưu an toàn; thử restore, xác định RPO/RTO
+  và kế hoạch rollback dữ liệu trước thay đổi schema. Volume local không thay backup.
 
 ## Nguồn kỹ thuật
 
-- [Docker Compose profiles](https://docs.docker.com/compose/how-tos/profiles/)
-- [Compose services và healthcheck](https://docs.docker.com/reference/compose-file/services/)
-- [Node.js release schedule](https://github.com/nodejs/Release)
-- [GitHub: Publishing Docker images](https://docs.github.com/en/actions/tutorials/publish-packages/publish-docker-images)
-- [GitHub Container registry](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry)
+- [FastAPI containers](https://fastapi.tiangolo.com/deployment/docker/)
+- [uv Docker integration](https://docs.astral.sh/uv/guides/integration/docker/)
+- [Compose services](https://docs.docker.com/reference/compose-file/services/)
+
+Build backend pin Hatchling 1.32.4; dependencies build gián tiếp chưa được khóa hoàn toàn.
+
+## Xử lý lỗi thường gặp
+
+| Hiện tượng | Xử lý |
+| --- | --- |
+| Không thấy đầy đủ project trong container | Mở root repo với `.devcontainer`, không attach vào service `api` của Compose app; service API chỉ có src |
+| Cổng 8000 đã dùng | Dừng API của stack còn lại; Compose app có thể đổi API_PORT; Dev Container đổi mapping và forwardPorts đồng bộ |
+| DB authentication failed sau đổi env | Volume cũ giữ mật khẩu role; sửa role bằng PostgreSQL có kiểm soát hoặc giữ credentials đã khởi tạo, không xóa volume để chữa lỗi |
+| Lock stale / thiếu package sau pull | `uv sync --locked --group dev` trong workspace; lock mismatch cần PR cập nhật manifest/lock, không bỏ --locked |
+| Compose app không nhận dependency mới | `docker compose up --build -d api` |
+| API ready503, live200 | Kiểm tra DB_HOST/PORT/USER/NAME và DB logs; không in password; readiness chỉ SELECT1 |
+| Clone cũ chưa có scaffold | `git switch main` rồi `git pull --ff-only origin main` sau khi PR hạ tầng đã merge |

@@ -1,4 +1,4 @@
-name: Publish container images
+name: Publish API image
 
 on:
   workflow_dispatch:
@@ -7,7 +7,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: publish-images
+  group: api-image-publish-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -24,8 +24,6 @@ jobs:
   quality:
     needs: branch
     uses: ./.github/workflows/ci.yml
-    with:
-      require_app: true
 
   publish:
     needs: quality
@@ -38,37 +36,33 @@ jobs:
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
+          ref: ${{ github.sha }}
           persist-credentials: false
-      - name: Build BOTH images before any registry push
+      - name: Build API before registry login
         env:
           OWNER: ${{ github.repository_owner }}
           REVISION: ${{ github.sha }}
           SOURCE: ${{ github.server_url }}/${{ github.repository }}
         run: |
           namespace=$(printf '%s' "$OWNER" | tr '[:upper:]' '[:lower:]')
-          for app in api web; do
-            docker build --target production -f "docker/${app}.Dockerfile" \
-              --label "org.opencontainers.image.source=$SOURCE" \
-              --label "org.opencontainers.image.revision=$REVISION" \
-              -t "ghcr.io/${namespace}/lib-management-${app}:sha-${REVISION}" .
-          done
-          echo "NAMESPACE=$namespace" >> "$GITHUB_ENV"
+          image="ghcr.io/${namespace}/lib-management-api:sha-${REVISION}"
+          docker build --target production -f docker/api.Dockerfile \
+            --label "org.opencontainers.image.source=$SOURCE" \
+            --label "org.opencontainers.image.revision=$REVISION" \
+            -t "$image" .
+          echo "API_IMAGE=$image" >> "$GITHUB_ENV"
       - name: Login using the scoped workflow token
         env:
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GHCR_USER: ${{ github.actor }}
         run: printf '%s' "$GHCR_TOKEN" | docker login ghcr.io -u "$GHCR_USER" --password-stdin
-      - name: Publish images and record digests
-        env:
-          REVISION: ${{ github.sha }}
+      - name: Publish API and record digest
         run: |
-          for app in api web; do
-            image="ghcr.io/${NAMESPACE}/lib-management-${app}:sha-${REVISION}"
-            docker push "$image"
-            digest=$(docker image inspect --format '{{index .RepoDigests 0}}' "$image")
-            printf '%s\n' "- $digest" >> "$GITHUB_STEP_SUMMARY"
-          done
-          echo 'Images published. No server deployment was performed.' >> "$GITHUB_STEP_SUMMARY"
+          docker push "$API_IMAGE"
+          digest=$(docker image inspect --format '{{index .RepoDigests 0}}' "$API_IMAGE")
+          test -n "$digest"
+          printf '%s\n' "- Image: $API_IMAGE" "- RepoDigest: $digest" >> "$GITHUB_STEP_SUMMARY"
+          echo 'API image published. No server deployment was performed.' >> "$GITHUB_STEP_SUMMARY"
       - name: Logout
         if: always()
         run: docker logout ghcr.io

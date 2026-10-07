@@ -1,33 +1,34 @@
-# syntax=docker/dockerfile:1
-# Build context MUST be the repository root; apps/api has its own lockfile.
-FROM node:24.21.0-bookworm-slim AS deps
+# Build context: repository root. Digests are multi-platform OCI indexes.
+FROM ghcr.io/astral-sh/uv:0.12.21@sha256:a7aed3216253ee804de3e2d8afa5073baa1a177335345d43845cd4165e43b711 AS uv
+FROM python:3.13-slim-bookworm@sha256:a1165e272e578941b84abc79e4ab38a0305cd12803a5c4247979ac7655f4d641 AS base
+ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PATH="/opt/venv/bin:$PATH"
 WORKDIR /app
-COPY apps/api/package.json apps/api/package-lock.json ./
-RUN npm ci
 
-FROM deps AS dev
-COPY --chown=node:node apps/api/ .
-RUN chown -R node:node /app
-USER node
-EXPOSE 3000
-CMD ["npm", "run", "dev"]
+FROM base AS deps
+COPY --from=uv /uv /usr/local/bin/uv
+ENV UV_PROJECT_ENVIRONMENT=/opt/venv UV_LINK_MODE=copy UV_PYTHON_DOWNLOADS=never
+COPY apps/api/pyproject.toml apps/api/uv.lock ./
+# Cache runtime dependencies before adding the package source.
+RUN --mount=type=cache,target=/root/.cache/uv uv sync --locked --no-dev --no-install-project
 
 FROM deps AS build
-COPY apps/api/ .
-RUN npm run build
+COPY apps/api/src ./src
+RUN --mount=type=cache,target=/root/.cache/uv uv sync --locked --no-dev --no-editable && uv build --wheel --no-sources
 
-FROM node:24.21.0-bookworm-slim AS prod-deps
-WORKDIR /app
-COPY apps/api/package.json apps/api/package-lock.json ./
-RUN npm ci --omit=dev && npm cache clean --force
+FROM deps AS dev
+COPY apps/api/src ./src
+RUN --mount=type=cache,target=/root/.cache/uv uv sync --locked --no-dev
+USER 10001:10001
+EXPOSE 8000
+CMD ["uvicorn", "lib_management.main:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000", "--reload", "--reload-dir", "/app/src"]
 
-FROM node:24.21.0-bookworm-slim AS production
-WORKDIR /app
-ENV NODE_ENV=production PORT=3000 TZ=Asia/Ho_Chi_Minh
-COPY --from=prod-deps --chown=node:node /app/node_modules ./node_modules
-COPY --from=build --chown=node:node /app/dist ./dist
-COPY --from=prod-deps --chown=node:node /app/package.json ./package.json
-USER node
-EXPOSE 3000
-HEALTHCHECK --interval=15s --timeout=3s --start-period=30s --retries=3 CMD node -e "fetch('http://127.0.0.1:3000/health/ready',{signal:AbortSignal.timeout(2500)}).then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
-CMD ["node", "dist/main.js"]
+FROM deps AS runtime-deps
+COPY --from=build /app/dist /tmp/dist
+RUN uv pip install --python /opt/venv/bin/python --no-deps /tmp/dist/*.whl
+
+FROM base AS production
+COPY --from=runtime-deps /opt/venv /opt/venv
+USER 10001:10001
+EXPOSE 8000
+HEALTHCHECK --interval=15s --timeout=3s --start-period=10s --retries=3 CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready', timeout=2.5)"
+CMD ["uvicorn", "lib_management.main:create_app", "--factory", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]

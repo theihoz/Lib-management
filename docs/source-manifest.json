@@ -1,0 +1,93 @@
+{
+  "snapshotDate": "2026-10-06",
+  "files": [
+    {
+      "path": "docs/design/library-software-design.docx",
+      "source": "https://drive.google.com/file/d/1aM0zXfRCbXduHbcH1MjuiCiB1BGI-0IPUnFsNsiWcc0/view",
+      "sourceModifiedAt": "2026-10-06T08:31:53.643Z",
+      "sha256": "9914484cee114bd9b48388297d0bdfc2ee11c012a903e763dd1c046f552d3ba5",
+      "sizeBytes": 7819613,
+      "downloadedOn": "2026-10-06"
+    },
+    {
+      "path": "docs/archive/planning/implementation-plan.docx",
+      "source": "https://drive.google.com/file/d/1hivkkX9RcD3ashGMO3jt0byRqNn9wDm8pCnG-dAWWEM/view",
+      "sourceModifiedAt": "2026-10-06T09:06:19.361Z",
+      "sha256": "0a989b30bf1edf2063d82a1fa885dc47780029eb0cd90d3985ff63b283bcbf1d",
+      "sizeBytes": 26829,
+      "downloadedOn": "2026-10-06"
+    },
+    {
+      "path": "docs/diagrams/library-uml.drawio",
+      "source": "https://drive.google.com/file/d/1vSIbDUjE65ajxkSRIzZU6nlsjdSooSkn/view",
+      "sourceModifiedAt": "2026-10-06T09:39:49.147Z",
+      "sha256": "a8caf53cc43c0b4412fbcb516a2fa734db06e3fe7e33ef29ee61fe7813936236",
+      "sizeBytes": 1161608,
+      "downloadedOn": "2026-10-06",
+      "note": "Single canvas: 80 diagram cards, 10 system overviews, per-diagram explanations; 74 source pages consolidated."
+    },
+    {
+      "path": "docs/archive/references/library-thesis-reference.pdf",
+      "source": "existing project document",
+      "sha256": "3bfcdf6cf372ff3334ce22d35495c07ef2ea4c4aed6b9fb10de9ba6c8cf1124b",
+      "sizeBytes": 16300434
+    },
+    {
+      "path": "docs/archive/references/original-architecture.docx",
+      "source": "existing project document",
+      "sha256": "0f022ed61a8adc11612ee2bef386db9678021a85d9f5c7e08a4cee2c5a438ab8",
+      "sizeBytes": 1064096
+    },
+    {
+      "path": "docs/archive/references/original-uml.drawio",
+      "source": "existing project document",
+      "sha256": "11d147e718f4f3ec0643e0493948c3622aac8bf129f92c5fc250c805c262a8e9",
+      "sizeBytes": 28868
+    },
+    {
+      "path": "docs/ui/DESIGN.md",
+      "source": "existing project document",
+      "sha256": "fb1f40d172af607000e45811e8b429cf50c8f667600598df579b89b04695a327",
+      "sizeBytes": 1412
+    },
+    {
+      "path": "docs/ui/design-tokens.json",
+      "source": "existing project document",
+      "sha256": "b9f0e10f678bbcd9154dcc44940f4b7c83225ae84ec2d4300f8412b5c0665000",
+      "sizeBytes": 437
+    },
+    {
+      "path": "docs/ui/design-tokens.css",
+      "source": "existing project document",
+      "sha256": "b61dd6e7276c4e6a410584055f8e988e86174d9e32ef37b64eab05feafa3ae37",
+      "sizeBytes": 303
+    },
+    {
+      "path": "docs/ui/design-preview.html",
+      "source": "existing project document",
+      "sha256": "ca363bec929c25801ce88fbf8346fb8b644ff8a84ebfb23bbdc858826e9cc012",
+      "sizeBytes": 6106
+    },
+    {
+      "path": "docs/archive/references/source-1.docx",
+      "source": "https://docs.google.com/document/d/1Dio7YudemqoVkzgHp6QNtwlJFf2eNKh2PzeZH2IZxqg/edit",
+      "sha256": "db2d1cc708552b7ee1f0ff24c852a22f7c8e29184b95eb67970f12a634dd32a9",
+      "sizeBytes": 1167940,
+      "note": "reference downloaded during design review"
+    },
+    {
+      "path": "docs/archive/references/source-2.docx",
+      "source": "https://docs.google.com/document/d/1MHOaa_OTs3FRoGSJXGSDWaA2KhHtVfsdRCXYMV0MsPI/edit",
+      "sha256": "bf15a60aeb22ffae3a5376f2a8301f42e7b17ceb94f0b8bc82c47d1f63b36644",
+      "sizeBytes": 2567450,
+      "note": "reference downloaded during design review"
+    },
+    {
+      "path": "docs/archive/references/source-3.docx",
+      "source": "https://docs.google.com/document/d/1UZsEh4NGKM_OBGHocXhkOOpvqz3SDKbG/edit",
+      "sha256": "8959a87584590ce4f7f314efa7fa33e746148594541bb943240a1640a1dbbc79",
+      "sizeBytes": 16487,
+      "note": "reference downloaded during design review"
+    }
+  ]
+}

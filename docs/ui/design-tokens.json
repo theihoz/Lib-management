@@ -1,0 +1,8 @@
+{
+  "status": "proposed",
+  "colors": {"background":"#FFFFFF","text":"#17212B","primary":"#174B73","border":"#C6D0D9","danger":"#B42318","success":"#146C43","warning":"#8A4B08","surface":"#EDF3F7"},
+  "font": {"family":"Arial, system-ui, sans-serif","body":16,"caption":13,"heading":24,"table":14},
+  "spacing": [4,8,12,16,24,32],
+  "control": {"minTarget":44,"radius":4,"focusWidth":3},
+  "breakpoints": {"mobile":640,"desktop":1024}
+}

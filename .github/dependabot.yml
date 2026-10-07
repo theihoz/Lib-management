@@ -1,5 +1,10 @@
 version: 2
 updates:
+  - package-ecosystem: uv
+    directory: /apps/api
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
   - package-ecosystem: github-actions
     directory: /
     schedule:
@@ -7,6 +12,11 @@ updates:
     open-pull-requests-limit: 5
   - package-ecosystem: docker
     directory: /docker
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+  - package-ecosystem: docker
+    directory: /.devcontainer
     schedule:
       interval: weekly
     open-pull-requests-limit: 5

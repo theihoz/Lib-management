@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 # Build context MUST be the repository root; apps/web has its own lockfile.
-FROM node:24.21.0-bookworm-slim AS deps
+FROM node:26.9.0-bookworm-slim AS deps
 WORKDIR /app
 COPY apps/web/package.json apps/web/package-lock.json ./
 RUN npm ci

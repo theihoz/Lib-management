@@ -34,4 +34,3 @@ Trước email READY kiểm tra reservation còn READY và chưa expiry; event c
 ## Nghiệm thu
 
 Crash trước/sau provider call; lease expired; hai workers; payload v1/v2; timeout; stale READY; mất consent; job replay cùng dedupe; deadline pickup không phụ thuộc cron. Không giữ transaction dài cho external call.
-

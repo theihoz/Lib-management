@@ -126,7 +126,7 @@ Mục lục
 8. Bảng mô tả chi tiết yêu cầu nghiệp vụ
 
 [P00039 | 1260:1282 | NORMAL_TEXT]
-8.1. Lập thẻ độc giả 
+8.1. Lập thẻ độc giả
 
 [P00040 | 1282:1306 | NORMAL_TEXT]
 8.2. Tiếp nhận sách mới
@@ -1275,22 +1275,22 @@ Hệ thống tự động
 Tiến trình nội bộ kiểm tra lượt giữ hết hạn, phân bổ bản sao theo FIFO, xử lý outbox và báo cáo. Đây là thành phần bên trong Lib-management, không phải actor bên ngoài trong use case.
 
 [P00422 | 15357:15359 | NORMAL_TEXT]
- 
+
 
 [P00423 | 15359:15417 | HEADING_1]
 3. Nhu cầu người dùng và Yêu cầu của phần mềm (NGHIỆP VỤ)
 
 [P00424 | 15417:15419 | NORMAL_TEXT]
- 
+
 
 [P00425 | 15419:15421 | NORMAL_TEXT]
- 
+
 
 [P00426 | 15421:15423 | NORMAL_TEXT]
- 
+
 
 [P00427 | 15423:15425 | NORMAL_TEXT]
- 
+
 
 [P00428 | 15425:15475 | NORMAL_TEXT]
 Bảng 3.1: Nhu cầu người dùng và yêu cầu nghiệp vụ
@@ -1677,7 +1677,7 @@ Trung bình
 Xử lý
 
 [P00556 | 19343:19345 | NORMAL_TEXT]
- 
+
 
 [P00557 | 19345:19357 | HEADING_1]
 4. Biểu mẫu
@@ -1752,7 +1752,7 @@ Loan: loan_no, reader_id, card_id, issued_at. LoanItem: copy_id, due_at, closed_
 5. Quy định
 
 [P00581 | 21231:21233 | NORMAL_TEXT]
- 
+
 
 [P00582 | 21233:21262 | NORMAL_TEXT]
 Bảng 5.1: Quy định nghiệp vụ
@@ -1884,7 +1884,7 @@ QĐ01,
 QĐ02
 
 [P00625 | 22564:22566 | NORMAL_TEXT | TABLE row=2 col=5]
- 
+
 
 [P00626 | 22568:22570 | NORMAL_TEXT | TABLE row=3 col=0]
 2
@@ -1905,7 +1905,7 @@ QĐ03,
 QĐ04
 
 [P00632 | 22678:22680 | NORMAL_TEXT | TABLE row=3 col=5]
- 
+
 
 [P00633 | 22682:22684 | NORMAL_TEXT | TABLE row=4 col=0]
 3
@@ -1932,7 +1932,7 @@ QĐ06,
 QĐ08
 
 [P00641 | 22800:22802 | NORMAL_TEXT | TABLE row=4 col=5]
- 
+
 
 [P00642 | 22804:22806 | NORMAL_TEXT | TABLE row=5 col=0]
 4
@@ -1953,10 +1953,10 @@ QĐ06,
 QĐ07
 
 [P00648 | 22902:22904 | NORMAL_TEXT | TABLE row=5 col=5]
- 
+
 
 [P00649 | 22905:22907 | NORMAL_TEXT]
- 
+
 
 [P00650 | 22907:22939 | HEADING_2]
 6.2. Danh sách yêu cầu tiến hóa
@@ -2040,7 +2040,7 @@ Mức phạt mỗi ngày quá hạn
 Mức phạt: [1.000 - 10.000 VNĐ/ngày]
 
 [P00677 | 23491:23493 | NORMAL_TEXT]
- 
+
 
 [P00678 | 23493:23525 | HEADING_2]
 6.3. Danh sách yêu cầu hiệu quả
@@ -2112,7 +2112,7 @@ Tối thiểu 500MB
 Xử lý giao dịch mượn/trả tức thì
 
 [P00701 | 23811:23813 | NORMAL_TEXT]
- 
+
 
 [P00702 | 23813:23846 | HEADING_2]
 6.4. Danh sách yêu cầu tiện dụng
@@ -2169,7 +2169,7 @@ Giao diện trực quan, dễ thao tác
 Phù hợp cho cả thủ thư và độc giả
 
 [P00720 | 24097:24099 | NORMAL_TEXT]
- 
+
 
 [P00721 | 24099:24130 | HEADING_2]
 6.5. Danh sách yêu cầu bảo mật
@@ -2271,7 +2271,7 @@ Dữ liệu độc giả và giao dịch mượn/trả
 Tự động sao lưu dữ liệu hằng ngày
 
 [P00754 | 24641:24643 | NORMAL_TEXT]
- 
+
 
 [P00755 | 24643:24678 | HEADING_2]
 6.7. Danh sách yêu cầu tương thích
@@ -2319,7 +2319,7 @@ Các trình duyệt web phổ biến (Chrome, Firefox, Edge)
 Tương thích đa nền tảng
 
 [P00770 | 24887:24889 | NORMAL_TEXT]
- 
+
 
 [P00771 | 24889:24922 | HEADING_2]
 6.8. Danh sách yêu cầu công nghệ
@@ -2391,7 +2391,7 @@ Bảng 7.1: Trách nhiệm nghiệp vụ
 ⟦EMPTY PARAGRAPH⟧
 
 [P00794 | 26323:26341 | NORMAL_TEXT | TABLE row=0 col=0]
-Bảng trách nhiệm 
+Bảng trách nhiệm
 
 [P00795 | 26341:26358 | NORMAL_TEXT | TABLE row=0 col=0]
 Bộ phận: Thủ thư
@@ -2454,7 +2454,7 @@ Kiểm tra hiệu lực thẻ, dư nợ bằng 0, không có mục mượn quá 
 Thủ thư xác nhận giao dịch
 
 [P00815 | 26822:26824 | NORMAL_TEXT]
- 
+
 
 [P00816 | 26824:26863 | HEADING_2]
 7.2. Bảng trách nhiệm yêu cầu tiến hóa
@@ -2508,10 +2508,10 @@ Yêu cầu thay đổi tham số độ tuổi/thời hạn thẻ
 Quản lý thư viện tạo PolicyVersion mới; QĐ01/QĐ02 có hiệu lực theo phiên bản, giữ quy định của thẻ đã cấp.
 
 [P00833 | 27165:27167 | NORMAL_TEXT | TABLE row=2 col=4]
- 
+
 
 [P00834 | 27168:27170 | NORMAL_TEXT]
- 
+
 
 [P00835 | 27170:27209 | HEADING_2]
 7.3. Bảng trách nhiệm yêu cầu hiệu quả
@@ -2565,10 +2565,10 @@ Nhập từ khóa tìm kiếm
 Trả về kết quả trong < 1 giây
 
 [P00852 | 27407:27409 | NORMAL_TEXT | TABLE row=2 col=4]
- 
+
 
 [P00853 | 27410:27412 | NORMAL_TEXT]
- 
+
 
 [P00854 | 27412:27452 | HEADING_2]
 7.4. Bảng trách nhiệm yêu cầu tiện dụng
@@ -2622,7 +2622,7 @@ Thao tác theo giao diện
 Hiển thị thông báo hướng dẫn và lỗi rõ ràng
 
 [P00871 | 27673:27675 | NORMAL_TEXT | TABLE row=2 col=4]
- 
+
 
 [P00872 | 27676:27714 | HEADING_2]
 7.5. Bảng trách nhiệm yêu cầu bảo mật
@@ -2679,7 +2679,7 @@ Xác thực tài khoản, phân quyền tương ứng
 Bảo mật mật khẩu
 
 [P00890 | 27958:27960 | NORMAL_TEXT]
- 
+
 
 [P00891 | 27960:27962 | NORMAL_TEXT]
 ​
@@ -2736,7 +2736,7 @@ Sử dụng hệ thống bình thường
 Tự động sao lưu dữ liệu hằng ngày
 
 [P00909 | 28210:28212 | NORMAL_TEXT | TABLE row=2 col=4]
- 
+
 
 [P00910 | 28213:28255 | HEADING_2]
 7.7. Bảng trách nhiệm yêu cầu tương thích
@@ -2790,7 +2790,7 @@ Sử dụng trình duyệt Chrome, Firefox hoặc Edge được hỗ trợ.
 Hiển thị giao diện chuẩn tương thích web
 
 [P00927 | 28512:28514 | NORMAL_TEXT | TABLE row=2 col=4]
- 
+
 
 [P00928 | 28515:28561 | HEADING_2]
 7.8. Trách nhiệm bổ sung theo toàn bộ phạm vi
@@ -2808,7 +2808,7 @@ Trách nhiệm hiệu quả, tiện dụng, bảo mật, an toàn và tương th
 8. Bảng mô tả chi tiết yêu cầu nghiệp vụ
 
 [P00933 | 29383:29405 | HEADING_2]
-8.1. Lập thẻ độc giả 
+8.1. Lập thẻ độc giả
 
 [P00934 | 29405:29430 | NORMAL_TEXT]
 Bảng 8.1: Đặc tả lập thẻ
@@ -2820,7 +2820,7 @@ Bảng 8.1: Đặc tả lập thẻ
 TÊN NGHIỆP VỤ: Lập thẻ độc giả
 
 [P00937 | 29465:29490 | NORMAL_TEXT | TABLE row=0 col=0]
-Đăng ký thẻ thành viên. 
+Đăng ký thẻ thành viên.
 
 [P00938 | 29491:29492 | NORMAL_TEXT | TABLE row=0 col=1]
 ⟦EMPTY PARAGRAPH⟧
@@ -2865,7 +2865,7 @@ B3: Nếu hợp lệ, Thủ thư nhập thông tin vào phần mềm và tạo t
 B4: Phần mềm lưu Reader và ReaderCard, hiển thị thông tin thẻ theo BM02. Nhu cầu in thẻ được giữ trong bài làm; phạm vi triển khai in cần xác nhận tại N06.
 
 [P00952 | 30147:30149 | NORMAL_TEXT]
- 
+
 
 [P00953 | 30149:30173 | HEADING_2]
 8.2. Tiếp nhận sách mới
@@ -3078,10 +3078,10 @@ B3: Nếu quá hạn, phần mềm tự động tính tiền phạt (1.000 VNĐ/
 B4: Thủ thư xác nhận nhận trả; hệ thống đóng LoanItem, ghi ReturnEvent, cập nhật BookCopy và FineCharge nếu có. Sách tốt được AVAILABLE hoặc HELD theo hàng đợi; sách hỏng → REPAIR, báo mất → LOST. Thu Payment được thực hiện trong UC10 riêng.
 
 [P01023 | 32634:32636 | NORMAL_TEXT]
- 
+
 
 [P01024 | 32636:32638 | NORMAL_TEXT]
- 
+
 
 [P01025 | 32638:32686 | HEADING_1]
 9. Kiến trúc đề xuất và hiện trạng cần xác nhận
@@ -3141,16 +3141,16 @@ Worker dự kiến xử lý outbox, giữ chỗ và expiry. READY giữ 3 ngày 
 Sao lưu hằng ngày là yêu cầu thiết kế. Cần xác nhận môi trường, nơi giữ bản mã hóa và bằng chứng diễn tập phục hồi trước khi ghi nhận đã vận hành.
 
 [P01044 | 35031:35033 | NORMAL_TEXT]
- 
+
 
 [P01045 | 35033:35035 | NORMAL_TEXT]
- 
+
 
 [P01046 | 35035:35037 | NORMAL_TEXT]
- 
+
 
 [P01047 | 35037:35039 | NORMAL_TEXT]
- 
+
 
 [P01048 | 35039:35067 | HEADING_2]
 9.4. Các góc nhìn kiến trúc
@@ -11326,4 +11326,3 @@ N01/N02 đã có quyết định; N06 chỉ còn in/Excel/PDF/chỉ số nâng c
 
 [P03772 | 110927:110928 | NORMAL_TEXT]
 ⟦EMPTY PARAGRAPH⟧
-

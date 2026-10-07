@@ -32,4 +32,3 @@ Audit12 tháng, artifact24h, idempotency7 ngày, backupRPO24h/RTO4h là mục ti
 Mỗi thay đổi API/schema/quyền bổ sung threat/ca nghiệm thu liên quan; incident/replay/restore có audit. Account vận hành giới hạn riêng; thay credential có checklist rotation và smoke check tại staging. Security checks là kế hoạch, không chứng minh code health đã bảo vệ nghiệp vụ.
 
 Tham khảo: [OWASP Threat Modeling](https://cheatsheetseries.owasp.org/cheatsheets/Threat_Modeling_Cheat_Sheet.html).
-

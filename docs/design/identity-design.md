@@ -27,4 +27,3 @@ Khóa ứng dụng cập nhật Account trong transaction trước; disable Keyc
 ## Cấu hình và nghiệm thu
 
 Keycloak DB/credentials độc lập, không dùng credential app DB; local start-dev chỉ phát triển, production tối ưu TLS/proxy/hostname và image pin. Không ghi secret vào .env.example. Kiểm thử issuer/audience/kid rotation/expiry, user ngoài allowlist, self-assert admin, refresh failure và provision retry; backend hiện chưa tích hợp các luồng này.
-

@@ -89,8 +89,8 @@
     {
       "path": "docs/design/live-report-snapshot.md",
       "source": "Design synchronization 2026-10-07",
-      "sha256": "5f55f8ec4f354acab00b6c800a9bcc8cf3db0baa484f0324b1c286c6e7c6a2c8",
-      "sizeBytes": 335762
+      "sha256": "45ddeaad2a670684ee0ad693e50aaa04fd2b6941f826e66fc20faf29cabe8c3e",
+      "sizeBytes": 335724
     },
     {
       "path": "docs/plan/frontend/wireframes.html",

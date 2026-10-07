@@ -42,3 +42,24 @@ def test_lifespan_disposes_engine():
             assert app.state.engine is engine
             engine.dispose.assert_not_called()
         engine.dispose.assert_called_once_with()
+
+
+def test_health_openapi_matches_public_contract(client):
+    schema = client.get("/openapi.json").json()
+    live = schema["paths"]["/health/live"]["get"]
+    ready = schema["paths"]["/health/ready"]["get"]
+    assert live["operationId"] == "health_live"
+    assert ready["operationId"] == "health_ready"
+    cases = (
+        (live, "200", "LiveHealth", "ok"),
+        (ready, "200", "ReadyHealth", "ready"),
+        (ready, "503", "NotReadyHealth", "not_ready"),
+    )
+    for operation, code, model_name, status in cases:
+        assert operation.get("security", []) == []
+        payload = operation["responses"][code]["content"]["application/json"]
+        assert payload["schema"]["$ref"] == f"#/components/schemas/{model_name}"
+        health = schema["components"]["schemas"][model_name]
+        assert health["required"] == ["status"]
+        assert health["additionalProperties"] is False
+        assert health["properties"]["status"]["const"] == status

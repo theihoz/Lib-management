@@ -18,7 +18,7 @@ DOCX thiết kế là chuẩn tên/thuộc tính; UML là chuẩn luồng. Áp d
 | ID | Công việc | Đầu ra bàn giao |
 | --- | --- | --- |
 | FE01.1 | Tích hợp Keycloak public client Authorization Code PKCE, token chỉ trong bộ nhớ | Bố cục/component, state và hợp đồng màn hình |
-| FE01.2 | Menu theo permission, auth guard, /auth/me và phiên hết hạn | Màn hình tích hợp, tương tác, motion và xử lý lỗi |
+| FE01.2 | Menu theo AuthContext.permissions từ /auth/me, auth guard và phiên hết hạn | Màn hình tích hợp, tương tác, motion và xử lý lỗi |
 | FE01.3 | Liên kết callback/logout, xử lý network error không tạo vòng lặp login | Màn hình tích hợp, tương tác, motion và xử lý lỗi |
 | FE01.4 | Viết kiểm thử tương ứng, cập nhật OpenAPI/tài liệu và ma trận truy vết | Ca kiểm thử, hướng dẫn chạy trong Dev Container, bằng chứng nghiệm thu trong PR |
 

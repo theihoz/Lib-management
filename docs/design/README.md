@@ -8,6 +8,8 @@ Tên và thuộc tính: [DOCX](library-software-design.docx), 38 bảng/288 trư
 
 | Tài liệu | Dùng để |
 | --- | --- |
+| [Architecture audit](architecture-audit-2026-10-07.md) | Phát hiện, sửa lỗi, kiểm tra vòng hai và giới hạn xác minh |
+| [Kiến trúc hệ thống](system-architecture.md) | Ranh giới module, request/session, transaction và trạng thái triển khai |
 | [Database](database-design.md) | 38 bảng gốc, 4 bảng bổ sung, kiểu/NULL/FK/index/transaction/migration |
 | [Ma trận quyền](permission-matrix.md) | Permission, actor và scope; không kế thừa quyền mặc nhiên |
 | [Identity](identity-design.md) | Keycloak PKCE, provisioning, khóa/thu hồi/reconciliation |
@@ -27,3 +29,5 @@ Cập nhật cùng PR: quyết định → DB/permission/API → UML → kế ho
 Google Docs báo cáo được cập nhật trực tiếp: https://docs.google.com/document/d/15pEvPMM7t_oiO0zzggZ_9K-RyN3LqzC4hEaFk2rc1J8/edit
 
 [Phần bổ sung báo cáo](supplemental-specification.md) và [snapshot text của Docs live](live-report-snapshot.md) phục vụ đối chiếu offline; snapshot không là DOCX export hoặc bộ hình.
+
+Nghiệm thu cuối sau architecture audit: health/PostgreSQL 22 tests đạt; DOCX/UML/Google Docs đã đồng bộ nội dung. Xem [bằng chứng và giới hạn](../quality/architecture-acceptance-2026-10-07.md). Bố cục PDF Google Docs live chưa kiểm tra do HTTP403; chức năng nghiệp vụ vẫn Not run.

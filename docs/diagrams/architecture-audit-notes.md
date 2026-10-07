@@ -1,27 +1,39 @@
-# Đồng bộ UML — 07/10/2026
+# Rà soát UML và cơ sở dữ liệu — 07/10/2026
 
-Giữ một canvas, toàn bộ cell nguồn và vùng lịch sử. Cập nhật stack/phạm vi/quyết định; bổ sung 8 ERD chi tiết theo danh mục 38 bảng và 6 khung kiến trúc, ERD 4 bảng mới, state/activity/sequence/use case duyệt phí. Mỗi khung có giải thích. FineCharge dùng assessed_amount; phí hỏng/mất chỉ tạo sau Quản lý quyết định.
+## Phát hiện và sửa
 
-Tổng 94 khung (80 gốc + 14 bổ sung), 3.020 cells. Sơ đồ cấp cao là góc nhìn tổng quát; thuộc tính chi tiết theo ERD mới và database-design.md. ARCHIVE giữ nhãn lịch sử. APPROVED ở F22 đánh dấu N05 cần chốt, không coi đã có trong enum nguồn DRAFT/POSTED/CANCELLED.
+| Mức | Bằng chứng trong canvas trước sửa | Cơ chế sai | Sửa trong file |
+| --- | --- | --- | --- |
+| High | `card_SD_Return__l4/l5`, `board_137/238/149`, `card_AD_F11__n1` | Luồng trả cũ tạo phí hỏng/mất ngay, trái C03 và ChargeAssessment PENDING | Phí trễ theo snapshot; hỏng/mất tạo PENDING; Quản lý quyết định trước FineCharge |
+| High | `card_OV_ERD__n0/n19/n23/n24/n25/n26` | ERD cũ trỏ trường không có trong danh mục: active_cover_id, oidc_sub, Job.kind/created_by; audit/outbox/idempotency sai tên | Dùng subset trường từ danh mục chuẩn; Account issuer+subject; Job metadata chuẩn; PK id và UQ actor+operation+key cho idempotency |
+| Medium | `card_OV_CLASS__n8/n10`, các bản lớp chi tiết | Reader.name và Loan.createdBy không khớp nguồn; nhiều thuộc tính camelCase/nullable sai | full_name/issued_by, snake_case; nullable lấy từ từ điển gốc |
+| Medium | `sync_erd_Circulation_fk_ReturnEvent_loan_item_id`, `sync_erd_Circulation_fk_Reservation_fulfilled_loan_item_id`, `sync_erd_Operations_fk_ReportJob_job_id` | Nhãn con N trái UQ | Bội số con 0..1; FK nullable vẫn tách khỏi bội số ngược |
+| Medium | `card_AD_F07/F09/F10/F12`, `card_SD_Checkout__l4` | Sơ đồ lõi thiếu guard PENDING dù extension có | Ghi guard tại các luồng checkout, renew, hold và eligibility |
+| Medium | `card_OV_ERD__n11` và các bản PolicyVersion | UQ effective_from không có trong từ điển | UQ version_no; hiệu lực không chồng lấn là ràng buộc riêng |
+| Medium | database-design.md, Account.auth_version và quy tắc Account/Role | Prose cũ tuyên bố tăng version thu hồi phiên và local-auth/bốn vai trò còn hiện hành | Nêu rõ cache quyền ứng dụng; JWT/provider revoke riêng; Keycloak đã chốt; 5 vai trò theo permission matrix |
 
-Các ảnh [supplemental](supplemental/) là góc nhìn dùng trong Docs/DOCX; nguồn chỉnh sửa DOT/SVG giữ cạnh ảnh. Chúng mô tả cùng logic trên canvas, không là canvas Draw.io thứ hai. Wireframe riêng tại ../plan/frontend/wireframes.html.
+## Đối chiếu bổ sung
 
+Database design bổ sung bất biến liên bảng: thẻ/phiếu cùng độc giả, lượt giữ chỗ cùng ấn bản/bản sao/độc giả, assessment khớp return và khoản phí, allocation cùng chủ thể, READY notification đúng độc giả. FK tồn tại không đủ chứng minh các quan hệ này; kiểm tra trong transaction có khóa. Không thay 38 bảng/288 trường hoặc tự thêm cột nguồn.
 
-## Rà soát kiến trúc 07/10/2026
+## Xác minh
 
-Sửa trực tiếp nhãn các cell hiện có, giữ 94 khung/3.020 cells/một canvas:
+- Một diagram Draw.io; 3.020 cell ID duy nhất; source/target/parent đều hợp lệ; 94 khung giữ nguyên.
+- Các projection lớp có tên trường và nullable khớp từ điển.
+- 38 hộp ERD chi tiết có đúng thứ tự 288 trường gốc.
+- Quét nhãn active (không xét archive) không còn active_cover_id, oidc_sub, policy_id, bảng giá 100.000–600.000 hoặc Job.requested_by.
+- Vùng lịch sử giữ nguyên về ý nghĩa. N05 APPROVED còn đánh dấu cần chốt, không chuyển thành trạng thái đã duyệt.
 
-- Lớp dùng thuộc tính snake_case theo từ điển gốc; Reader.full_name và Loan.issued_by thay nhãn cũ name/createdBy. Dấu nullable lấy từ nguồn, gồm BookCopy.location_id và ReturnEvent.condition.
-- ERD tổng quát dùng tên bảng số ít, policy_version_id; bỏ active_cover_id không có trong nguồn. Account dùng issuer+subject; AuditLog/OutboxEvent/Job/IdempotencyRecord dùng các trường có thật trong danh mục. Chi tiết đầy đủ vẫn ở 8 khung ERD 38 bảng.
-- FK có UQ của ReturnEvent, fulfilled Reservation và ReportJob ghi con 0..1 thay con N.
-- Chú thích và sequence F08/F11 tách phí trễ theo snapshot khỏi đề xuất hỏng/mất PENDING. Xóa phương án bảng giá 100.000–600.000 vì C03 đã duyệt phí thủ công có lý do. Thêm PENDING vào kiểm tra checkout/renew/hold và eligibility; trạng thái UNPAID/PARTIALLY_SETTLED/SETTLED là projection ledger.
+## Giới hạn
 
-Đây là thay đổi file repository. DOCX được render và đồng bộ ở bước nghiệm thu bên dưới; Drive/Google Docs đã readback ở mục đồng bộ cuối, migration/runtime chưa được xác nhận.
+Kiểm tra cấu trúc file và nội dung thiết kế; chưa render toàn canvas hoặc chứng minh migration/runtime. DOCX đã được đồng bộ ở bước nghiệm thu tài liệu bên dưới. Drive/Google Docs đã readback ở mục đồng bộ cuối; không dùng byte hash cũ để chứng minh bản live đã nhận cập nhật.
 
 
 ### Chốt gate restore trong F23
 
 Job.status QUEUED không cấp quyền thực thi restore. RestoreJobPayload.approvalStatus=PENDING bị loại trước claim/lease; restore.approve và reason ghi approvedBy/approvedAt phía server dưới khóa Job, chuyển payload APPROVED. Worker kiểm lại metadata, checksum và target allowlist trước pg_restore; metadata sai/thiếu bị từ chối. F23 bỏ luồng chuyển target/promote cũ, chỉ ghi nhận kết quả restore cô lập. Không thêm trạng thái Job hoặc cột vào nguồn chuẩn. Kiểm tra lại: một canvas/3.020 cell/ID và toàn bộ tham chiếu hợp lệ.
+
+Đối chiếu hình DOCX phát hiện nhãn “active cover” 0..1:0..1 còn tồn tại trong class/ERD overview. Đã sửa thành edition 0..1 — media 0..* theo MediaAsset.edition_id nullable; không thêm active_cover_id hoặc unique edition_id vào schema.
 
 
 ## Nghiệm thu đồng bộ DOCX

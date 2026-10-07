@@ -27,3 +27,9 @@ Khóa ứng dụng cập nhật Account trong transaction trước; disable Keyc
 ## Cấu hình và nghiệm thu
 
 Keycloak DB/credentials độc lập, không dùng credential app DB; local start-dev chỉ phát triển, production tối ưu TLS/proxy/hostname và image pin. Không ghi secret vào .env.example. Kiểm thử issuer/audience/kid rotation/expiry, user ngoài allowlist, self-assert admin, refresh failure và provision retry; backend hiện chưa tích hợp các luồng này.
+
+## Chủ thể tạo tác vụ cấp tài khoản
+
+Khi tạo provision job, server lưu `requesterAccountId` từ Account đã xác thực vào `Job.payload` theo `ProvisionJobPayload` nội bộ, trong cùng transaction tạo job/outbox. `ProvisionRequest` phía client không có quyền ghi trường này. Đọc job qua `/jobs/{id}` yêu cầu account.provision_reader hiện tại và requester khớp, hoặc nhánh job.read vận hành có allowlist. Dữ liệu thiếu/sai không được suy ra quyền từ email/Reader; worker giữ nguyên requester khi retry. Report/export có ownership riêng trong ReportJob.requested_by; không thêm cột requester vào Job gốc.
+
+`GET /auth/me` trả projection `AuthContext` (AccountView và mã permission hiện tại) cho menu frontend FE01. Quyền lấy từ DB và được kiểm lại mỗi lệnh; DTO không biến JWT claim thành permission và không đổi Account.

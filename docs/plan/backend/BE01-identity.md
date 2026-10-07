@@ -18,7 +18,7 @@ Account, Role, Permission, AccountRole, RolePermission; /auth/me, /accounts, /ro
 | ID | Công việc | Đầu ra bàn giao |
 | --- | --- | --- |
 | BE01.1 | Cấu hình Keycloak realm/client public PKCE, JWKS issuer/audience và liên kết issuer+sub | Model/migration hoặc nền màn hình cùng mô tả hợp đồng |
-| BE01.2 | Xây dịch vụ quyền theo Account đang hoạt động và role/permission trong DB | Service/API hoặc màn hình tích hợp, ví dụ dữ liệu và xử lý lỗi |
+| BE01.2 | Xây dịch vụ quyền theo Account đang hoạt động và role/permission trong DB; /auth/me trả AuthContext gồm account và permissions hiện hành | Service/API hoặc màn hình tích hợp, ví dụ dữ liệu và xử lý lỗi |
 | BE01.3 | Thêm cấp/liên kết/khóa tài khoản độc giả, quản trị quyền và audit | Service/API hoặc màn hình tích hợp, ví dụ dữ liệu và xử lý lỗi |
 | BE01.4 | Viết kiểm thử tương ứng, cập nhật OpenAPI/tài liệu và ma trận truy vết | Ca kiểm thử, hướng dẫn chạy trong Dev Container, bằng chứng nghiệm thu trong PR |
 
@@ -29,6 +29,7 @@ Mỗi PR khai báo task ID và phụ thuộc. Task .4 có thể bổ sung ca ki�
 - JWT sai/hết hạn nhận 401.
 - ngoài scope nhận 403.
 - khóa Account chặn API dù JWT còn hạn.
+- /auth/me không lấy permission từ client/JWT role; thu hồi quyền được phản ánh khi tải lại context và API vẫn kiểm quyền mỗi request.
 
 ## Kiểm thử dự kiến
 

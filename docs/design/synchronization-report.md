@@ -46,3 +46,12 @@ N01 không cần bảng giá mất/hỏng tự động trong phiên bản hiện
 ## Cách tiếp tục
 
 Đóng N05 trước migration tiếp nhận. Triển khai BE00/identity/schema rồi lưu thông/tài chính; dùng OpenAPI và acceptance để review từng PR. Các thay đổi tương lai phải cập nhật DB/permission/API/UML/plan cùng nhau theo [chỉ mục thiết kế](README.md).
+
+## Đồng bộ cuối sau hai vòng architecture audit
+
+- Drive: đúng file ID `1vSIbDUjE65ajxkSRIzZU6nlsjdSooSkn`; modifiedTime `2026-10-07T12:05:49.077Z`; 1.230.546 bytes; SHA256 `c4052199b78fafb106ce580f5bc8e6e7018b1558561cffc228e091dd27f3d068` khớp repo khi tải lại. Một canvas/3.020 cell/94 khung.
+- Google Docs: đúng báo cáo `15pEvPMM7t_oiO0zzggZ_9K-RyN3LqzC4hEaFk2rc1J8`, tab t.0; đọc lại 82 inline images, 70 bảng, 24 mục chức năng và 82 số hình duy nhất. Thay 26 hình hiện có; thêm 8 hình state/activity F21–F24 đúng mục; sửa danh mục hình/mục lục thủ công và thêm 19.10. Revision cuối lưu trong manifest và snapshot.
+- DOCX: 67 bảng/76 hình; thay 73 occurrence sơ đồ từ cell hiện hành, giữ ba hình assessment; nguồn 38 bảng/288 thuộc tính không đổi. Render 149 trang; xem contact sheets toàn tài liệu và chi tiết các trang thay đổi. Routing ảnh xuất ngoài Draw.io là xấp xỉ; chưa kiểm tra toàn canvas bằng GUI Draw.io.
+- PDF Google Docs cuối xuất được (17.006.937 bytes), nhưng tải về HTTP403; chỉ xác nhận nội dung/cấu trúc connector, chưa xác nhận bố cục PDF live. DOCX repo là bản nguồn đã sửa, không là export báo cáo live.
+- Runtime scaffold: Ruff/format/mypy đạt; mặc định 17 passed/5 skipped, PostgreSQL integration 22 passed. Contract tĩnh 77 operations/649 refs/95 schemas đạt; full OAS metaschema chưa chạy. F01–F24 nghiệp vụ, Keycloak, worker và frontend chưa được nghiệm thu runtime.
+- N03–N07 còn mở; lời xác nhận chung không xác định lựa chọn chính sách. Thay đổi đang ở nhánh `fix/architecture-audit`, chưa commit/push.

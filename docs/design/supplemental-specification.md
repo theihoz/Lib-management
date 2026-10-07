@@ -24,9 +24,9 @@ UUID bất biến; timestamp UTC/timestamptz, nghiệp vụ Asia/Ho_Chi_Minh; VN
 
 Vai trò là tập permission, không kế thừa quyền mặc nhiên. Khách chỉ đọc catalog công khai; độc giả có own-scope cho lịch sử, dư nợ, đặt/hủy giữ chỗ và thông báo. Thủ thư xử lý danh mục, thẻ, lưu thông, đề xuất phí và thu; Quản lý quyết định phí, miễn/đảo ledger, quy định, báo cáo và CSV. Admin hệ thống quản trị Account/Role; quyền backup/restore dành cho permission vận hành được gán rõ, không suy ra từ tên role.
 
-Keycloak xác thực; Account/AccountRole/RolePermission của ứng dụng phân quyền. API kiểm issuer, audience, chữ ký, expiry rồi kiểm Account đang hoạt động, permission và scope. Token phía trình duyệt chỉ lưu trong bộ nhớ. Tắt tự đăng ký và JIT; nhân viên cấp/liên kết tài khoản độc giả có sẵn. Không nhận actor/approvedBy/role đặc quyền từ client. Khóa Account chặn ngay ở API; tác vụ khóa provider có retry/reconciliation và không thay thế kiểm tra ứng dụng.
+Keycloak xác thực; Account/AccountRole/RolePermission của ứng dụng phân quyền. API kiểm issuer, audience, chữ ký, expiry rồi lookup Account bằng issuer+subject, kiểm Account đang hoạt động, permission và scope. Token phía trình duyệt chỉ lưu trong bộ nhớ. Tắt tự đăng ký và JIT; nhân viên cấp/liên kết tài khoản độc giả có sẵn. Không nhận actor/approvedBy/role đặc quyền từ client. Khóa Account chặn ngay ở API; tác vụ khóa provider có retry/reconciliation và không thay thế kiểm tra ứng dụng.
 
-Mã quyền chính: catalog.read/write, reader.read/write, card.issue, eligibility.read, loan.checkout/renew, return.create, reservation.read/create/cancel/pickup, finance.read, assessment.propose/decide, payment.collect, charge.waive, ledger.reverse, report.read, export.create/download, policy.write/approve, account.provision_reader/manage, role.manage, acquisition.write/approve, copy.dispose, backup.create, restore.request/approve, job.read/replay, notification.read, preference.write. Job/report/provision chỉ xem khi có quyền loại job và ownership phù hợp.
+Mã quyền chính: catalog.read/write, reader.read/write, card.issue, eligibility.read, loan.checkout/renew, return.create, reservation.read/create/cancel/pickup, finance.read, assessment.propose/decide, payment.collect, charge.waive, ledger.reverse, report.read, export.create/download, policy.write/approve, account.provision_reader/manage, role.manage, acquisition.write/approve, copy.dispose, backup.create, restore.request/approve, job.read/replay, notification.read, preference.write. Job/report/provision chỉ xem khi có quyền loại job và ownership phù hợp. Report/export lấy owner từ ReportJob.requested_by qua job_id; provision dùng Job.payload.requesterAccountId do server ghi theo ProvisionJobPayload. Job không có cột requested_by. auth_version vô hiệu cache quyền ứng dụng, không tự vô hiệu JWT Keycloak.
 
 ## 19.4. Duyệt phí hỏng/mất và nhận trả
 
@@ -42,7 +42,7 @@ Retry cùng Idempotency-Key và payload trả biên nhận cũ; key khác payloa
 
 Hợp đồng máy đọc được nằm tại docs/design/openapi.json: OpenAPI 3.1.0, 75 operation nghiệp vụ planned và hai health endpoints hiện có. Request command dùng camelCase; entity response giữ snake_case của DOCX, DTO tổng hợp được đặt tên riêng. Không expose writable full Account/Job/BackupManifest hoặc khóa object private.
 
-Nhóm endpoint /api/v1: book-editions/authors/publishers/categories/copies/media; readers/cards/eligibility; loans/returns/renewals/reservations; charge-assessments và decisions; payments/waivers/ledger-reversals; reports/export-jobs; policies; accounts/roles; acquisitions; backup-manifests/restores/jobs; me/history/notifications/preferences. API đang thiết kế chưa được coi là endpoint runtime đã tồn tại.
+Nhóm endpoint /api/v1: book-editions/authors/publishers/categories/copies/media; readers/cards/eligibility; loans/returns/renewals/reservations; charge-assessments và decisions; payments/waivers/ledger-reversals; reports/export-jobs; policies; accounts/roles; acquisitions; backup-manifests/restores/jobs; auth/me; me/loans/reservations/fine-charges/notifications/notification-preference. API đang thiết kế chưa được coi là endpoint runtime đã tồn tại.
 
 POST tạo tài nguyên 201 + Location; job 202 + Location. UUID đúng định dạng, cursor mặc định 20/tối đa 100; tiền chuỗi số nguyên. returnedAt/processedBy/approvedBy do server ghi. Lỗi có code/message/details/request_id: 401 token, 403 permission/Account, 404 đối tượng ngoài scope, 409 cạnh tranh/idempotency, 422 validation/eligibility, 429 rate limit, 503 dependency. Chưa có cột version trong nguồn thì không tự dùng expectedVersion như một cột DB mới; dùng trạng thái có điều kiện/khóa transaction hoặc đặc tả extension riêng.
 
@@ -54,7 +54,7 @@ OutboxEvent ghi cùng transaction nghiệp vụ. Payload envelope v1: schemaVers
 
 Các sự kiện: reservation.ready.v1, reservation.expired.v1, loan.item.returned.v1, charge.assessment.decided.v1, reader.overdue.daily.v1, report.requested.v1, account.reader.provision.requested.v1, backup.requested.v1 và restore.requested.v1.
 
-Dispatcher tạo Job và đánh dấu processed_at trong cùng transaction, UNIQUE dedupe_key. Worker lấy lease bằng SKIP LOCKED, commit trước khi gọi provider, retry hữu hạn; không hứa exactly-once email. READY giữ hạn 3 ngày từ readyAt, retry không gia hạn; trước gửi kiểm trạng thái/expiry. Nhắc quá hạn tổng hợp một độc giả/ngày/kênh theo consent. Lịch 08:00 và thông số lease/retry là mặc định đề xuất trong kế hoạch, chưa là chỉ tiêu đã được người dùng duyệt.
+Dispatcher tạo Job và đánh dấu processed_at trong cùng transaction, UNIQUE dedupe_key. Riêng restore: Job QUEUED với RestoreJobPayload.approvalStatus=PENDING không được claim/lease. restore.approve có reason ghi approvedBy/approvedAt từ server dưới khóa Job và chuyển payload APPROVED; worker kiểm lại approval, checksum và target allowlist trước pg_restore. Metadata thiếu/sai bị từ chối; không thêm enum hoặc cột Job mới. Worker lấy lease bằng SKIP LOCKED, commit trước khi gọi provider, retry hữu hạn; không hứa exactly-once email. READY giữ hạn 3 ngày từ readyAt, retry không gia hạn; trước gửi kiểm trạng thái/expiry. Nhắc quá hạn tổng hợp một độc giả/ngày/kênh theo consent. Lịch 08:00 và thông số lease/retry là mặc định đề xuất trong kế hoạch, chưa là chỉ tiêu đã được người dùng duyệt.
 
 ## 19.7. Bảo mật và vận hành
 
@@ -75,3 +75,14 @@ Ma trận nghiệm thu tại docs/quality/acceptance-matrix.md truy vết F01–
 Đã sửa scope cũ F21–F24 chưa duyệt; stack .NET/NestJS chưa chốt; JIT; phí hỏng/mất ghi trực tiếp; manifest binary cũ; liên kết UI cũ. Bổ sung DB/permission/API/identity/assessment/events/threat model/acceptance/wireframes và 14 khung UML trong cùng canvas.
 
 N01/N02 đã có quyết định; N06 chỉ còn in/Excel/PDF/chỉ số nâng cao. N03 uniqueness Reader.email/Category.name, N04 retention/upload/hosting và N05 người giao/APPROVED cần xác nhận. N07 cần môi trường và dữ liệu đo; chưa khẳng định đạt hiệu năng. Bản DOCX gốc và nguồn tham khảo lịch sử được lưu để truy vết; không xóa schema hay hình nguồn.
+
+
+## 19.10. Kết quả rà soát kiến trúc và đồng bộ
+
+GET /api/v1/auth/me trả AuthContext gồm AccountView và tập permissions hiện tại từ AccountRole/RolePermission; Bearer JWT và Account ACTIVE là bắt buộc, không đòi permission nghiệp vụ riêng chỉ để bootstrap UI. UI không thay thế kiểm quyền API; quyền bị thu hồi phải được kiểm lại mỗi lệnh. Request validation trả cùng ErrorResponse với request_id; mã 503 dành lỗi phụ thuộc/readiness theo hợp đồng runtime.
+
+Lớp/ERD dùng tên trường nguồn: Reader.full_name, Loan.issued_by, policy_version_id; bảng vật lý số ít; Account dùng UNIQUE(issuer,subject). Không có BookEdition.active_cover_id, Account.oidc_sub hoặc Job.requested_by trong danh mục. Một LoanItem có 0..1 ReturnEvent; 0..1 Reservation fulfilled; một Job có 0..1 ReportJob. UQ của PolicyVersion là version_no; chống chồng hiệu lực là bất biến khác.
+
+FK chỉ chứng minh đối tượng tồn tại. Unit of Work phải kiểm thẻ/phiếu cùng độc giả, giữ chỗ đúng ấn bản/bản sao/độc giả, assessment khớp return và charge, payment allocation cùng chủ thể, READY notification đúng độc giả. CHECK trạng thái assessment cần IS NULL/IS NOT NULL rõ ràng, không để NULL làm biểu thức CHECK vượt qua.
+
+UML editable đã sửa trực tiếp tại library-uml.drawio, vẫn một canvas/94 khung/3.020 cells. DOCX đã thay 73 hình nguồn bằng ảnh tái xuất từ cell hiện hành và giữ ba hình ChargeAssessment cùng logic. Routing cạnh xấp xỉ do bộ xuất ngoài ứng dụng Draw.io; các snapshot live phải được kiểm chứng riêng. N05 trạng thái APPROVED/người giao phiếu nhập vẫn cần xác nhận; không tự thêm vào enum DRAFT/POSTED/CANCELLED.

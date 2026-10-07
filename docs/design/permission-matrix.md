@@ -43,3 +43,11 @@ Kiểm thử mỗi ô từ chối, đổi readerId và revoked permission trư�
 
 
 GET job riêng của report/provision được cho phép theo permission loại tác vụ và requestedBy ownership; job.read toàn hệ thống/replay vẫn dành quyền vận hành. Không dùng ownership để cấp quyền restore.
+
+## Đối chiếu với extension OpenAPI
+
+`x-account-guard=ACTIVE` trên `/auth/me` là điều kiện Account hiện tại, không thêm vào RolePermission và không có x-permission. `x-permission` chứa mã đơn; `x-authorization` xác định nhánh quyền thay thế và ownership cho job. Một nhánh own cần đồng thời permission hiện tại, đúng loại job allowlist và ownershipSource của loại job bằng Account.id; quyền vận hành vẫn kiểm allowlist. Export job dùng `export.create`, report job dùng `report.read`, provision job dùng `account.provision_reader`. Không cấp quyền xem backup/restore/replay chỉ vì đã tạo job.
+
+`/me/reservations` dùng `reservation.read`; đọc không đòi `reservation.create`. Trả DAMAGE/LOST yêu cầu bổ sung `assessment.propose`, kiểm cùng `return.create` trước transaction để tránh lưu ReturnEvent rồi thất bại khi tạo assessment. “Return không chặn” nói về điều kiện thẻ/nợ/PENDING, không cho người thiếu quyền nhận trả. GOOD không cần `assessment.propose`.
+
+Nguồn ownership: report/export dùng `ReportJob.requested_by` và FK `job_id`; provision dùng `Job.payload.requesterAccountId` theo schema nội bộ `ProvisionJobPayload`. Job không có cột `requested_by`. Server ghi metadata sau xác thực trong cùng transaction tạo job; client không được chọn requester. Metadata thiếu/sai không đủ điều kiện nhánh own.

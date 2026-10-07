@@ -3426,7 +3426,22 @@
               }
             }
           }
-        }
+        },
+        "x-conditional-permissions": [
+          {
+            "when": {
+              "field": "condition",
+              "values": [
+                "DAMAGE",
+                "LOST"
+              ]
+            },
+            "allPermissions": [
+              "assessment.propose"
+            ]
+          }
+        ],
+        "description": "Luôn kiểm tra return.create. DAMAGE/LOST còn yêu cầu assessment.propose trước transaction; GOOD không cần quyền này. Thiếu quyền trả403 và không ghi một phần ReturnEvent/LoanItem/assessment. Không chặn nhận trả vì debt/card/PENDING; quyền thao tác vẫn bắt buộc."
       }
     },
     "/api/v1/loans/{id}/renewals": {
@@ -5772,8 +5787,19 @@
                 }
               }
             }
+          },
+          "410": {
+            "description": "Artifact đã hết hạn hoặc bị xóa theo retention sau khi xác thực và kiểm scope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
           }
-        }
+        },
+        "description": "Kiểm tra Account ACTIVE, export.download và scope trước khi xét expiry; ngoài scope trả404. Artifact hết hạn trả410; job chưa hoàn thành trả409. Signed URL chỉ được phát khi artifact còn hợp lệ; TTL không vượt expires_at."
       }
     },
     "/api/v1/policy-versions": {
@@ -6455,14 +6481,13 @@
     "/api/v1/auth/me": {
       "get": {
         "operationId": "get_auth_me",
-        "summary": "account.active",
+        "summary": "Ngữ cảnh tài khoản và quyền hiện tại",
         "tags": [
           "F16"
         ],
         "x-functions": [
           "F16"
         ],
-        "x-permission": "account.active",
         "x-status": "planned",
         "security": [
           {
@@ -6476,7 +6501,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AccountView"
+                  "$ref": "#/components/schemas/AuthContext"
                 }
               }
             }
@@ -6551,7 +6576,8 @@
               }
             }
           }
-        }
+        },
+        "x-account-guard": "ACTIVE"
       }
     },
     "/api/v1/accounts/reader-provisioning": {
@@ -8620,7 +8646,18 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/JobAccepted"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/RestoreJobAccepted"
+                    },
+                    {
+                      "properties": {
+                        "approvalStatus": {
+                          "const": "PENDING"
+                        }
+                      }
+                    }
+                  ]
                 }
               }
             },
@@ -8713,7 +8750,8 @@
               }
             }
           }
-        }
+        },
+        "description": "Restore Job giữ QUEUED nhưng payload approvalStatus=PENDING cấm claim/restore. Approval nguyên tử dưới khóa Job, kiểm restore.approve và lý do, ghi approvedBy/approvedAt từ phiên rồi mới cho dispatch. Worker kiểm lại approval, checksum và target allowlist trước pg_restore. Không tự promote production. Retry cùng key trả kết quả cũ; approval khác key sau quyết định trả409."
       }
     },
     "/api/v1/restore-jobs/{id}/approval": {
@@ -8760,7 +8798,18 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/JobAccepted"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/RestoreJobAccepted"
+                    },
+                    {
+                      "properties": {
+                        "approvalStatus": {
+                          "const": "APPROVED"
+                        }
+                      }
+                    }
+                  ]
                 }
               }
             },
@@ -8853,7 +8902,8 @@
               }
             }
           }
-        }
+        },
+        "description": "Restore Job giữ QUEUED nhưng payload approvalStatus=PENDING cấm claim/restore. Approval nguyên tử dưới khóa Job, kiểm restore.approve và lý do, ghi approvedBy/approvedAt từ phiên rồi mới cho dispatch. Worker kiểm lại approval, checksum và target allowlist trước pg_restore. Không tự promote production. Retry cùng key trả kết quả cũ; approval khác key sau quyết định trả409."
       }
     },
     "/api/v1/jobs/{id}": {
@@ -8867,7 +8917,7 @@
           "F23",
           "F24"
         ],
-        "x-permission": "job.read OR own report/provision job scope",
+        "x-permission": "job.read",
         "x-status": "planned",
         "security": [
           {
@@ -8967,7 +9017,48 @@
             }
           }
         },
-        "description": "Quản lý xem report/export job của mình; nhân viên xem provision job do mình tạo; vận hành xem theo job.read; portal không xem raw payload."
+        "description": "Authorization: áp dụng x-authorization, không yêu cầu đồng thời job.read cho các nhánh ownership. jobTypes là loại tác vụ logic; BE00 ánh xạ vào Job.job_type bằng allowlist. Report/export dùng ReportJob.requested_by; provision dùng Job.payload.requesterAccountId do server ghi sau xác thực theo ProvisionJobPayload. Job không có cột requested_by. Thiếu/malformed ownership metadata thì từ chối nhánh own; không suy diễn requester từ readerId. Kiểm tra Account ACTIVE và permission hiện tại. Không mở nhánh ownership cho backup/restore/replay. Chỉ trả JobView.",
+        "x-authorization": {
+          "mode": "any",
+          "rules": [
+            {
+              "allPermissions": [
+                "job.read"
+              ],
+              "scope": "operations_allowlisted_job_types"
+            },
+            {
+              "allPermissions": [
+                "report.read"
+              ],
+              "scope": "requested_by_current_account",
+              "jobTypes": [
+                "report"
+              ],
+              "ownershipSource": "ReportJob.requested_by"
+            },
+            {
+              "allPermissions": [
+                "export.create"
+              ],
+              "scope": "requested_by_current_account",
+              "jobTypes": [
+                "export"
+              ],
+              "ownershipSource": "ReportJob.requested_by"
+            },
+            {
+              "allPermissions": [
+                "account.provision_reader"
+              ],
+              "scope": "requested_by_current_account",
+              "jobTypes": [
+                "reader_provisioning"
+              ],
+              "ownershipSource": "Job.payload.requesterAccountId"
+            }
+          ]
+        }
       }
     },
     "/api/v1/jobs/{id}/replay": {
@@ -9260,14 +9351,14 @@
     "/api/v1/me/reservations": {
       "get": {
         "operationId": "get_me_reservations",
-        "summary": "reservation.create",
+        "summary": "Đọc đặt trước của độc giả hiện tại",
         "tags": [
           "F10"
         ],
         "x-functions": [
           "F10"
         ],
-        "x-permission": "reservation.create",
+        "x-permission": "reservation.read",
         "x-status": "planned",
         "security": [
           {
@@ -9400,6 +9491,10 @@
               }
             }
           }
+        },
+        "x-data-scope": {
+          "kind": "own_reader",
+          "source": "Account.reader_id"
         }
       }
     },
@@ -9948,7 +10043,18 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Health"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Health"
+                    },
+                    {
+                      "properties": {
+                        "status": {
+                          "const": "ok"
+                        }
+                      }
+                    }
+                  ]
                 }
               }
             }
@@ -9967,7 +10073,18 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Health"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Health"
+                    },
+                    {
+                      "properties": {
+                        "status": {
+                          "const": "ready"
+                        }
+                      }
+                    }
+                  ]
                 }
               }
             }
@@ -9977,7 +10094,18 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/Health"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/Health"
+                    },
+                    {
+                      "properties": {
+                        "status": {
+                          "const": "not_ready"
+                        }
+                      }
+                    }
+                  ]
                 }
               }
             }
@@ -12595,6 +12723,14 @@
               "null"
             ],
             "maxLength": 100
+          },
+          "approval_status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "APPROVED"
+            ],
+            "description": "Projection từ RestoreJobPayload chỉ cho job restore; bỏ trường với loại khác. Không phải cột Job mới."
           }
         },
         "required": [
@@ -14183,6 +14319,193 @@
         "required": [
           "status",
           "expectedVersion"
+        ],
+        "additionalProperties": false
+      },
+      "ProvisionJobPayload": {
+        "type": "object",
+        "description": "Hợp đồng nội bộ bổ sung cho Job.payload, chưa là endpoint/body phía client hoặc migration cột Job. Server ghi requesterAccountId từ Account đã xác thực; không nhận qua ProvisionRequest.",
+        "properties": {
+          "schemaVersion": {
+            "type": "integer",
+            "const": 1
+          },
+          "readerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "requesterAccountId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "readerId",
+          "requesterAccountId"
+        ],
+        "additionalProperties": false
+      },
+      "AuthContext": {
+        "type": "object",
+        "description": "Projection phiên tính từ Account/AccountRole/RolePermission hiện tại; quyền UI chỉ để hiển thị, API kiểm lại mỗi lệnh. Không thêm trường Account.",
+        "properties": {
+          "account": {
+            "$ref": "#/components/schemas/AccountView"
+          },
+          "permissions": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            },
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "account",
+          "permissions"
+        ],
+        "additionalProperties": false
+      },
+      "RestoreJobPayload": {
+        "type": "object",
+        "description": "Schema nội bộ bổ sung cho Job.payload. Server ghi/requester/approver từ phiên; không mở writable full payload. Không thêm trạng thái hoặc cột vào Job gốc.",
+        "properties": {
+          "schemaVersion": {
+            "type": "integer",
+            "const": 1
+          },
+          "manifestId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "targetAlias": {
+            "type": "string",
+            "minLength": 1
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1
+          },
+          "requesterAccountId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "approvalStatus": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "APPROVED"
+            ]
+          },
+          "approvedBy": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "approvedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "approvalReason": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "manifestId",
+          "targetAlias",
+          "reason",
+          "requesterAccountId",
+          "approvalStatus",
+          "approvedBy",
+          "approvedAt",
+          "approvalReason"
+        ],
+        "additionalProperties": false,
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "approvalStatus": {
+                  "const": "APPROVED"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "approvedBy": {
+                  "type": "string",
+                  "format": "uuid"
+                },
+                "approvedAt": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "approvalReason": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          },
+          {
+            "if": {
+              "properties": {
+                "approvalStatus": {
+                  "const": "PENDING"
+                }
+              }
+            },
+            "then": {
+              "properties": {
+                "approvedBy": {
+                  "type": "null"
+                },
+                "approvedAt": {
+                  "type": "null"
+                },
+                "approvalReason": {
+                  "type": "null"
+                }
+              }
+            }
+          }
+        ]
+      },
+      "RestoreJobAccepted": {
+        "type": "object",
+        "properties": {
+          "jobId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "const": "QUEUED"
+          },
+          "approvalStatus": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "APPROVED"
+            ]
+          }
+        },
+        "required": [
+          "jobId",
+          "status",
+          "approvalStatus"
         ],
         "additionalProperties": false
       }

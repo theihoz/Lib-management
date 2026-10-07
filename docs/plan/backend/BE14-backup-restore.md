@@ -18,7 +18,7 @@ BackupManifest, Job; /backup-jobs, /restore-jobs.
 | ID | Công việc | Đầu ra bàn giao |
 | --- | --- | --- |
 | BE14.1 | Dựng backup bằng pg_dump, checksum và manifest lưu private | Model/migration hoặc nền màn hình cùng mô tả hợp đồng |
-| BE14.2 | Tạo restore request tham chiếu backup và target cô lập được allowlist; phê duyệt theo quyền vận hành | Service/API hoặc màn hình tích hợp, ví dụ dữ liệu và xử lý lỗi |
+| BE14.2 | Tạo restore request tham chiếu backup và target cô lập được allowlist; phê duyệt theo quyền vận hành, trạng thái duyệt trong RestoreJobPayload server ghi; worker không nhận job PENDING | Service/API hoặc màn hình tích hợp, ví dụ dữ liệu và xử lý lỗi |
 | BE14.3 | Worker restore vào target mới, kiểm tra migrations/invariants và ghi kết quả diễn tập | Service/API hoặc màn hình tích hợp, ví dụ dữ liệu và xử lý lỗi |
 | BE14.4 | Viết kiểm thử tương ứng, cập nhật OpenAPI/tài liệu và ma trận truy vết | Ca kiểm thử, hướng dẫn chạy trong Dev Container, bằng chứng nghiệm thu trong PR |
 
@@ -26,6 +26,8 @@ Mỗi PR khai báo task ID và phụ thuộc. Task .4 có thể bổ sung ca ki�
 
 ## Nghiệm thu và tình huống lỗi
 
+- Job QUEUED nhưng approvalStatus=PENDING không được lease/chạy; thiếu restore.approve không đổi trạng thái duyệt.
+- Hai lần duyệt/replay không tạo restore song song; worker kiểm lại approval/target/checksum trước adapter.
 - Checksum sai chặn restore.
 - không nhận SQL/path tùy ý.
 - thất bại không đổi DB đang dùng.

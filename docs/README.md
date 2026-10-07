@@ -10,7 +10,7 @@
 Báo cáo Google Docs đã chọn để chỉnh sửa: https://docs.google.com/document/d/15pEvPMM7t_oiO0zzggZ_9K-RyN3LqzC4hEaFk2rc1J8/edit
 Các file Git là snapshot; chưa tải lại nội dung Google Docs mới trong lần cleanup này.
 Khi cập nhật nghiệp vụ: giữ tên DOCX chuẩn, đối chiếu UML, ghi thay đổi cùng PR và
-cập nhật manifest nếu thay đổi binary nguồn. Prototype UI là minh họa, frontend chưa chốt.
+cập nhật manifest nếu thay đổi binary nguồn. Frontend đã chốt React + TypeScript + Vite; xem [kế hoạch frontend](plan/README.md#frontend).
 
 ## Dọn tài liệu trùng và file không còn dùng
 
@@ -30,7 +30,7 @@ Giữ nguyên DOCX/UML/PDF/prototype và kế hoạch nghiệp vụ cũ để đ
 | [design](design/) | [Tài liệu thiết kế phần mềm](design/library-software-design.docx), xuất từ Google Docs |
 | [diagrams](diagrams/) | [Bộ UML chỉnh sửa được](diagrams/library-uml.drawio): 80 sơ đồ trên một trang canvas, mở bằng diagrams.net |
 | [archive/planning](archive/planning/) | [Kế hoạch Markdown](archive/planning/PLAN.md), [bản DOCX](archive/planning/implementation-plan.docx) (bản lịch sử) |
-| [ui](ui/) | [Quy tắc giao diện](ui/DESIGN.md), token JSON/CSS và [prototype HTML](ui/design-preview.html) |
+| [plan](plan/) | Kế hoạch backend/frontend/tích hợp; hướng giao diện và token chuẩn tại [decisions](plan/decisions.md) |
 | [archive/references](archive/references/) | Tài liệu tham khảo ban đầu để đối chiếu |
 
 Google Docs thiết kế và kế hoạch được tải về ngày 06/10/2026. Đây là snapshot; thay đổi trên Google Docs sau thời điểm tải sẽ không tự cập nhật trong Git.
@@ -56,9 +56,9 @@ Ba bản Google Docs nguồn trong `archive/references` được lưu từ lần
 
 ## Cách sử dụng
 
-1. Đọc `archive/planning/PLAN.md` để xem thứ tự, phụ thuộc và tiêu chí nghiệm thu của 20 bước.
+1. Đọc [kế hoạch triển khai hiện hành](plan/README.md), [quyết định](plan/decisions.md) và [truy vết F01–F24](plan/traceability.md). Kế hoạch trong `archive/planning` chỉ giữ làm lịch sử.
 2. Mở file `.drawio` bằng [diagrams.net](https://app.diagrams.net/). Tệp có **một trang canvas duy nhất**, gồm 10 loại sơ đồ có tổng quát, 24 State và 24 Activity theo chức năng, 6 Sequence chi tiết cùng phần chú giải cho từng sơ đồ. Vùng cuối giữ sơ đồ gốc để đối chiếu. Phóng to để đọc từng vùng; canvas lớn không theo khổ A4. Mục lục và tọa độ Y của các vùng nằm trên cùng trang.
-3. Mở `ui/design-preview.html` trong trình duyệt để xem prototype. Dữ liệu chỉ là minh họa; chưa kết nối API.
+3. Đọc kế hoạch FE00 và hướng giao diện trong `plan/decisions.md`. Các tệp UI cũ đang được bỏ tại checkout; frontend chưa có code.
 4. Dùng [quy trình team](operations/team-development.md) cho môi trường và Git; lệnh điều phối agent cũ đã được dọn.
 5. Khi cập nhật tài liệu, ghi cùng PR với thay đổi yêu cầu hoặc mã nguồn và cập nhật manifest của tệp thay đổi.
 

@@ -15,10 +15,10 @@ Mỗi PR nghiệp vụ cần ánh xạ chức năng → UC → API → dữ li�
 ## 2. Môi trường thống nhất
 
 Dùng [Dev Container](../../.devcontainer/README.md) để sửa toàn bộ repository.
-Python 3.13, uv 0.12.21, PostgreSQL 17; package nằm ở `apps/api/src/lib_management`.
-Venv Linux ở `/opt/venv`, không dùng `.venv` macOS/Windows. Dev Container tự sync
+Python 3.13, uv theo image Dev Container được pin, PostgreSQL 17; package nằm ở `apps/api/src/lib_management`.
+Venv Dev Container ở `/home/developer/.venv`, không dùng `.venv` macOS/Windows. Dev Container tự sync
 khi tạo; sau đổi pyproject/lock chạy `cd apps/api && uv sync --locked --group dev`.
-Mỗi thành viên có DB local riêng; không chia sẻ mật khẩu production hoặc dump chứa
+Workspace Linux luôn `/workspaces/lib-management`; Windows dùng Docker Desktop Linux containers/WSL2 theo Dev Container README, không cần Python host. Mỗi thành viên có DB local riêng; không chia sẻ mật khẩu production hoặc dump chứa
 thông tin độc giả. VS Code là cách mở IDE được cấu hình; chạy Compose qua terminal
 cũng mount cùng thư mục, nhưng không tự chuyển terminal host vào container.
 

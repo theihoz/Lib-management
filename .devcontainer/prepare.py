@@ -1,26 +1,55 @@
-"""Prepare local-only credentials and host mounts, including Git worktrees."""
+"""Prepare local credentials and optional Git worktree mount using Docker Python."""
+
 import json
-from pathlib import Path
+import os
+from pathlib import Path, PurePosixPath, PureWindowsPath
 import secrets
-import subprocess
 
 root = Path(__file__).resolve().parent.parent
-directory = root / ".devcontainer"
-credentials = directory / ".env"
+folder = root / ".devcontainer"
+credentials = folder / ".env"
 if not credentials.exists():
     password = secrets.token_hex(24)
     with credentials.open("x") as stream:
         stream.write(f"POSTGRES_PASSWORD={password}\nDB_PASSWORD={password}\n")
     credentials.chmod(0o600)
-mounts = [{"type": "bind", "source": str(root), "target": str(root)}]
-git_common = Path(subprocess.check_output(
-    ["git", "-C", str(root), "rev-parse", "--path-format=absolute", "--git-common-dir"],
-    text=True,
-).strip())
-if not git_common.is_relative_to(root):
-    mounts.append({"type": "bind", "source": str(git_common), "target": str(git_common)})
-configuration = {"services": {"workspace": {
-    "working_dir": str(root), "volumes": mounts,
+    # Bootstrap runs as root. Preserve host access on native Linux / WSL binds.
+    if os.geteuid() == 0:
+        owner = folder.stat()
+        os.chown(credentials, owner.st_uid, owner.st_gid)
+
+owner = folder.stat()
+workspace = {"build": {"args": {
+    "DEVELOPER_UID": str(owner.st_uid or 10001),
+    "DEVELOPER_GID": str(owner.st_gid or 10001),
 }}}
-(directory / "workspace.generated.json").write_text(json.dumps(configuration, indent=2) + "\n")
-print("Prepared project/Git mounts and local Dev Container environment.")
+git_file = root / ".git"
+if git_file.is_file():
+    marker = git_file.read_text().strip()
+    if not marker.startswith("gitdir: "):
+        raise SystemExit("Unsupported .git file. Open a regular clone of the repository.")
+    host_root = os.environ.get("LOCAL_WORKSPACE_HOST")
+    if not host_root:
+        raise SystemExit("Git worktrees require LOCAL_WORKSPACE_HOST (set by devcontainer.json).")
+    path_type = PureWindowsPath if PureWindowsPath(host_root).drive else PurePosixPath
+    git_dir = path_type(marker.removeprefix("gitdir: "))
+    if not git_dir.is_absolute():
+        git_dir = path_type(host_root) / git_dir
+    if git_dir.parent.name != "worktrees":
+        raise SystemExit("Nonstandard Git metadata. Use a regular clone for this Dev Container.")
+    # Linked worktrees use <common Git dir>/worktrees/<name>, commondir ../..
+    common_git = git_dir.parent.parent
+    workspace.update({
+        "volumes": [{"type": "bind", "source": str(common_git), "target": "/workspace-git"}],
+        "environment": {
+            "GIT_DIR": f"/workspace-git/worktrees/{git_dir.name}",
+            "GIT_WORK_TREE": "/workspaces/lib-management",
+        },
+    })
+configuration = {"services": {"workspace": workspace}}
+generated = folder / "workspace.generated.json"
+generated.write_text(json.dumps(configuration, indent=2) + "\n")
+if os.geteuid() == 0:
+    owner = folder.stat()
+    os.chown(generated, owner.st_uid, owner.st_gid)
+print("Prepared local DB environment; workspace path is /workspaces/lib-management.")

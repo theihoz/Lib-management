@@ -34,3 +34,14 @@ def test_settings_read_db_environment(monkeypatch):
     assert settings.db_user == "fixture"
     assert settings.db_name == "fixture_db"
     assert settings.db_password.get_secret_value() == "fixture-password"
+
+
+@pytest.mark.parametrize("port", [0, -1, 65536])
+def test_db_port_rejects_invalid_tcp_ports(port):
+    with pytest.raises(ValidationError):
+        Settings(db_password="unit-test-fixture", db_port=port)
+
+
+@pytest.mark.parametrize("port", [1, 5432, 65535])
+def test_db_port_accepts_valid_tcp_ports(port):
+    assert Settings(db_password="unit-test-fixture", db_port=port).db_port == port

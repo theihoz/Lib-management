@@ -4,8 +4,8 @@
     {
       "path": "docs/design/library-software-design.docx",
       "source": "User-provided canonical DOCX; adapted to approved decisions 2026-10-07",
-      "sha256": "6fd09716f7fc162fea70b42a206cb6c848ea207dad856e590f38803bbb19e267",
-      "sizeBytes": 8100846,
+      "sha256": "9a817992c849e640625e70aad939baf55a3602fcd30939076d6554321eb9408d",
+      "sizeBytes": 14279824,
       "previousSnapshot": {
         "source": "https://drive.google.com/file/d/1aM0zXfRCbXduHbcH1MjuiCiB1BGI-0IPUnFsNsiWcc0/view",
         "sourceModifiedAt": "2026-10-06T08:31:53.643Z",
@@ -14,7 +14,7 @@
         "downloadedOn": "2026-10-06"
       },
       "adaptedOn": "2026-10-07",
-      "note": "38 tables / 288 source fields preserved; supplemental appendix; not live report export"
+      "note": "Canonical source adapted after architecture audit; 38 tables/288 source fields preserved; 67 Word tables/76 images; 149 rendered pages; not a live report export."
     },
     {
       "path": "docs/archive/planning/implementation-plan.docx",
@@ -27,13 +27,16 @@
     {
       "path": "docs/diagrams/library-uml.drawio",
       "source": "https://drive.google.com/file/d/1vSIbDUjE65ajxkSRIzZU6nlsjdSooSkn/view",
-      "sourceModifiedAt": "2026-10-07T08:12:43.043Z",
-      "sha256": "b28dd0080f3fb9c08eb97c1f5b142b3b6594efbf93f4ebe28c97003deffcbe01",
-      "sizeBytes": 1228595,
+      "sourceModifiedAt": "2026-10-07T12:05:49.077Z",
+      "sha256": "c4052199b78fafb106ce580f5bc8e6e7018b1558561cffc228e091dd27f3d068",
+      "sizeBytes": 1230546,
       "downloadedOn": "2026-10-06",
-      "note": "One canvas, 94 cards, 3020 cells; raw bytes read back and hash matched",
+      "note": "Same one-canvas Drive file updated; final raw bytes read back and SHA256 matches repository.",
       "syncedOn": "2026-10-07",
-      "cloudSha256": "b28dd0080f3fb9c08eb97c1f5b142b3b6594efbf93f4ebe28c97003deffcbe01"
+      "cloudSha256": "c4052199b78fafb106ce580f5bc8e6e7018b1558561cffc228e091dd27f3d068",
+      "previousRepositorySha256": "b28dd0080f3fb9c08eb97c1f5b142b3b6594efbf93f4ebe28c97003deffcbe01",
+      "modifiedLocallyOn": "2026-10-07",
+      "syncStatus": "synced_verified"
     },
     {
       "path": "docs/archive/references/library-thesis-reference.pdf",
@@ -83,14 +86,18 @@
     {
       "path": "docs/design/openapi.json",
       "source": "Design synchronization 2026-10-07",
-      "sha256": "3ec8db13fb8ab53c9bb739a1d77d34b80390abea915eeb0348e80b3a0a4839f3",
-      "sizeBytes": 376418
+      "sha256": "a42915122ece64b86d38290da29c0c6d9179e8179aafe7688ebdc71293451523",
+      "sizeBytes": 387298,
+      "previousRepositorySha256": "3ec8db13fb8ab53c9bb739a1d77d34b80390abea915eeb0348e80b3a0a4839f3",
+      "modifiedLocallyOn": "2026-10-07",
+      "note": "Local architecture audit revision; design contract remains planned except health."
     },
     {
       "path": "docs/design/live-report-snapshot.md",
       "source": "Design synchronization 2026-10-07",
-      "sha256": "45ddeaad2a670684ee0ad693e50aaa04fd2b6941f826e66fc20faf29cabe8c3e",
-      "sizeBytes": 335724
+      "sha256": "7adbd6069d076fd923fa4af1d07efbdf3c1c549268abb38f1ed6087a6c8ce1e8",
+      "sizeBytes": 257436,
+      "note": "Final connector paragraph readback including table text; indices/style retained; not a layout or image export."
     },
     {
       "path": "docs/plan/frontend/wireframes.html",
@@ -131,11 +138,21 @@
   ],
   "liveReport": {
     "documentId": "15pEvPMM7t_oiO0zzggZ_9K-RyN3LqzC4hEaFk2rc1J8",
-    "revisionId": "AHj4eMTN_YIyEFChu2PHIHn1a1LgsABTnIJ8mgL58UsF05GSSuEbPH1BfKEYr7sMeVZLhLL5utRgtBInId3hFrZqn8_sIHtzOLLYycAiSZf-",
+    "revisionId": "ANLCKQle6rf4x9tc3zViahUq_Gg2HP78hdjg3Xwu-qpENpK6pmvB15lA70I_8yo4qI91S_uWXCZ5TBqLhnOyUTi5AHa0ZpdjOyfW50C786wU",
     "tabId": "t.0",
-    "inlineObjects": 74,
+    "inlineObjects": 82,
     "verifiedOn": "2026-10-07",
     "snapshotPath": "docs/design/live-report-snapshot.md",
-    "docxExportLocalStatus": "blocked HTTP403"
+    "docxExportLocalStatus": "blocked HTTP403",
+    "tables": 70,
+    "functionSections": 24,
+    "figureCaptions": 82,
+    "pdfExportLocalStatus": "Export created (17006937 bytes); download HTTP403; final live PDF layout not verified"
+  },
+  "architectureAudit": {
+    "reportPath": "docs/design/architecture-audit-2026-10-07.md",
+    "date": "2026-10-07",
+    "cloudSyncStatus": "verified_readback",
+    "acceptancePath": "docs/quality/architecture-acceptance-2026-10-07.md"
   }
 }

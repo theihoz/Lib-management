@@ -167,7 +167,7 @@ Truy vết: F06,F12. Quy tắc: expires_at>issued_at; thẻ hợp lệ khi ACTIV
 
 ### 12. Account → `account`
 
-Truy vết: F16,F21; kiểm quyền F01–F20. Quy tắc: OIDC: UQ issuer+subject; reader_id UQ khi có. Local auth là lựa chọn riêng, không lưu mật khẩu rõ.
+Truy vết: F16,F21; kiểm quyền F01–F20. Quy tắc: OIDC: UQ issuer+subject; reader_id UQ khi có. Phương án local auth trong nguồn là lịch sử; thiết kế hiện tại đã chốt Keycloak OIDC, mật khẩu không thuộc DB ứng dụng.
 
 | Cột | Kiểu PostgreSQL | NULL | Ràng buộc/default nguồn | Ý nghĩa |
 | --- | --- | --- | --- | --- |
@@ -177,12 +177,12 @@ Truy vết: F16,F21; kiểm quyền F01–F20. Quy tắc: OIDC: UQ issuer+subjec
 | reader_id | uuid | Có | FK Reader.id; UQ | Ánh xạ độc giả |
 | display_name | varchar(200) | Không | — | Tên hiển thị |
 | status | varchar(16) | Không | ACTIVE/LOCKED/DISABLED | Trạng thái |
-| auth_version | integer | Không | DEFAULT 1 | Thu hồi phiên khi tăng |
+| auth_version | integer | Không | DEFAULT 1 | Version để vô hiệu cache quyền ứng dụng; không tự vô hiệu JWT Keycloak |
 | created_at | timestamptz | Không | DEFAULT now() | Thời điểm ghi nhận |
 
 ### 13. Role → `role`
 
-Truy vết: F21; quyền F01–F20. Quy tắc: Bốn vai trò trong tài liệu; không cấp quyền chỉ từ UI.
+Truy vết: F21; quyền F01–F20. Quy tắc: Ma trận quyền hiện tại phân biệt Độc giả, Thủ thư, Quản lý, Admin hệ thống và Admin vận hành. Nhãn bốn vai trò trong nguồn là mô hình cũ; không cấp quyền chỉ từ UI.
 
 | Cột | Kiểu PostgreSQL | NULL | Ràng buộc/default nguồn | Ý nghĩa |
 | --- | --- | --- | --- | --- |
@@ -601,3 +601,21 @@ Không tự thêm Disposition/ledger mới vào 38 bảng: thanh lý dùng comma
 AcquisitionReceipt.status nguồn là DRAFT/POSTED/CANCELLED. APPROVED trong kế hoạch/UML là extension chưa chốt; chưa thêm enum vào danh mục gốc. Cần chọn duyệt và post cùng command hoặc bổ sung APPROVED trước triển khai F22. Người giao BM01 chưa có cột nguồn.
 
 ChargeAssessment ASSESSED bắt buộc approved_amount>0, decided_by/decided_at/decision_reason và fine_charge_id; CLOSED_NO_CHARGE bắt buộc approved_amount=0, thông tin quyết định và fine_charge_id NULL. PENDING chưa có quyết định/charge. Notification kind READY cần reservation_id; OVERDUE không cần; lease/retry qua Job.
+
+
+## Bất biến liên bảng khi triển khai (rà soát 07/10/2026)
+
+Các FK đơn chỉ xác nhận đối tượng tồn tại, chưa xác nhận chúng thuộc cùng độc giả/ấn bản. Giữ nguyên 38 bảng/288 trường; service kiểm tra các quan hệ sau trong cùng Unit of Work và dưới khóa đã quy định. Chỉ dùng CHECK cho cột cùng một dòng; không viết CHECK truy vấn bảng khác.
+
+| Quan hệ | Điều kiện phải kiểm tra trước commit |
+| --- | --- |
+| Loan → ReaderCard → Reader | card.reader_id = loan.reader_id; thẻ hợp lệ tại thời điểm cho mượn |
+| Reservation → BookCopy / LoanItem | copy.edition_id = reservation.edition_id; READY yêu cầu copy HELD; khi FULFILLED, mục mượn phải thuộc cùng reader và copy của lượt giữ chỗ |
+| ChargeAssessment → ReturnEvent → LoanItem → Loan | reader_id lấy từ loan.reader_id phía server; DAMAGE chỉ gắn RETURNED/DAMAGED, LOST chỉ gắn return_kind=LOST và condition NULL; không nhận reader_id từ client |
+| ChargeAssessment → FineCharge | Khi ASSESSED, charge.reader_id/loan_item_id/reason/assessed_amount khớp nguồn return, kind và approved_amount; tạo charge, quyết định và audit trong cùng transaction |
+| PaymentAllocation → Payment / FineCharge | payment.reader_id = charge.reader_id; khóa các khoản liên quan, tổng phân bổ không vượt tiền thu hoặc dư nợ; tiền đảo/miễn cũng tham gia phép tính |
+| Notification → Reservation | Khi kind=READY, reservation.reader_id = notification.reader_id; không gửi dữ liệu lượt giữ chỗ của độc giả khác |
+
+Bội số có UQ: một LoanItem có 0..1 ReturnEvent; một LoanItem được gắn bởi 0..1 Reservation đã fulfilled; một Job có 0..1 ReportJob. FK NOT NULL ở dòng con không buộc mọi dòng cha có con. Các bội số này phải xuất hiện giống nhau trong ERD và migration.
+
+Mẫu ràng buộc trạng thái ChargeAssessment: PENDING có toàn bộ trường quyết định và fine_charge_id NULL; ASSESSED có approved_amount > 0, decided_by/decided_at/decision_reason/fine_charge_id NOT NULL; CLOSED_NO_CHARGE có approved_amount = 0, thông tin quyết định NOT NULL và fine_charge_id NULL. CHECK nên gồm IS NULL/IS NOT NULL rõ ràng vì biểu thức CHECK cho kết quả NULL vẫn được PostgreSQL chấp nhận. Bất biến tên/trường trên là đặc tả để triển khai, chưa là bằng chứng DB đã áp dụng constraint.

@@ -16,7 +16,7 @@ OutboxEvent giữ đúng các cột nguồn; payload JSON có schemaVersion=1, e
 | charge.assessment.decided.v1 | Finance | assessmentId,readerId,status,chargeId nullable | Projection/audit; không tự email ngoài phạm vi |
 | reader.overdue.daily.v1 | Scheduler08:00 | readerId,localDate,asOf | Một portal/email summary readerId+localDate+channel |
 | report.requested.v1 | Reporting | reportJobId,requestedBy,filterSnapshot,asOf | Export jobId; auth recheck download |
-| account.reader.provision.requested.v1 | Identity | readerId,jobId | Provider provision: readerId+operation |
+| account.reader.provision.requested.v1 | Identity | readerId,jobId,requesterAccountId (server) | Provider provision: readerId+operation |
 | backup.requested.v1 / restore.requested.v1 | Operations | jobId,manifestId nullable,targetAlias | allowlist target; retry không ghi đè target đang dùng |
 
 Không ghi recipient email/secret/rawCSV vào event logs; worker lấy dữ liệu nhận tối thiểu khi gửi. Phiên bản payload và tên event được xác định trong eventType/payload, không thêm cột source tùy ý.
@@ -34,3 +34,15 @@ Trước email READY kiểm tra reservation còn READY và chưa expiry; event c
 ## Nghiệm thu
 
 Crash trước/sau provider call; lease expired; hai workers; payload v1/v2; timeout; stale READY; mất consent; job replay cùng dedupe; deadline pickup không phụ thuộc cron. Không giữ transaction dài cho external call.
+
+## Ownership khi đọc trạng thái job
+
+Report/export truy vấn ownership từ `ReportJob.requested_by` qua `job_id`; không đọc cột requester không tồn tại trên Job. Cấp tài khoản dùng schema JSON nội bộ `ProvisionJobPayload` trong [OpenAPI](openapi.json): `schemaVersion=1`, `readerId`, `requesterAccountId`. Producer lấy requesterAccountId từ Account đã xác thực, ghi cùng transaction tạo job/outbox; envelope event provision gồm jobId và requesterAccountId để truy vết. Worker không ghi đè requester khi retry/replay. Schema này là bổ sung cho payload, chưa là cột mới hay triển khai runtime.
+
+Đọc job own cần permission hiện tại tương ứng (report.read/export.create/account.provision_reader), loại job allowlist và ownership đúng. Metadata thiếu hoặc không hợp lệ thì từ chối nhánh own; job.read vận hành kiểm allowlist riêng. Không dùng Job.payload client gửi hoặc readerId/email để cấp quyền. JobView không trả payload nội bộ.
+
+## Điều kiện duyệt restore trước lease
+
+Restore request tạo Job(status=QUEUED), `RestoreJobPayload.approvalStatus=PENDING` và approvedBy/approvedAt/approvalReason NULL; chưa cho chạy restore. Dispatcher/worker loại restore PENDING trước claim/lease; QUEUED riêng không chứng minh đã được duyệt. Payload/schema/metadata sai bị từ chối. Transaction approval khóa Job, kiểm restore.approve và lý do rồi ghi APPROVED và dữ liệu người duyệt từ server; chỉ sau đó mới dispatch. JobId và projection approval_status cho biết tiến độ.
+
+Worker kiểm lại approval, target allowlist, manifest và checksum trước pg_restore; replay không bỏ qua điều kiện duyệt. Loại job khác giữ điều kiện thực thi riêng. Không thêm enum WAITING_APPROVAL vào Job gốc hoặc cho client sửa payload approval. BE00/BE14 kiểm chứng không có lệnh restore bên ngoài khi PENDING.

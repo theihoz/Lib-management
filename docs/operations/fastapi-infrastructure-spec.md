@@ -7,7 +7,7 @@ Ngày: 2026-10-07. Trạng thái: hợp đồng hạ tầng hiện hành; đã t
 - Người dùng chọn Python + FastAPI + PostgreSQL, thay lựa chọn backend NestJS trong template chưa commit.
 - [Báo cáo thiết kế](https://docs.google.com/document/d/15pEvPMM7t_oiO0zzggZ_9K-RyN3LqzC4hEaFk2rc1J8/edit): giữ C01–C09 và tên dữ liệu chuẩn. 38 bảng/288 trường được triển khai ở nhiệm vụ nghiệp vụ sau.
 - Chuẩn bị một API tối thiểu chạy được, PostgreSQL local, Docker dev/production và GitHub Actions. Chỉ có health endpoints; không tạo CRUD, đăng nhập, schema nghiệp vụ hay frontend.
-- Frontend và reverse proxy chưa được chọn; template Node/Nginx không hoạt động đã được dọn. Tài liệu DOCX/UML/PDF được giữ làm nguồn tham khảo.
+- Frontend đã chọn React + TypeScript + Vite; mã frontend và reverse proxy chưa triển khai. Template Node/Nginx cũ không hoạt động đã được dọn. Tài liệu DOCX/UML/PDF được giữ làm nguồn tham khảo.
 - Chưa có đích deploy; CD của mốc này là publish image GHCR thủ công sau CI thành công.
 
 ## Hợp đồng kỹ thuật

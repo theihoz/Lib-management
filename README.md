@@ -1,9 +1,22 @@
 # Phần mềm quản lý thư viện
 
-Repository lưu tài liệu yêu cầu, thiết kế UML và kế hoạch triển khai ứng dụng quản lý thư viện.
+Lib-management đang ở giai đoạn thiết kế và chuẩn bị code. [Báo cáo thiết kế chuẩn](https://docs.google.com/document/d/15pEvPMM7t_oiO0zzggZ_9K-RyN3LqzC4hEaFk2rc1J8/edit) đã áp dụng C01–C09.
 
-Bắt đầu từ [mục lục tài liệu](docs/README.md) và [kế hoạch triển khai](docs/plan/PLAN.md).
+## Môi trường local
 
-Stack đề xuất trong kế hoạch: TypeScript, React, NestJS và PostgreSQL; CI/CD bằng GitHub Actions. Mã nguồn ứng dụng và workflow sẽ được bổ sung theo các bước đã xác định.
+```bash
+cp .env.example .env
+# Sửa POSTGRES_PASSWORD trong .env.
+docker compose up -d --wait db
+```
 
-Các quy tắc nghiệp vụ C01–C09 trong tài liệu thiết kế cần được chủ nghiệp vụ xác nhận trước khi đóng băng chính sách tương ứng.
+Compose mặc định chỉ chạy PostgreSQL. API/web chưa có mã nguồn; profile `app` được bật khi có đủ hai package trong `apps/api`, `apps/web`.
+
+Template hiện theo TypeScript, React/Vite, NestJS, PostgreSQL. Backend N02 còn chờ xác nhận; không xem template NestJS là quyết định đã chốt.
+
+## CI/CD và Docker
+
+- [Hướng dẫn container, hợp đồng app và CI/CD](docs/operations/containers-ci.md)
+- [Kế hoạch triển khai hạ tầng](docs/superpowers/plans/2026-10-07-ci-cd-docker.md)
+- CI kiểm tra cấu hình ngay; quality/build app chỉ chạy khi mã nguồn đáp ứng hợp đồng.
+- Publish GHCR thủ công trên default branch sau quality gates; chưa deploy lên máy chủ.

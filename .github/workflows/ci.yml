@@ -1,0 +1,92 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      require_app:
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  infrastructure:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    outputs:
+      ready: ${{ steps.contract.outputs.ready }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version-file: .nvmrc
+      - name: Validate Compose model (no containers started)
+        run: docker compose --env-file .env.example --profile app config --quiet
+      - name: Detect application contracts
+        id: contract
+        env:
+          REQUIRE_APP: ${{ inputs.require_app || false }}
+        run: node scripts/ci/app-contract.mjs
+
+  application:
+    needs: infrastructure
+    if: needs.infrastructure.outputs.ready == 'true'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        app: [api, web]
+    defaults:
+      run:
+        working-directory: apps/${{ matrix.app }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+          cache-dependency-path: apps/${{ matrix.app }}/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm run test:ci
+        env:
+          CI: true
+      - run: npm run build
+      - name: Build production container without publishing
+        working-directory: .
+        env:
+          APP: ${{ matrix.app }}
+        run: docker build --target production -f "docker/${APP}.Dockerfile" -t "lib-management-${APP}:ci" .
+
+  ci-result:
+    if: always()
+    needs: [infrastructure, application]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Required check result
+        env:
+          INFRA: ${{ needs.infrastructure.result }}
+          READY: ${{ needs.infrastructure.outputs.ready }}
+          APP_RESULT: ${{ needs.application.result }}
+        run: |
+          if [ "$INFRA" != success ]; then exit 1; fi
+          if [ "$READY" = true ] && [ "$APP_RESULT" != success ]; then exit 1; fi
+          if [ "$READY" = false ]; then
+            echo "Bootstrap validated; application quality gates have not run."
+          fi

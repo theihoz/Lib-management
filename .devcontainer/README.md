@@ -28,7 +28,7 @@ docker compose -f .devcontainer/compose.yaml -f .devcontainer/workspace.generate
 ```
 
 Lần tạo bằng terminal cần cài dependencies một lần trong container:
-`cd apps/api && uv sync --locked --group dev`.
+`bash .devcontainer/setup.sh` từ thư mục gốc repository. Script chỉ trust đúng repository đang mount để Git không báo dubious ownership do UID host/container khác nhau; không dùng safe.directory=* để bỏ kiểm tra toàn bộ.
 Thoát shell vẫn giữ container chạy. Dừng bằng:
 
 ```bash

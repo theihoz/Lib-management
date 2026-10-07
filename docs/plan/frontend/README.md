@@ -8,6 +8,10 @@
 2. [Motion](MOTION.md): timing, trigger, focus và reduced motion.
 3. Chọn module bên dưới; áp dụng task chức năng và D1/D2/D3 cho redesign.
 
+## Wireframe
+
+[Board 12 màn hình desktop/mobile](wireframes.html) và [ánh xạ](WIREFRAMES.md). Đây là thiết kế tĩnh, không phải app.
+
 ## Mục lục
 
 | Module | Kế hoạch |

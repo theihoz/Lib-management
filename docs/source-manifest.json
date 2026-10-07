@@ -1,13 +1,20 @@
 {
-  "snapshotDate": "2026-10-06",
+  "snapshotDate": "2026-10-07",
   "files": [
     {
       "path": "docs/design/library-software-design.docx",
-      "source": "https://drive.google.com/file/d/1aM0zXfRCbXduHbcH1MjuiCiB1BGI-0IPUnFsNsiWcc0/view",
-      "sourceModifiedAt": "2026-10-06T08:31:53.643Z",
-      "sha256": "9914484cee114bd9b48388297d0bdfc2ee11c012a903e763dd1c046f552d3ba5",
-      "sizeBytes": 7819613,
-      "downloadedOn": "2026-10-06"
+      "source": "User-provided canonical DOCX; adapted to approved decisions 2026-10-07",
+      "sha256": "6fd09716f7fc162fea70b42a206cb6c848ea207dad856e590f38803bbb19e267",
+      "sizeBytes": 8100846,
+      "previousSnapshot": {
+        "source": "https://drive.google.com/file/d/1aM0zXfRCbXduHbcH1MjuiCiB1BGI-0IPUnFsNsiWcc0/view",
+        "sourceModifiedAt": "2026-10-06T08:31:53.643Z",
+        "sha256": "9914484cee114bd9b48388297d0bdfc2ee11c012a903e763dd1c046f552d3ba5",
+        "sizeBytes": 7819613,
+        "downloadedOn": "2026-10-06"
+      },
+      "adaptedOn": "2026-10-07",
+      "note": "38 tables / 288 source fields preserved; supplemental appendix; not live report export"
     },
     {
       "path": "docs/archive/planning/implementation-plan.docx",
@@ -20,11 +27,13 @@
     {
       "path": "docs/diagrams/library-uml.drawio",
       "source": "https://drive.google.com/file/d/1vSIbDUjE65ajxkSRIzZU6nlsjdSooSkn/view",
-      "sourceModifiedAt": "2026-10-06T09:39:49.147Z",
-      "sha256": "a8caf53cc43c0b4412fbcb516a2fa734db06e3fe7e33ef29ee61fe7813936236",
-      "sizeBytes": 1161608,
+      "sourceModifiedAt": "2026-10-07T08:12:43.043Z",
+      "sha256": "b28dd0080f3fb9c08eb97c1f5b142b3b6594efbf93f4ebe28c97003deffcbe01",
+      "sizeBytes": 1228595,
       "downloadedOn": "2026-10-06",
-      "note": "Single canvas: 80 diagram cards, 10 system overviews, per-diagram explanations; 74 source pages consolidated."
+      "note": "One canvas, 94 cards, 3020 cells; raw bytes read back and hash matched",
+      "syncedOn": "2026-10-07",
+      "cloudSha256": "b28dd0080f3fb9c08eb97c1f5b142b3b6594efbf93f4ebe28c97003deffcbe01"
     },
     {
       "path": "docs/archive/references/library-thesis-reference.pdf",
@@ -43,30 +52,6 @@
       "source": "existing project document",
       "sha256": "11d147e718f4f3ec0643e0493948c3622aac8bf129f92c5fc250c805c262a8e9",
       "sizeBytes": 28868
-    },
-    {
-      "path": "docs/ui/DESIGN.md",
-      "source": "existing project document",
-      "sha256": "fb1f40d172af607000e45811e8b429cf50c8f667600598df579b89b04695a327",
-      "sizeBytes": 1412
-    },
-    {
-      "path": "docs/ui/design-tokens.json",
-      "source": "existing project document",
-      "sha256": "b9f0e10f678bbcd9154dcc44940f4b7c83225ae84ec2d4300f8412b5c0665000",
-      "sizeBytes": 437
-    },
-    {
-      "path": "docs/ui/design-tokens.css",
-      "source": "existing project document",
-      "sha256": "b61dd6e7276c4e6a410584055f8e988e86174d9e32ef37b64eab05feafa3ae37",
-      "sizeBytes": 303
-    },
-    {
-      "path": "docs/ui/design-preview.html",
-      "source": "existing project document",
-      "sha256": "ca363bec929c25801ce88fbf8346fb8b644ff8a84ebfb23bbdc858826e9cc012",
-      "sizeBytes": 6106
     },
     {
       "path": "docs/archive/references/source-1.docx",
@@ -88,6 +73,69 @@
       "sha256": "8959a87584590ce4f7f314efa7fa33e746148594541bb943240a1640a1dbbc79",
       "sizeBytes": 16487,
       "note": "reference downloaded during design review"
+    },
+    {
+      "path": "docs/design/source-data-dictionary.json",
+      "source": "Design synchronization 2026-10-07",
+      "sha256": "c85bb10e6e090655cc3920e32e92d0a748b45c301fb25fb49916adbf5e86ba0e",
+      "sizeBytes": 66619
+    },
+    {
+      "path": "docs/design/openapi.json",
+      "source": "Design synchronization 2026-10-07",
+      "sha256": "3ec8db13fb8ab53c9bb739a1d77d34b80390abea915eeb0348e80b3a0a4839f3",
+      "sizeBytes": 376418
+    },
+    {
+      "path": "docs/design/live-report-snapshot.md",
+      "source": "Design synchronization 2026-10-07",
+      "sha256": "5f55f8ec4f354acab00b6c800a9bcc8cf3db0baa484f0324b1c286c6e7c6a2c8",
+      "sizeBytes": 335762
+    },
+    {
+      "path": "docs/plan/frontend/wireframes.html",
+      "source": "Design synchronization 2026-10-07",
+      "sha256": "7dbeae7f857ba05a2543886660bf425f35fd4f9e37e5d71f08d25d33fed2aa31",
+      "sizeBytes": 24179
     }
-  ]
+  ],
+  "removedArtifacts": [
+    {
+      "path": "docs/ui/DESIGN.md",
+      "source": "existing project document",
+      "sha256": "fb1f40d172af607000e45811e8b429cf50c8f667600598df579b89b04695a327",
+      "sizeBytes": 1412,
+      "disposition": "Removed before this sync; superseded by docs/plan/frontend direction/motion/wireframes"
+    },
+    {
+      "path": "docs/ui/design-tokens.json",
+      "source": "existing project document",
+      "sha256": "b9f0e10f678bbcd9154dcc44940f4b7c83225ae84ec2d4300f8412b5c0665000",
+      "sizeBytes": 437,
+      "disposition": "Removed before this sync; superseded by docs/plan/frontend direction/motion/wireframes"
+    },
+    {
+      "path": "docs/ui/design-tokens.css",
+      "source": "existing project document",
+      "sha256": "b61dd6e7276c4e6a410584055f8e988e86174d9e32ef37b64eab05feafa3ae37",
+      "sizeBytes": 303,
+      "disposition": "Removed before this sync; superseded by docs/plan/frontend direction/motion/wireframes"
+    },
+    {
+      "path": "docs/ui/design-preview.html",
+      "source": "existing project document",
+      "sha256": "ca363bec929c25801ce88fbf8346fb8b644ff8a84ebfb23bbdc858826e9cc012",
+      "sizeBytes": 6106,
+      "disposition": "Removed before this sync; superseded by docs/plan/frontend direction/motion/wireframes"
+    }
+  ],
+  "liveReport": {
+    "documentId": "15pEvPMM7t_oiO0zzggZ_9K-RyN3LqzC4hEaFk2rc1J8",
+    "revisionId": "AHj4eMTN_YIyEFChu2PHIHn1a1LgsABTnIJ8mgL58UsF05GSSuEbPH1BfKEYr7sMeVZLhLL5utRgtBInId3hFrZqn8_sIHtzOLLYycAiSZf-",
+    "tabId": "t.0",
+    "inlineObjects": 74,
+    "verifiedOn": "2026-10-07",
+    "snapshotPath": "docs/design/live-report-snapshot.md",
+    "docxExportLocalStatus": "blocked HTTP403"
+  }
 }

@@ -9,7 +9,7 @@ backend đã chốt Python 3.13, FastAPI và PostgreSQL 17.
 
 [Báo cáo thiết kế chuẩn](https://docs.google.com/document/d/15pEvPMM7t_oiO0zzggZ_9K-RyN3LqzC4hEaFk2rc1J8/edit)
 và dữ liệu chuẩn DOCX là nguồn tham chiếu nghiệp vụ. Giữ C01–C09, tên dữ liệu và
-thứ tự nội dung chuẩn; schema 38 bảng/288 trường được triển khai trong nhiệm vụ sau.
+thứ tự nội dung chuẩn; schema gốc 38 bảng/288 trường, thêm 4 bảng thiết kế cho duyệt phí/thông báo; migration nghiệp vụ chưa triển khai. Xem [thiết kế chi tiết](docs/design/README.md).
 Không ghi secrets vào repository, tài liệu
 hoặc image; chỉ cung cấp credentials lúc chạy.
 

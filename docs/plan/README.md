@@ -87,3 +87,7 @@ Bộ kế hoạch mới bao phủ F01–F24. Mỗi module một file Markdown, t
 - [Kế hoạch cũ](../archive/planning/PLAN.md) chỉ tham khảo nghiệp vụ/thứ tự; đề xuất stack cũ không còn là quyết định hiện hành.
 - Các tệp docs/ui đang bị xóa tại checkout; không khôi phục chúng. Token và hướng UI lấy từ DOCX, mô tả tại FE00/decisions.
 - Hosting production chưa chốt; publish image không chứng minh đã deploy.
+
+## Hợp đồng chi tiết và điểm mở
+
+Dùng [chỉ mục thiết kế](../design/README.md) khi triển khai. Danh mục gốc 38 bảng/288 trường đã trích xuất; 4 bảng mới cho assessment/notifications được đặc tả riêng. N05: APPROVED và người giao trong tiếp nhận còn cần quyết định, không tự thêm enum/cột từ màn hình. Ma trận nghiệm thu ghi Not run cho tới khi có bằng chứng runtime.

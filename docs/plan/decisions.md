@@ -5,7 +5,7 @@ Ngày chốt: 2026-10-07. Đây là quyết định đã thống nhất trong ph
 ## Nguồn chuẩn và phạm vi
 
 - Toàn bộ F01–F24, gồm quản trị, nhập/thanh lý, backup/restore và thông báo.
-- DOCX thiết kế chính trong Downloads có danh mục 38 bảng; bản trong repository cần đối chiếu trước migration. UML là nguồn luồng; PDF chỉ tham khảo, không sao chép.
+- DOCX thiết kế chính trong Downloads có danh mục 38 bảng; bản trong repository đã đối chiếu 38 bảng/288 trường, bổ sung 4 bảng thiết kế; migration chưa triển khai. UML là nguồn luồng; PDF chỉ tham khảo, không sao chép.
 - PascalCase là thực thể logic, thuộc tính/bảng vật lý theo snake_case; ánh xạ chính xác trong traceability và migration. Không suy diễn schema đã được triển khai.
 - Cập nhật snapshot binary chỉ sau đối chiếu và lưu manifest; bước này chỉ tạo kế hoạch Markdown.
 

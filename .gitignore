@@ -6,3 +6,11 @@ coverage/
 .env.*
 !.env.example
 ~$*.docx
+
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/

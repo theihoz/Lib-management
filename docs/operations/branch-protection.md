@@ -2,24 +2,41 @@
 
 ## Trạng thái ngày 07/10/2026
 
-Repository private, tài khoản GitHub Free có quyền ADMIN. GitHub trả HTTP403:
-“Upgrade to GitHub Pro or make this repository public to enable this feature.”
-**Rule chưa được bật.** Không đổi repo sang public hoặc mua gói trong lượt này.
+Repository đã public. Đã bật và đọc lại thành công cả branch protection và ruleset
+**Protect main — team workflow**, ID `24628362`, enforcement **Active**.
+Ruleset: https://github.com/theihoz/Lib-management/rules/24628362
 
-Payload ở [.github/branch-protection/main.json](../../.github/branch-protection/main.json):
-PR có ít nhất 1 approval, dismiss approval cũ khi push thêm, `ci-result` bắt buộc,
-nhánh phải cập nhật với main, resolve conversation, áp dụng cả admin; cấm force push
-và xóa main. Reviewer phải là người khác tác giả PR; CI không thay thế review.
+Trước khi repo public, GitHub Free/private đã trả HTTP403; hạn chế đó không còn
+chặn cấu hình sau khi chủ repo đổi visibility. Lần xác nhận này đọc trạng thái
+server, không chỉ dựa vào file JSON.
 
-Sau khi chủ repo nâng gói hỗ trợ bảo vệ repo private, đăng nhập gh bằng tài khoản
-quản trị và chạy từ repository root:
+## Quy tắc đang áp dụng
+
+- Thay đổi main qua PR, ít nhất 1 approval từ reviewer khác tác giả.
+- Approval cũ bị bỏ khi push thêm commit; phải giải quyết review conversations.
+- `ci-result` bắt buộc từ GitHub Actions (App ID `15368`); nhánh phải cập nhật main.
+- Cấm force push và xóa main.
+- Branch protection enforce cả admin; ruleset không có bypass actor.
+- Không bắt buộc linear history; hỗ trợ merge/squash/rebase qua PR nếu đủ điều kiện.
+
+Hai lớp bảo vệ chạy đồng thời. Không tắt một lớp để vượt điều kiện lớp còn lại.
+Chủ repo có thể quản trị cấu hình; thao tác push/merge vẫn phải đáp ứng quy tắc.
+Không tự approve PR của chính mình. Maintainer cần thêm thành viên có quyền review.
+
+## Cấu hình trong Git
+
+- [Branch protection](../../.github/branch-protection/main.json)
+- [Ruleset](../../.github/rulesets/main.json)
+
+Để cập nhật có chủ đích, dùng gh với quyền quản trị từ root repository:
 
 ```bash
 gh api --method PUT repos/theihoz/Lib-management/branches/main/protection --input .github/branch-protection/main.json
+gh api --method PUT repos/theihoz/Lib-management/rulesets/24628362 --input .github/rulesets/main.json
 gh api repos/theihoz/Lib-management/branches/main/protection
+gh api repos/theihoz/Lib-management/rulesets/24628362
 ```
 
-Kiểm tra readback có `ci-result`, strict, approval_count1, enforce_admins,
-conversation_resolution và force_push/deletions=false. JSON là cấu hình mong muốn,
-không chứng minh GitHub đang cưỡng chế. Trong lúc chưa bật, team chỉ merge PR sau
-review và CI thành công; đó là quy trình tự giác, chưa là rào chặn server.
+Payload ruleset dùng PUT ID hiện có; không POST để tránh tạo rule trùng.
+Rule chỉ nhắm `refs/heads/main`, không khóa các feature branch. Environment
+`image-publish` là thiết lập khác và chưa được xác nhận trong nhiệm vụ này.

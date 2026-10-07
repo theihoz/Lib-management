@@ -48,7 +48,7 @@ CI kiểm tra source/lock, lint, format, types, tests, wheel và production imag
 Workflow `Publish API image` xuất bản GHCR thủ công từ default branch sau CI cùng SHA;
 **publish image chưa triển khai server**. Frontend, auth provider và hosting chưa chốt.
 Maintainer cần bật review PR, required check `ci-result` và environment `image-publish`
-trên GitHub. Bảo vệ main đang bị GitHub Free/private chặn; xem [trạng thái và cấu hình rule](docs/operations/branch-protection.md). Environment image-publish chưa được xác nhận đã bật.
+trên GitHub. Ruleset Active và branch protection của main đã bật; xem [trạng thái và cấu hình rule](docs/operations/branch-protection.md). Environment image-publish chưa được xác nhận đã bật.
 
 ## Cấu trúc repository
 

@@ -1,0 +1,36 @@
+name: lib-management-devcontainer
+services:
+  workspace:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+    init: true
+    env_file: .env
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: lib_dev
+      DB_NAME: lib_management
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8000:8000"
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+  db:
+    image: postgres:17-bookworm@sha256:3645570cccdfa447589da9f57dd740faa29b30938e861289a5574b6ca6b03826
+    env_file: .env
+    environment:
+      POSTGRES_USER: lib_dev
+      POSTGRES_DB: lib_management
+    volumes:
+      - devcontainer-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lib_dev -d lib_management"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    security_opt: [no-new-privileges:true]
+volumes:
+  devcontainer-pgdata:

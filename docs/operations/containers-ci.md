@@ -1,8 +1,28 @@
 # Docker và CI/CD cho FastAPI
 
 Backend là Python 3.13 + FastAPI + PostgreSQL 17. Chỉ có health endpoints;
-chưa có schema nghiệp vụ, CRUD hoặc migration. Các file web/Nginx được giữ làm
-template chưa hoạt động và không tham gia Compose hoặc CI backend.
+chưa có schema nghiệp vụ, CRUD hoặc migration. Frontend/Nginx chưa được cấu hình; template Node cũ đã được dọn.
+
+## Ba cấu hình Docker — chọn theo mục đích
+
+| Cấu hình | Dùng khi | Mount / dependencies | Khởi động | Dữ liệu |
+| --- | --- | --- | --- | --- |
+| `.devcontainer/compose.yaml` + override sinh tự động | Team code toàn bộ repository | Toàn repo + Git metadata worktree; Linux venv `/opt/venv` | workspace chờ terminal; API chạy thủ công | `lib-management-devcontainer_devcontainer-pgdata` |
+| `compose.yaml` | Chạy app local / reload API | Chỉ `apps/api/src` → `/app/src`; dependencies trong image | API tự chạy; DB healthy trước | `lib-management_pgdata` |
+| `docker/api.Dockerfile --target production` | CI / xuất bản image runtime | Không mount source; wheel và runtime deps | Uvicorn một worker, không reload | DB phải cung cấp riêng lúc deploy |
+
+Hai Compose project có DB/volume riêng, không tự chia sẻ dữ liệu. Không chạy hai
+API cùng cổng host 8000. Dev Container DB không publish cổng host; workspace kết nối
+`db:5432`. [Dev Container README](../../.devcontainer/README.md) có lệnh mở shell,
+khởi động API, reconnect và dừng. Không dùng `down -v` khi cần giữ dữ liệu.
+
+`.devcontainer/prepare.py` tạo mật khẩu ngẫu nhiên local vào `.devcontainer/.env`
+và override chứa đường dẫn máy hiện tại; cả hai bị gitignore. Máy mới chạy script
+hoặc để Dev Containers gọi `initializeCommand`; yêu cầu Python host >=3.9 và Git.
+Sau khi di chuyển repo chạy lại prepare và recreate workspace. Venv ở filesystem
+container, recreate cần sync lại; PostgreSQL ở named volume vẫn được giữ.
+Git worktree mount thêm metadata chung nên thao tác Git trong container tác động
+repository host. Không tự mount SSH keys, Docker socket hoặc credentials host.
 
 ## Local với Docker
 
@@ -73,7 +93,7 @@ metadata registry, review thay đổi và build/smoke lại, không dùng latest
 `GET /health/live` trả 200 `{"status":"ok"}` độc lập DB.
 `GET /health/ready` chạy SELECT 1, trả 200 `{"status":"ready"}` hoặc
 503 `{"status":"not_ready"}`. Readiness chưa kiểm tra 38 bảng hoặc revision
-migration. DB connect timeout 2 giây, statement timeout 2000 ms.
+migration. Readiness có deadline client 2 giây gồm chờ slot, connect và đọc; tối đa 4 probe async. Kết nối được đóng trước khi hủy task hết hạn. Liveness async không dùng DB hoặc worker đồng bộ. SQLAlchemy pool dành cho nghiệp vụ tương lai không tham gia readiness. DB connect timeout 2 giây, statement timeout 2000 ms.
 
 ## CI và publish
 
@@ -85,7 +105,7 @@ Node hoặc chế độ bootstrap. Ba job configuration → quality → containe
 đều làm check thất bại. Concurrency của CI dùng prefix riêng với caller publish.
 
 Quality dùng Python từ .python-version và uv 0.12.21, `uv sync --locked --group dev`,
-Ruff check/format, mypy, 9 unit tests độc lập DB, 3 integration tests, build wheel.
+Ruff check/format, mypy, 10 unit tests độc lập DB, 5 integration tests, build wheel.
 PostgreSQL service disposable dùng cùng digest PostgreSQL 17 như Compose,
 credentials fixture công khai, không có volume hoặc secret production. Integration
 chỉ chạy khi `RUN_DB_INTEGRATION=1` và DB_HOST/DB_PORT/DB_USER/DB_NAME/DB_PASSWORD
@@ -149,11 +169,16 @@ Publish package chưa tạo server hoặc triển khai production. Cần hoàn t
 - [uv Docker integration](https://docs.astral.sh/uv/guides/integration/docker/)
 - [Compose services](https://docs.docker.com/reference/compose-file/services/)
 
-Readiness uses dedicated async psycopg connections, with at most four active probes.
-A 2-second client deadline includes admission, connection establishment and reads.
-On timeout the connection is closed before task cancellation, avoiding a stalled
-server cancellation handshake. Health handlers are async; liveness uses no DB
-or synchronous worker. The SQLAlchemy engine remains available for future work
-and is disposed at shutdown, but its pool is not used for health probes.
-Isolated builds pin the reviewed hatchling backend to 1.32.4; transitive build
-dependencies are still resolved by the isolated builder (not fully locked).
+Build backend pin Hatchling 1.32.4; dependencies build gián tiếp chưa được khóa hoàn toàn.
+
+## Xử lý lỗi thường gặp
+
+| Hiện tượng | Xử lý |
+| --- | --- |
+| Không thấy đầy đủ project trong container | Mở root repo với `.devcontainer`, không attach vào service `api` của Compose app; service API chỉ có src |
+| Cổng 8000 đã dùng | Dừng API của stack còn lại; Compose app có thể đổi API_PORT; Dev Container đổi mapping và forwardPorts đồng bộ |
+| DB authentication failed sau đổi env | Volume cũ giữ mật khẩu role; sửa role bằng PostgreSQL có kiểm soát hoặc giữ credentials đã khởi tạo, không xóa volume để chữa lỗi |
+| Lock stale / thiếu package sau pull | `uv sync --locked --group dev` trong workspace; lock mismatch cần PR cập nhật manifest/lock, không bỏ --locked |
+| Compose app không nhận dependency mới | `docker compose up --build -d api` |
+| API ready503, live200 | Kiểm tra DB_HOST/PORT/USER/NAME và DB logs; không in password; readiness chỉ SELECT1 |
+| Main clone chưa có scaffold | Checkout `codex/fastapi-ci-docker` trong khi chưa merge nhánh hạ tầng |

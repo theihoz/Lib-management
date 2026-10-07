@@ -10,13 +10,12 @@ backend đã chốt Python 3.13, FastAPI và PostgreSQL 17.
 [Báo cáo thiết kế chuẩn](https://docs.google.com/document/d/15pEvPMM7t_oiO0zzggZ_9K-RyN3LqzC4hEaFk2rc1J8/edit)
 và dữ liệu chuẩn DOCX là nguồn tham chiếu nghiệp vụ. Giữ C01–C09, tên dữ liệu và
 thứ tự nội dung chuẩn; schema 38 bảng/288 trường được triển khai trong nhiệm vụ sau.
-Không khôi phục các tài liệu đã bị xóa. Không ghi secrets vào repository, tài liệu
+Không ghi secrets vào repository, tài liệu
 hoặc image; chỉ cung cấp credentials lúc chạy.
 
 Mốc hạ tầng hiện tại gồm API tối thiểu, DB local, health endpoints, Docker và CI,
 cùng hợp đồng publish API thủ công lên GHCR sau quality gates trên cùng SHA.
-Chưa triển khai CRUD, đăng nhập, schema nghiệp vụ hoặc frontend. Các template
-web/Nginx hiện có không tham gia Compose hoặc CI backend.
+Chưa triển khai CRUD, đăng nhập, schema nghiệp vụ hoặc frontend. Frontend/Nginx chưa được cấu hình trong stack hiện tại.
 
 ## Tiêu chí hoàn thành
 
@@ -37,3 +36,7 @@ HTTPS, runtime secrets, DB role production, migration và backup/restore phải 
 chuẩn bị trước deployment theo [hướng dẫn vận hành](docs/operations/containers-ci.md).
 GitHub environment reviewers và branch protection phải do maintainer cấu hình
 ngoài repository. Không tự coi các template là quyết định sản phẩm đã chốt.
+
+## Làm việc theo team
+
+Dùng [quy trình team](docs/operations/team-development.md) và Dev Container mount toàn bộ repository. Nguồn tài liệu trong [docs/README.md](docs/README.md) giữ bản DOCX/UML/PDF đã có cùng trạng thái lịch sử rõ ràng. Không phụ thuộc plugin/agent để clone và code dự án.

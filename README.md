@@ -1,28 +1,53 @@
-# Phần mềm quản lý thư viện
+# Lib-management — Quản lý thư viện
 
-Backend dùng Python 3.13, FastAPI và PostgreSQL 17. [Báo cáo thiết kế chuẩn](https://docs.google.com/document/d/15pEvPMM7t_oiO0zzggZ_9K-RyN3LqzC4hEaFk2rc1J8/edit) giữ C01–C09; schema 38 bảng được triển khai sau.
+Backend **Python 3.13 + FastAPI + PostgreSQL 17**, dependencies khóa bằng `uv.lock`.
+Hiện có scaffold, health endpoints, Docker và CI; chưa có CRUD, schema nghiệp vụ,
+đăng nhập hoặc giao diện hoàn chỉnh. C01–C09 đã được người dùng đồng ý áp dụng.
 
-## Chạy local
+## Bắt đầu cho thành viên mới
+
+```bash
+git clone https://github.com/theihoz/Lib-management.git
+cd Lib-management
+# Trong khi nhánh hạ tầng chưa merge về main:
+git switch codex/fastapi-ci-docker
+```
+
+**Code trong Dev Container (khuyến nghị):** cài Docker Desktop/Engine, Git,
+Python host >=3.9 và VS Code với extension Dev Containers. Mở thư mục repository,
+chọn **Dev Containers: Reopen in Container**. Toàn bộ dự án được mount vào workspace;
+Python, uv, Git và dependencies Linux có sẵn. Trong terminal container:
+
+```bash
+cd apps/api
+uv run --locked uvicorn lib_management.main:create_app --factory --host 0.0.0.0 --port 8000 --reload
+```
+
+Swagger: <http://localhost:8000/docs>. Xem [hướng dẫn Dev Container](.devcontainer/README.md).
+
+**Chỉ chạy app bằng Compose:**
 
 ```bash
 cp .env.example .env
-# Sửa POSTGRES_PASSWORD trong .env.
-docker compose up --build
+# Đổi POSTGRES_PASSWORD trong .env trước khi chạy.
+docker compose up --build -d --wait
 ```
 
-API: http://localhost:8000; OpenAPI: http://localhost:8000/docs.
-Compose chạy API có reload và PostgreSQL; DB chỉ mở cổng localhost.
-`docker compose down` giữ dữ liệu trong volume `pgdata`.
+Compose này chạy API tự động, khác workspace Dev Container. Chọn một cách chạy
+trên cổng 8000; hai stack có volume PostgreSQL riêng. `docker compose down` giữ dữ liệu.
+Có thể [chạy API trên host](apps/api/README.md) bằng uv và DB Compose.
 
-Có thể chạy API bằng uv trên host theo [apps/api/README.md](apps/api/README.md).
-[Hướng dẫn Docker và CI/CD](docs/operations/containers-ci.md) mô tả cấu hình,
-lockfile và giới hạn deployment. Các file frontend/Nginx là template chưa hoạt động.
-Readiness chỉ kiểm tra kết nối PostgreSQL, chưa kiểm tra 38 bảng.
-Production deployment chưa được cấu hình.
+## Tài liệu cho team
 
-Publish API lên GHCR bằng workflow thủ công `Publish API image` từ default branch,
-sau CI trên cùng SHA. Tag `sha-<full commit SHA>` và digest được ghi trong job summary.
-Maintainer cần cấu hình reviewers của environment `image-publish` và branch protection
-trên GitHub trước publish thật. Publish image chưa triển khai máy chủ; xem checklist
-hosting, HTTPS, runtime secrets, migrations và backup trong hướng dẫn vận hành.
-[PROJECT-CONTEXT.md](PROJECT-CONTEXT.md) ghi phạm vi và các quyết định chưa chốt.
+- [Onboarding, chia công việc, Git và review](docs/operations/team-development.md)
+- [Docker, biến môi trường, dữ liệu, CI/CD, xử lý lỗi](docs/operations/containers-ci.md)
+- [Hợp đồng hạ tầng hiện hành](docs/operations/fastapi-infrastructure-spec.md)
+- [Thiết kế DOCX, UML một trang, PDF và kế hoạch đã có](docs/README.md)
+- [Bối cảnh và phạm vi dự án](PROJECT-CONTEXT.md)
+- [Bằng chứng kiểm tra đã thực hiện](docs/operations/verification.md)
+
+CI kiểm tra source/lock, lint, format, types, tests, wheel và production image.
+Workflow `Publish API image` xuất bản GHCR thủ công từ default branch sau CI cùng SHA;
+**publish image chưa triển khai server**. Frontend, auth provider và hosting chưa chốt.
+Maintainer cần bật review PR, required check `ci-result` và environment `image-publish`
+trên GitHub. Các thiết lập này chưa được xác nhận đã bật.

@@ -7,7 +7,7 @@
 
 ## Nguồn và ranh giới
 
-DOCX thiết kế là chuẩn tên/thuộc tính; UML là chuẩn luồng. Áp dụng [quyết định](../decisions.md) và [truy vết](../traceability.md). Tệp này là kế hoạch, không chứng minh chức năng đã triển khai.
+[Google Docs mới và từ điển 7 cột](../../design/data-dictionary.md) là chuẩn mô tả dữ liệu hiện hành (39 bảng/303 trường); DOCX gốc giữ provenance 38 bảng/288 trường, UML là góc nhìn luồng. Ba bảng notification mở rộng được đặc tả riêng; không cộng vào 39/303. Áp dụng [quyết định](../decisions.md) và [truy vết](../traceability.md). Tệp này là kế hoạch, không chứng minh chức năng đã triển khai.
 
 ## Hợp đồng và đầu ra
 
@@ -72,3 +72,10 @@ Các D-task đi cùng task chức năng hiện có, không tạo thêm API nghi�
 Số tiền không nhảy layout; pending assessment khác debt; permission quyết định action; miễn/đảo không PATCH ledger.
 
 Không delay nghiệp vụ để chờ motion. UI chưa có code; các tiêu chí này là kế hoạch, chưa được xác minh trên trình duyệt.
+
+## Đồng bộ dữ liệu Docs mới
+
+- FE07.S1: dùng ChargeAssessment DTO đã công bố, không gọi trực tiếp tên bảng hoặc tự thêm trường DB vào client. API tiền dạng chuỗi; hiển thị VND, không dùng float để tính dư nợ.
+- FE07.S2: PENDING / ASSESSED / CLOSED_NO_CHARGE có nhãn, icon và giải thích; phân biệt đề xuất với nợ đã ghi. Chỉ Quản lý có action quyết định theo permission.
+- FE07.S3: gửi amount/reason/version theo command; 409 giữ dữ liệu nhập và yêu cầu tải bản mới, không tự duyệt lại. Trường người/thời điểm do server ghi, không cho sửa trên form.
+- FE07.S4: motion không thay thế phản hồi trạng thái; reduced-motion, focus và loading/empty/error theo DESIGN-DIRECTION.md/MOTION.md. Đây là plan, chưa nghiệm thu UI runtime.

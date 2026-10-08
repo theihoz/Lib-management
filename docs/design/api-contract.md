@@ -51,3 +51,9 @@ Ownership của report/export lấy từ `ReportJob.requested_by` qua `ReportJob
 `GET /auth/me` trả `AuthContext` gồm `account: AccountView` và `permissions`, tính từ quan hệ role/permission hiện tại trong DB. Không thêm trường Account; frontend dùng projection cho menu FE01 và xử lý403/khóa tài khoản ở các request sau. Backend không tin permissions do client gửi hoặc cache UI.
 
 Restore tạo `RestoreJobPayload` nội bộ với approvalStatus=PENDING và dữ liệu duyệt NULL. Job giữ trạng thái nguồn QUEUED; trạng thái duyệt nằm riêng trong payload. Dispatcher/worker loại PENDING khỏi nhóm được thực thi. Lệnh duyệt khóa Job, kiểm restore.approve, trạng thái và lý do; ghi approvedBy/approvedAt từ phiên rồi chuyển APPROVED. Retry cùng key trả kết quả đã lưu; lệnh khác sau duyệt trả409. Trước pg_restore, worker kiểm lại approval, manifest/checksum và target allowlist; metadata thiếu/sai bị từ chối. `RestoreJobAccepted` thể hiện trạng thái duyệt; `JobView.approval_status` chỉ chiếu trường này cho restore. Đây là hợp đồng JSON bổ sung, không thêm cột hoặc enum Job.
+
+## Ánh xạ với từ điển hiện hành 08/10/2026
+
+ChargeAssessment ở data-dictionary.md có 15 cột DB. Schema OpenAPI ChargeAssessment chỉ công bố projection: id,reader_id,return_event_id,kind, status,proposed_amount,approved_amount,reason,version. proposed_by/decided_by/decided_at/decision_reason/fine_charge_id/created_at không mặc nhiên công khai qua response hiện tại; muốn mở rộng phải sửa contract và kiểm tra scope.
+
+Command dùng camelCase, dữ liệu entity dùng snake_case; amount truyền chuỗi VND, DB numeric(14,0). Kind/status là API enum chuỗi đã chốt nhưng SQL type/độ rộng chưa chốt(D01). version required/minimum1 trong response không xác định DB NOT NULL. Mốc 39/303 mô tả dữ liệu, không phải số schema DTO. Không đổi API chỉ vì đổi bố cục từ điển 5→7 cột.

@@ -7,7 +7,7 @@
 
 ## Nguồn và ranh giới
 
-DOCX thiết kế là chuẩn tên/thuộc tính; UML là chuẩn luồng. Áp dụng [quyết định](../decisions.md) và [truy vết](../traceability.md). Tệp này là kế hoạch, không chứng minh chức năng đã triển khai.
+[Google Docs mới và từ điển 7 cột](../../design/data-dictionary.md) là chuẩn mô tả dữ liệu hiện hành (39 bảng/303 trường); DOCX gốc giữ provenance 38 bảng/288 trường, UML là góc nhìn luồng. Ba bảng notification mở rộng được đặc tả riêng; không cộng vào 39/303. Áp dụng [quyết định](../decisions.md) và [truy vết](../traceability.md). Tệp này là kế hoạch, không chứng minh chức năng đã triển khai.
 
 ## Hợp đồng và đầu ra
 
@@ -42,3 +42,7 @@ Mỗi PR khai báo task ID và phụ thuộc. Task .4 có thể bổ sung ca ki�
 - Task và tiêu chí trên đạt; CI liên quan xanh; tài liệu và hợp đồng đồng bộ.
 - Không chứa secrets; không tự thay quy tắc DOCX; bổ sung schema có lý do và migration.
 - Cập nhật trạng thái thực tế tại mục lục khi PR được merge; giữ giới hạn xác minh rõ ràng.
+
+## Ranh giới dữ liệu theo Docs mới
+
+Docs mục 13.4 mới mô tả 39 bảng/303 trường, chưa bao gồm bảng chi tiết 7 cột cho Notification, NotificationDelivery và NotificationPreference. Ba extension đã có mô tả thiết kế tại database-design.md; BE13 phải hoàn thiện kiểu/độ rộng/NULL/ràng buộc và cập nhật Docs/UML/API trước migration. Không coi các trường chưa quy định là đã duyệt, không bỏ portal/email khỏi F24.

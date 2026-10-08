@@ -1,5 +1,5 @@
 {
-  "snapshotDate": "2026-10-07",
+  "snapshotDate": "2026-10-08",
   "files": [
     {
       "path": "docs/design/library-software-design.docx",
@@ -27,15 +27,15 @@
     {
       "path": "docs/diagrams/library-uml.drawio",
       "source": "https://drive.google.com/file/d/1vSIbDUjE65ajxkSRIzZU6nlsjdSooSkn/view",
-      "sourceModifiedAt": "2026-10-07T12:05:49.077Z",
-      "sha256": "c4052199b78fafb106ce580f5bc8e6e7018b1558561cffc228e091dd27f3d068",
-      "sizeBytes": 1230546,
+      "sourceModifiedAt": "2026-10-08T05:02:35.993Z",
+      "sha256": "8896fcfec135fb1abc20e44c441e3b42094fd8ef4f8ecb78c1e58a447f18ae98",
+      "sizeBytes": 1231014,
       "downloadedOn": "2026-10-06",
-      "note": "Same one-canvas Drive file updated; final raw bytes read back and SHA256 matches repository.",
-      "syncedOn": "2026-10-07",
-      "cloudSha256": "c4052199b78fafb106ce580f5bc8e6e7018b1558561cffc228e091dd27f3d068",
-      "previousRepositorySha256": "b28dd0080f3fb9c08eb97c1f5b142b3b6594efbf93f4ebe28c97003deffcbe01",
-      "modifiedLocallyOn": "2026-10-07",
+      "note": "Same Drive file; four existing labels updated; final downloaded bytes match repository; one canvas/3020 cells",
+      "syncedOn": "2026-10-08",
+      "cloudSha256": "8896fcfec135fb1abc20e44c441e3b42094fd8ef4f8ecb78c1e58a447f18ae98",
+      "previousRepositorySha256": "c4052199b78fafb106ce580f5bc8e6e7018b1558561cffc228e091dd27f3d068",
+      "modifiedLocallyOn": "2026-10-08",
       "syncStatus": "synced_verified"
     },
     {
@@ -95,15 +95,44 @@
     {
       "path": "docs/design/live-report-snapshot.md",
       "source": "Design synchronization 2026-10-07",
-      "sha256": "7adbd6069d076fd923fa4af1d07efbdf3c1c549268abb38f1ed6087a6c8ce1e8",
-      "sizeBytes": 257436,
-      "note": "Final connector paragraph readback including table text; indices/style retained; not a layout or image export."
+      "sha256": "a07b8170351946931d8619dd097b935975f43191bcd9a52d499cb589e724805f",
+      "sizeBytes": 298518,
+      "note": "Applied on host with user authorization; verified against latest Google Docs revision",
+      "previousRepositorySha256": "7adbd6069d076fd923fa4af1d07efbdf3c1c549268abb38f1ed6087a6c8ce1e8",
+      "modifiedLocallyOn": "2026-10-08"
     },
     {
       "path": "docs/plan/frontend/wireframes.html",
       "source": "Design synchronization 2026-10-07",
       "sha256": "7dbeae7f857ba05a2543886660bf425f35fd4f9e37e5d71f08d25d33fed2aa31",
       "sizeBytes": 24179
+    },
+    {
+      "path": "docs/design/data-dictionary.md",
+      "sha256": "fca28e4ec16095984253eb2be3ced6580ece56f8f13a96d317e4ec48c58efb32",
+      "sizeBytes": 35438,
+      "modifiedLocallyOn": "2026-10-08",
+      "note": "Applied on host with user authorization; verified against latest Google Docs revision"
+    },
+    {
+      "path": "docs/design/data-dictionary.json",
+      "sha256": "f5d96a70b1455e98fd681c5e86671dbd1a800397e5b3e785e57e891a58ee414e",
+      "sizeBytes": 82463,
+      "modifiedLocallyOn": "2026-10-08",
+      "note": "Applied on host with user authorization; verified against latest Google Docs revision"
+    },
+    {
+      "path": "docs/design/live-report.docx",
+      "sha256": "5d2d903d7f1f7376fb5e3c0b9bf4379d57af310212ce3cf3b77cb59ce1edec96",
+      "sizeBytes": 15381741,
+      "modifiedLocallyOn": "2026-10-08",
+      "note": "Applied on host with user authorization; verified against latest Google Docs revision"
+    },
+    {
+      "path": "docs/design/synchronization-2026-10-08.md",
+      "source": "Google Docs synchronization 2026-10-08",
+      "sha256": "95f2eb86d694656624d88226a299001eba01740acafb423edad9f59d379348ef",
+      "sizeBytes": 7013
     }
   ],
   "removedArtifacts": [
@@ -138,21 +167,40 @@
   ],
   "liveReport": {
     "documentId": "15pEvPMM7t_oiO0zzggZ_9K-RyN3LqzC4hEaFk2rc1J8",
-    "revisionId": "ANLCKQle6rf4x9tc3zViahUq_Gg2HP78hdjg3Xwu-qpENpK6pmvB15lA70I_8yo4qI91S_uWXCZ5TBqLhnOyUTi5AHa0ZpdjOyfW50C786wU",
+    "revisionId": "ANLCKQmy4reOPIhlpzm37Pag8dk93aGD-qr-gKuyYoTZqPN1QzJzn8-NsUqTbKcmzHC0QevkajV7VKeK7BUl_kkT26NxGq18MHqpnHNe924v",
     "tabId": "t.0",
     "inlineObjects": 82,
-    "verifiedOn": "2026-10-07",
+    "verifiedOn": "2026-10-08",
     "snapshotPath": "docs/design/live-report-snapshot.md",
-    "docxExportLocalStatus": "blocked HTTP403",
-    "tables": 70,
+    "docxExportLocalStatus": "Downloaded and stored in repository; ZIP/XML verified 71 tables, 39 dictionary tables, 303 fields, 82 media",
+    "tables": 71,
     "functionSections": 24,
     "figureCaptions": 82,
-    "pdfExportLocalStatus": "Export created (17006937 bytes); download HTTP403; final live PDF layout not verified"
+    "dictionaryTables": 39,
+    "dictionaryFields": 303,
+    "docxExportPath": "docs/design/live-report.docx",
+    "pdfExportPreviousStatus": "Export created (17006937 bytes); download HTTP403; final live PDF layout not verified",
+    "pdfExportLocalStatus": "Not re-exported during 2026-10-08 repository apply; prior status retained separately"
   },
   "architectureAudit": {
     "reportPath": "docs/design/architecture-audit-2026-10-07.md",
     "date": "2026-10-07",
     "cloudSyncStatus": "verified_readback",
     "acceptancePath": "docs/quality/architecture-acceptance-2026-10-07.md"
+  },
+  "documentSynchronization": {
+    "date": "2026-10-08",
+    "reportPath": "docs/design/synchronization-2026-10-08.md",
+    "status": "applied_host_cloud_readback_verified",
+    "openSchemaDecision": "D01",
+    "originalTables": 38,
+    "originalFields": 288,
+    "documentedTables": 39,
+    "documentedFields": 303,
+    "notificationExtensionTables": 3,
+    "plannedSchemaTables": 42,
+    "repositoryBranch": "fix/architecture-audit",
+    "commitStatus": "not_committed",
+    "googleDocsRevisionUnchanged": true
   }
 }

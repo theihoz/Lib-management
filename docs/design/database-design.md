@@ -619,3 +619,11 @@ Các FK đơn chỉ xác nhận đối tượng tồn tại, chưa xác nhận c
 Bội số có UQ: một LoanItem có 0..1 ReturnEvent; một LoanItem được gắn bởi 0..1 Reservation đã fulfilled; một Job có 0..1 ReportJob. FK NOT NULL ở dòng con không buộc mọi dòng cha có con. Các bội số này phải xuất hiện giống nhau trong ERD và migration.
 
 Mẫu ràng buộc trạng thái ChargeAssessment: PENDING có toàn bộ trường quyết định và fine_charge_id NULL; ASSESSED có approved_amount > 0, decided_by/decided_at/decision_reason/fine_charge_id NOT NULL; CLOSED_NO_CHARGE có approved_amount = 0, thông tin quyết định NOT NULL và fine_charge_id NULL. CHECK nên gồm IS NULL/IS NOT NULL rõ ràng vì biểu thức CHECK cho kết quả NULL vẫn được PostgreSQL chấp nhận. Bất biến tên/trường trên là đặc tả để triển khai, chưa là bằng chứng DB đã áp dụng constraint.
+
+## Đối chiếu Google Docs mới 08/10/2026
+
+[Từ điển 7 cột](data-dictionary.md) và [JSON hiện hành](data-dictionary.json) giữ 39 bảng/303 trường đã mô tả trong Docs. 38/288 ở các phần trên là phạm vi nguồn gốc; ChargeAssessment đã có bảng 15 trường ở mục 13.4.39. Ba notification extensions chưa có bảng 7 cột trong Docs; tổng thiết kế 42 bảng không đồng nghĩa 42 bảng đã mô tả đầy đủ hoặc đã migrate.
+
+D01 chưa chốt SQL type/độ rộng kind/status và NOT NULL version/created_at của ChargeAssessment. API required/version>0 là hợp đồng phản hồi và concurrency; không tự suy ra DB NOT NULL. DEFAULT 1/now() không tương đương NOT NULL. Chốt quyết định và backfill trước migration.
+
+Account.auth_version trong Docs mới mô tả vô hiệu cache quyền ứng dụng; thu hồi phiên/JWT Keycloak là thao tác riêng. Dữ liệu source-data-dictionary.json giữ mô tả gốc để truy vết, còn data-dictionary.json phản ánh mô tả hiện hành.

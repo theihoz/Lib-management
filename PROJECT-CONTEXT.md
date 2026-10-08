@@ -44,3 +44,11 @@ Dùng [quy trình team](docs/operations/team-development.md) và Dev Container m
 ## Kế hoạch triển khai hiện hành
 
 [docs/plan](docs/plan/README.md) chia theo backend, frontend và tích hợp, mỗi module có task nhỏ theo PR. Đây là kế hoạch chưa triển khai: schema nghiệp vụ, Keycloak và frontend chưa được tạo. C01–C09 đã duyệt; phí hỏng/mất do Quản lý xác nhận, khoản chờ duyệt chặn mượn/gia hạn/đặt trước nhưng không chặn trả; thông báo portal và email.
+
+## Nguồn hiện hành sau đồng bộ 08/10/2026
+
+Google Docs báo cáo mới là bản hiện hành: 71 bảng tài liệu, trong đó 39 bảng mô tả 7 cột/303 trường = 38 bảng gốc/288 trường + ChargeAssessment/15 trường. Ba notification extensions nằm ngoài mốc này; schema thiết kế dự kiến tổng 42 bảng, chưa có migration nghiệp vụ.
+
+Từ điển hiện hành: docs/design/data-dictionary.md và data-dictionary.json (đường dẫn tính từ root repo). docs/design/live-report.docx là export trực tiếp từ Docs mới; library-software-design.docx vẫn giữ bản nguồn đã hiệu chỉnh 07/10 để truy vết, không phải export mới. source-data-dictionary.json là dữ liệu trích xuất 38 bảng nguồn. Không dùng bảng 5 cột cũ để phủ định Docs mới.
+
+D01: SQL type/độ rộng kind/status và NOT NULL version/created_at của ChargeAssessment chưa chốt; giữ nguyên nhãn trong nguồn. N03–N07 còn mở. Các task BE00.S, BE05.S, FE07.S và INT00.S mô tả gate triển khai; chưa đổi trạng thái Planned.

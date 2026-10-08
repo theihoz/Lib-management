@@ -55,3 +55,13 @@ N01 không cần bảng giá mất/hỏng tự động trong phiên bản hiện
 - PDF Google Docs cuối xuất được (17.006.937 bytes), nhưng tải về HTTP403; chỉ xác nhận nội dung/cấu trúc connector, chưa xác nhận bố cục PDF live. DOCX repo là bản nguồn đã sửa, không là export báo cáo live.
 - Runtime scaffold: Ruff/format/mypy đạt; mặc định 17 passed/5 skipped, PostgreSQL integration 22 passed. Contract tĩnh 77 operations/649 refs/95 schemas đạt; full OAS metaschema chưa chạy. F01–F24 nghiệp vụ, Keycloak, worker và frontend chưa được nghiệm thu runtime.
 - N03–N07 còn mở; lời xác nhận chung không xác định lựa chọn chính sách. Thay đổi đang ở nhánh `fix/architecture-audit`, chưa commit/push.
+
+## Đồng bộ Docs mới 08/10/2026
+
+- Nguồn live:39 bảng / 303 trường/7 cột,71 bảng tài liệu/82 ảnh; giữ38 bảng / 288 trường nguồn và provenance.
+- Bổ sung data-dictionary.md/json và export live-report.docx; cập nhật snapshot, nguồn chuẩn của plan, gate BE00/BE05/FE07/INT00/BE13.
+- UML sửa4 nhãn trong canvas hiện có: tổng số và projection ChargeAssessment đủ15 trường; giữ94 khung/3.020 cell/một canvas. Không đổi quy tắc hoặc trạng thái nghiệp vụ.
+- D01 được đánh dấu rõ; ba notification extensions đặc tả riêng, không gán kiểu/NULL chưa được duyệt.
+- Các ghi nhận07/10 ở trên là lịch sử. Xem synchronization-2026-10-08.md để biết bằng chứng hiện hành và trạng thái cloud; không dùng hash/revision lịch sử cho bản mới.
+
+Đã áp dụng trên host theo xác nhận chủ dự án. Drive đã tải lại, SHA256 `8896fcfec135fb1abc20e44c441e3b42094fd8ef4f8ecb78c1e58a447f18ae98` khớp repo; Google Docs revision giữ nguyên bản mới. Chưa commit/push.

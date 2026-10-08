@@ -1,0 +1,3064 @@
+{
+  "documentId": "15pEvPMM7t_oiO0zzggZ_9K-RyN3LqzC4hEaFk2rc1J8",
+  "revisionId": "ANLCKQmy4reOPIhlpzm37Pag8dk93aGD-qr-gKuyYoTZqPN1QzJzn8-NsUqTbKcmzHC0QevkajV7VKeK7BUl_kkT26NxGq18MHqpnHNe924v",
+  "verifiedOn": "2026-10-08",
+  "originalTables": 38,
+  "originalFields": 288,
+  "documentedTables": 39,
+  "documentedFields": 303,
+  "extensionTablesNotInDetailedDictionary": [
+    "Notification",
+    "NotificationDelivery",
+    "NotificationPreference"
+  ],
+  "columns": [
+    "TT",
+    "Tên thuộc tính (Field name)",
+    "Kiểu dữ liệu",
+    "Độ rộng",
+    "Not NULL",
+    "Ràng buộc / Miền giá trị",
+    "Diễn giải"
+  ],
+  "tables": [
+    {
+      "ordinal": 1,
+      "entity": "Publisher",
+      "label": "Nhà xuất bản",
+      "physicalTable": "publisher",
+      "fields": [
+        {
+          "ordinal": "1",
+          "name": "id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "ordinal": "2",
+          "name": "name",
+          "type": "varchar",
+          "width": "200",
+          "notNull": "Có",
+          "constraint": "CHECK không rỗng",
+          "description": "Tên nhà xuất bản"
+        },
+        {
+          "ordinal": "3",
+          "name": "address",
+          "type": "text",
+          "width": "—",
+          "notNull": "Không",
+          "constraint": "—",
+          "description": "Địa chỉ liên hệ"
+        },
+        {
+          "ordinal": "4",
+          "name": "status",
+          "type": "varchar",
+          "width": "16",
+          "notNull": "Có",
+          "constraint": "ACTIVE/INACTIVE",
+          "description": "Trạng thái danh mục"
+        },
+        {
+          "ordinal": "5",
+          "name": "created_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ]
+    },
+    {
+      "ordinal": 2,
+      "entity": "Author",
+      "label": "Tác giả",
+      "physicalTable": "author",
+      "fields": [
+        {
+          "ordinal": "1",
+          "name": "id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "ordinal": "2",
+          "name": "name",
+          "type": "varchar",
+          "width": "200",
+          "notNull": "Có",
+          "constraint": "CHECK không rỗng",
+          "description": "Tên tác giả"
+        },
+        {
+          "ordinal": "3",
+          "name": "biography",
+          "type": "text",
+          "width": "—",
+          "notNull": "Không",
+          "constraint": "—",
+          "description": "Giới thiệu"
+        },
+        {
+          "ordinal": "4",
+          "name": "status",
+          "type": "varchar",
+          "width": "16",
+          "notNull": "Có",
+          "constraint": "ACTIVE/INACTIVE",
+          "description": "Trạng thái"
+        },
+        {
+          "ordinal": "5",
+          "name": "created_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ]
+    },
+    {
+      "ordinal": 3,
+      "entity": "Category",
+      "label": "Thể loại",
+      "physicalTable": "category",
+      "fields": [
+        {
+          "ordinal": "1",
+          "name": "id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "ordinal": "2",
+          "name": "code",
+          "type": "varchar",
+          "width": "32",
+          "notNull": "Có",
+          "constraint": "UQ",
+          "description": "Mã thể loại"
+        },
+        {
+          "ordinal": "3",
+          "name": "name",
+          "type": "varchar",
+          "width": "120",
+          "notNull": "Có",
+          "constraint": "—",
+          "description": "Tên thể loại"
+        },
+        {
+          "ordinal": "4",
+          "name": "parent_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Không",
+          "constraint": "FK Category.id",
+          "description": "Thể loại cha"
+        },
+        {
+          "ordinal": "5",
+          "name": "is_root",
+          "type": "boolean",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "DEFAULT false",
+          "description": "Cờ gốc được bảo vệ"
+        },
+        {
+          "ordinal": "6",
+          "name": "created_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ]
+    },
+    {
+      "ordinal": 4,
+      "entity": "BookEdition",
+      "label": "Ấn bản sách",
+      "physicalTable": "book_edition",
+      "fields": [
+        {
+          "ordinal": "1",
+          "name": "id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "ordinal": "2",
+          "name": "isbn",
+          "type": "varchar",
+          "width": "13",
+          "notNull": "Không",
+          "constraint": "UQ",
+          "description": "ISBN chuẩn hóa"
+        },
+        {
+          "ordinal": "3",
+          "name": "title",
+          "type": "varchar",
+          "width": "300",
+          "notNull": "Có",
+          "constraint": "CHECK không rỗng",
+          "description": "Nhan đề"
+        },
+        {
+          "ordinal": "4",
+          "name": "publication_year",
+          "type": "smallint",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "—",
+          "description": "Năm xuất bản"
+        },
+        {
+          "ordinal": "5",
+          "name": "publisher_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Không",
+          "constraint": "FK Publisher.id",
+          "description": "Nhà xuất bản"
+        },
+        {
+          "ordinal": "6",
+          "name": "language",
+          "type": "varchar",
+          "width": "32",
+          "notNull": "Không",
+          "constraint": "—",
+          "description": "Ngôn ngữ"
+        },
+        {
+          "ordinal": "7",
+          "name": "description",
+          "type": "text",
+          "width": "—",
+          "notNull": "Không",
+          "constraint": "—",
+          "description": "Mô tả nội dung"
+        },
+        {
+          "ordinal": "8",
+          "name": "status",
+          "type": "varchar",
+          "width": "16",
+          "notNull": "Có",
+          "constraint": "ACTIVE/INACTIVE",
+          "description": "Trạng thái"
+        },
+        {
+          "ordinal": "9",
+          "name": "version",
+          "type": "integer",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "DEFAULT 1; >0",
+          "description": "Phiên bản cập nhật"
+        },
+        {
+          "ordinal": "10",
+          "name": "created_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ]
+    },
+    {
+      "ordinal": 5,
+      "entity": "BookAuthor",
+      "label": "Tác giả của ấn bản",
+      "physicalTable": "book_author",
+      "fields": [
+        {
+          "ordinal": "1",
+          "name": "edition_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "PK ghép; FK BookEdition.id",
+          "description": "Ấn bản"
+        },
+        {
+          "ordinal": "2",
+          "name": "author_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "PK ghép; FK Author.id",
+          "description": "Tác giả"
+        },
+        {
+          "ordinal": "3",
+          "name": "ordinal",
+          "type": "smallint",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": ">0; UQ edition_id+ordinal",
+          "description": "Thứ tự trình bày"
+        },
+        {
+          "ordinal": "4",
+          "name": "created_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ]
+    },
+    {
+      "ordinal": 6,
+      "entity": "BookCategory",
+      "label": "Thể loại của ấn bản",
+      "physicalTable": "book_category",
+      "fields": [
+        {
+          "ordinal": "1",
+          "name": "edition_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "PK ghép; FK BookEdition.id",
+          "description": "Ấn bản"
+        },
+        {
+          "ordinal": "2",
+          "name": "category_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "PK ghép; FK Category.id",
+          "description": "Thể loại"
+        },
+        {
+          "ordinal": "3",
+          "name": "created_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ]
+    },
+    {
+      "ordinal": 7,
+      "entity": "Location",
+      "label": "Vị trí kho",
+      "physicalTable": "location",
+      "fields": [
+        {
+          "ordinal": "1",
+          "name": "id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "ordinal": "2",
+          "name": "code",
+          "type": "varchar",
+          "width": "32",
+          "notNull": "Có",
+          "constraint": "UQ",
+          "description": "Mã kệ/vị trí"
+        },
+        {
+          "ordinal": "3",
+          "name": "name",
+          "type": "varchar",
+          "width": "120",
+          "notNull": "Có",
+          "constraint": "—",
+          "description": "Tên vị trí"
+        },
+        {
+          "ordinal": "4",
+          "name": "status",
+          "type": "varchar",
+          "width": "16",
+          "notNull": "Có",
+          "constraint": "ACTIVE/INACTIVE",
+          "description": "Khả dụng"
+        },
+        {
+          "ordinal": "5",
+          "name": "created_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ]
+    },
+    {
+      "ordinal": 8,
+      "entity": "BookCopy",
+      "label": "Bản sao vật lý",
+      "physicalTable": "book_copy",
+      "fields": [
+        {
+          "ordinal": "1",
+          "name": "id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "ordinal": "2",
+          "name": "edition_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "FK BookEdition.id",
+          "description": "Ấn bản"
+        },
+        {
+          "ordinal": "3",
+          "name": "barcode",
+          "type": "varchar",
+          "width": "64",
+          "notNull": "Có",
+          "constraint": "UQ",
+          "description": "Mã vạch"
+        },
+        {
+          "ordinal": "4",
+          "name": "location_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Không",
+          "constraint": "FK Location.id",
+          "description": "Vị trí hiện tại"
+        },
+        {
+          "ordinal": "5",
+          "name": "status",
+          "type": "varchar",
+          "width": "16",
+          "notNull": "Có",
+          "constraint": "AVAILABLE/ON_LOAN/HELD/REPAIR/LOST/RETIRED",
+          "description": "Trạng thái vật lý"
+        },
+        {
+          "ordinal": "6",
+          "name": "acquired_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "—",
+          "description": "Ngày tiếp nhận"
+        },
+        {
+          "ordinal": "7",
+          "name": "source_receipt_item_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Không",
+          "constraint": "FK AcquisitionReceiptItem.id (mở rộng)",
+          "description": "Dòng nhập nguồn"
+        },
+        {
+          "ordinal": "8",
+          "name": "version",
+          "type": "integer",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "DEFAULT 1; >0",
+          "description": "Phiên bản"
+        },
+        {
+          "ordinal": "9",
+          "name": "created_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ]
+    },
+    {
+      "ordinal": 9,
+      "entity": "MediaAsset",
+      "label": "Tệp và ảnh bìa",
+      "physicalTable": "media_asset",
+      "fields": [
+        {
+          "ordinal": "1",
+          "name": "id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "ordinal": "2",
+          "name": "edition_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Không",
+          "constraint": "FK BookEdition.id",
+          "description": "Ấn bản nếu là bìa"
+        },
+        {
+          "ordinal": "3",
+          "name": "object_key",
+          "type": "text",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "UQ",
+          "description": "Khóa object storage"
+        },
+        {
+          "ordinal": "4",
+          "name": "mime_type",
+          "type": "varchar",
+          "width": "100",
+          "notNull": "Có",
+          "constraint": "—",
+          "description": "MIME đã kiểm tra"
+        },
+        {
+          "ordinal": "5",
+          "name": "byte_size",
+          "type": "bigint",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": ">0",
+          "description": "Dung lượng"
+        },
+        {
+          "ordinal": "6",
+          "name": "sha256",
+          "type": "char",
+          "width": "64",
+          "notNull": "Có",
+          "constraint": "—",
+          "description": "Hash nội dung"
+        },
+        {
+          "ordinal": "7",
+          "name": "visibility",
+          "type": "varchar",
+          "width": "16",
+          "notNull": "Có",
+          "constraint": "PUBLIC/PRIVATE",
+          "description": "Phạm vi tải"
+        },
+        {
+          "ordinal": "8",
+          "name": "status",
+          "type": "varchar",
+          "width": "16",
+          "notNull": "Có",
+          "constraint": "PENDING/READY/REJECTED/DELETED",
+          "description": "Vòng đời tệp"
+        },
+        {
+          "ordinal": "9",
+          "name": "uploaded_by",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "FK Account.id",
+          "description": "Người tải"
+        },
+        {
+          "ordinal": "10",
+          "name": "created_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ]
+    },
+    {
+      "ordinal": 10,
+      "entity": "Reader",
+      "label": "Độc giả",
+      "physicalTable": "reader",
+      "fields": [
+        {
+          "ordinal": "1",
+          "name": "id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "ordinal": "2",
+          "name": "reader_code",
+          "type": "varchar",
+          "width": "32",
+          "notNull": "Có",
+          "constraint": "UQ",
+          "description": "Mã độc giả"
+        },
+        {
+          "ordinal": "3",
+          "name": "full_name",
+          "type": "varchar",
+          "width": "200",
+          "notNull": "Có",
+          "constraint": "—",
+          "description": "Họ tên"
+        },
+        {
+          "ordinal": "4",
+          "name": "birth_date",
+          "type": "date",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "—",
+          "description": "Ngày sinh, tuổi tính khi cấp thẻ"
+        },
+        {
+          "ordinal": "5",
+          "name": "reader_type",
+          "type": "varchar",
+          "width": "8",
+          "notNull": "Có",
+          "constraint": "X/Y/Z dự thảo",
+          "description": "Loại độc giả"
+        },
+        {
+          "ordinal": "6",
+          "name": "email",
+          "type": "varchar",
+          "width": "254",
+          "notNull": "Không",
+          "constraint": "—",
+          "description": "Email liên hệ"
+        },
+        {
+          "ordinal": "7",
+          "name": "phone",
+          "type": "varchar",
+          "width": "32",
+          "notNull": "Không",
+          "constraint": "—",
+          "description": "Điện thoại"
+        },
+        {
+          "ordinal": "8",
+          "name": "address",
+          "type": "text",
+          "width": "—",
+          "notNull": "Không",
+          "constraint": "—",
+          "description": "Địa chỉ"
+        },
+        {
+          "ordinal": "9",
+          "name": "status",
+          "type": "varchar",
+          "width": "16",
+          "notNull": "Có",
+          "constraint": "ACTIVE/SUSPENDED/INACTIVE",
+          "description": "Trạng thái"
+        },
+        {
+          "ordinal": "10",
+          "name": "version",
+          "type": "integer",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "DEFAULT 1",
+          "description": "Phiên bản"
+        },
+        {
+          "ordinal": "11",
+          "name": "created_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ]
+    },
+    {
+      "ordinal": 11,
+      "entity": "ReaderCard",
+      "label": "Thẻ thư viện",
+      "physicalTable": "reader_card",
+      "fields": [
+        {
+          "ordinal": "1",
+          "name": "id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "ordinal": "2",
+          "name": "reader_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "FK Reader.id",
+          "description": "Chủ thẻ"
+        },
+        {
+          "ordinal": "3",
+          "name": "card_no",
+          "type": "varchar",
+          "width": "64",
+          "notNull": "Có",
+          "constraint": "UQ",
+          "description": "Số thẻ"
+        },
+        {
+          "ordinal": "4",
+          "name": "issued_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "—",
+          "description": "Thời điểm cấp"
+        },
+        {
+          "ordinal": "5",
+          "name": "expires_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "—",
+          "description": "Hết hiệu lực"
+        },
+        {
+          "ordinal": "6",
+          "name": "status",
+          "type": "varchar",
+          "width": "16",
+          "notNull": "Có",
+          "constraint": "ACTIVE/BLOCKED/REVOKED",
+          "description": "Trạng thái; hết hạn tính từ thời gian"
+        },
+        {
+          "ordinal": "7",
+          "name": "issued_by",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "FK Account.id",
+          "description": "Người cấp"
+        },
+        {
+          "ordinal": "8",
+          "name": "policy_version_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "FK PolicyVersion.id",
+          "description": "Quy định cấp thẻ"
+        },
+        {
+          "ordinal": "9",
+          "name": "version",
+          "type": "integer",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "DEFAULT 1",
+          "description": "Phiên bản"
+        },
+        {
+          "ordinal": "10",
+          "name": "created_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ]
+    },
+    {
+      "ordinal": 12,
+      "entity": "Account",
+      "label": "Tài khoản",
+      "physicalTable": "account",
+      "fields": [
+        {
+          "ordinal": "1",
+          "name": "id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "ordinal": "2",
+          "name": "issuer",
+          "type": "text",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "—",
+          "description": "Nhà phát hành định danh"
+        },
+        {
+          "ordinal": "3",
+          "name": "subject",
+          "type": "text",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "UQ ghép issuer+subject",
+          "description": "Định danh bên IdP"
+        },
+        {
+          "ordinal": "4",
+          "name": "reader_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Không",
+          "constraint": "FK Reader.id; UQ",
+          "description": "Ánh xạ độc giả"
+        },
+        {
+          "ordinal": "5",
+          "name": "display_name",
+          "type": "varchar",
+          "width": "200",
+          "notNull": "Có",
+          "constraint": "—",
+          "description": "Tên hiển thị"
+        },
+        {
+          "ordinal": "6",
+          "name": "status",
+          "type": "varchar",
+          "width": "16",
+          "notNull": "Có",
+          "constraint": "ACTIVE/LOCKED/DISABLED",
+          "description": "Trạng thái"
+        },
+        {
+          "ordinal": "7",
+          "name": "auth_version",
+          "type": "integer",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "DEFAULT 1",
+          "description": "Vô hiệu cache quyền ứng dụng; thu hồi phiên/JWT Keycloak là thao tác riêng"
+        },
+        {
+          "ordinal": "8",
+          "name": "created_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ]
+    },
+    {
+      "ordinal": 13,
+      "entity": "Role",
+      "label": "Vai trò",
+      "physicalTable": "role",
+      "fields": [
+        {
+          "ordinal": "1",
+          "name": "id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "ordinal": "2",
+          "name": "code",
+          "type": "varchar",
+          "width": "64",
+          "notNull": "Có",
+          "constraint": "UQ",
+          "description": "Mã vai trò"
+        },
+        {
+          "ordinal": "3",
+          "name": "name",
+          "type": "varchar",
+          "width": "120",
+          "notNull": "Có",
+          "constraint": "—",
+          "description": "Tên vai trò"
+        },
+        {
+          "ordinal": "4",
+          "name": "created_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ]
+    },
+    {
+      "ordinal": 14,
+      "entity": "Permission",
+      "label": "Quyền",
+      "physicalTable": "permission",
+      "fields": [
+        {
+          "ordinal": "1",
+          "name": "id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "ordinal": "2",
+          "name": "code",
+          "type": "varchar",
+          "width": "100",
+          "notNull": "Có",
+          "constraint": "UQ",
+          "description": "Mã quyền"
+        },
+        {
+          "ordinal": "3",
+          "name": "description",
+          "type": "text",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "—",
+          "description": "Ý nghĩa quyền"
+        },
+        {
+          "ordinal": "4",
+          "name": "created_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ]
+    },
+    {
+      "ordinal": 15,
+      "entity": "AccountRole",
+      "label": "Gán vai trò",
+      "physicalTable": "account_role",
+      "fields": [
+        {
+          "ordinal": "1",
+          "name": "account_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "PK ghép; FK Account.id",
+          "description": "Tài khoản"
+        },
+        {
+          "ordinal": "2",
+          "name": "role_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "PK ghép; FK Role.id",
+          "description": "Vai trò"
+        },
+        {
+          "ordinal": "3",
+          "name": "granted_by",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "FK Account.id",
+          "description": "Người cấp"
+        },
+        {
+          "ordinal": "4",
+          "name": "created_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ]
+    },
+    {
+      "ordinal": 16,
+      "entity": "RolePermission",
+      "label": "Quyền của vai trò",
+      "physicalTable": "role_permission",
+      "fields": [
+        {
+          "ordinal": "1",
+          "name": "role_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "PK ghép; FK Role.id",
+          "description": "Vai trò"
+        },
+        {
+          "ordinal": "2",
+          "name": "permission_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "PK ghép; FK Permission.id",
+          "description": "Quyền"
+        },
+        {
+          "ordinal": "3",
+          "name": "created_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ]
+    },
+    {
+      "ordinal": 17,
+      "entity": "PolicyVersion",
+      "label": "Phiên bản quy định",
+      "physicalTable": "policy_version",
+      "fields": [
+        {
+          "ordinal": "1",
+          "name": "id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "ordinal": "2",
+          "name": "version_no",
+          "type": "integer",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "UQ; >0",
+          "description": "Số phiên bản"
+        },
+        {
+          "ordinal": "3",
+          "name": "effective_from",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "—",
+          "description": "Bắt đầu hiệu lực"
+        },
+        {
+          "ordinal": "4",
+          "name": "effective_to",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Không",
+          "constraint": "—",
+          "description": "Kết thúc độc quyền"
+        },
+        {
+          "ordinal": "5",
+          "name": "status",
+          "type": "varchar",
+          "width": "16",
+          "notNull": "Có",
+          "constraint": "DRAFT/ACTIVE/SUPERSEDED",
+          "description": "Trạng thái"
+        },
+        {
+          "ordinal": "6",
+          "name": "rules",
+          "type": "jsonb",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "Schema validation",
+          "description": "Hạn mức, tuổi, phí, thời hạn"
+        },
+        {
+          "ordinal": "7",
+          "name": "rules_schema_version",
+          "type": "integer",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": ">0",
+          "description": "Phiên bản schema JSON"
+        },
+        {
+          "ordinal": "8",
+          "name": "approved_by",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Không",
+          "constraint": "FK Account.id",
+          "description": "Bắt buộc khi ACTIVE"
+        },
+        {
+          "ordinal": "9",
+          "name": "approved_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Không",
+          "constraint": "—",
+          "description": "Thời điểm duyệt"
+        },
+        {
+          "ordinal": "10",
+          "name": "created_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ]
+    },
+    {
+      "ordinal": 18,
+      "entity": "Loan",
+      "label": "Phiếu mượn",
+      "physicalTable": "loan",
+      "fields": [
+        {
+          "ordinal": "1",
+          "name": "id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "ordinal": "2",
+          "name": "loan_no",
+          "type": "varchar",
+          "width": "64",
+          "notNull": "Có",
+          "constraint": "UQ",
+          "description": "Số phiếu"
+        },
+        {
+          "ordinal": "3",
+          "name": "reader_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "FK Reader.id",
+          "description": "Độc giả"
+        },
+        {
+          "ordinal": "4",
+          "name": "card_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "FK ReaderCard.id",
+          "description": "Thẻ đã dùng"
+        },
+        {
+          "ordinal": "5",
+          "name": "issued_by",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "FK Account.id",
+          "description": "Thủ thư"
+        },
+        {
+          "ordinal": "6",
+          "name": "issued_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "—",
+          "description": "Ngày mượn"
+        },
+        {
+          "ordinal": "7",
+          "name": "renewal_count",
+          "type": "integer",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": ">=0; DEFAULT 0",
+          "description": "Số lần gia hạn phiếu"
+        },
+        {
+          "ordinal": "8",
+          "name": "version",
+          "type": "integer",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "DEFAULT 1",
+          "description": "Phiên bản"
+        },
+        {
+          "ordinal": "9",
+          "name": "created_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ]
+    },
+    {
+      "ordinal": 19,
+      "entity": "LoanItem",
+      "label": "Chi tiết mượn",
+      "physicalTable": "loan_item",
+      "fields": [
+        {
+          "ordinal": "1",
+          "name": "id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "ordinal": "2",
+          "name": "loan_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "FK Loan.id",
+          "description": "Phiếu mượn"
+        },
+        {
+          "ordinal": "3",
+          "name": "copy_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "FK BookCopy.id",
+          "description": "Bản sao"
+        },
+        {
+          "ordinal": "4",
+          "name": "issued_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "—",
+          "description": "Bắt đầu mượn"
+        },
+        {
+          "ordinal": "5",
+          "name": "due_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "—",
+          "description": "Hạn trả hiện hành"
+        },
+        {
+          "ordinal": "6",
+          "name": "closed_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Không",
+          "constraint": "—",
+          "description": "Đóng mục"
+        },
+        {
+          "ordinal": "7",
+          "name": "closure_reason",
+          "type": "varchar",
+          "width": "16",
+          "notNull": "Không",
+          "constraint": "RETURNED/LOST/VOIDED",
+          "description": "Lý do đóng"
+        },
+        {
+          "ordinal": "8",
+          "name": "policy_version_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "FK PolicyVersion.id",
+          "description": "Policy ban đầu"
+        },
+        {
+          "ordinal": "9",
+          "name": "applied_rules",
+          "type": "jsonb",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "—",
+          "description": "Snapshot quy tắc ban đầu"
+        },
+        {
+          "ordinal": "10",
+          "name": "version",
+          "type": "integer",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "DEFAULT 1",
+          "description": "Phiên bản"
+        },
+        {
+          "ordinal": "11",
+          "name": "created_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ]
+    },
+    {
+      "ordinal": 20,
+      "entity": "RenewalEvent",
+      "label": "Lần gia hạn phiếu",
+      "physicalTable": "renewal_event",
+      "fields": [
+        {
+          "ordinal": "1",
+          "name": "id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "ordinal": "2",
+          "name": "loan_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "FK Loan.id",
+          "description": "Phiếu gia hạn"
+        },
+        {
+          "ordinal": "3",
+          "name": "sequence_no",
+          "type": "integer",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": ">0",
+          "description": "Thứ tự gia hạn"
+        },
+        {
+          "ordinal": "4",
+          "name": "actor_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "FK Account.id",
+          "description": "Người thực hiện"
+        },
+        {
+          "ordinal": "5",
+          "name": "renewed_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "—",
+          "description": "Thời điểm"
+        },
+        {
+          "ordinal": "6",
+          "name": "policy_version_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "FK PolicyVersion.id",
+          "description": "Policy quyết định gia hạn"
+        },
+        {
+          "ordinal": "7",
+          "name": "request_id",
+          "type": "varchar",
+          "width": "100",
+          "notNull": "Có",
+          "constraint": "—",
+          "description": "Mã tương quan yêu cầu"
+        },
+        {
+          "ordinal": "8",
+          "name": "created_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ]
+    },
+    {
+      "ordinal": 21,
+      "entity": "RenewalItem",
+      "label": "Hạn trước sau gia hạn",
+      "physicalTable": "renewal_item",
+      "fields": [
+        {
+          "ordinal": "1",
+          "name": "renewal_event_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "PK ghép; FK RenewalEvent.id",
+          "description": "Lần gia hạn"
+        },
+        {
+          "ordinal": "2",
+          "name": "loan_item_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "PK ghép; FK LoanItem.id",
+          "description": "Mục mượn"
+        },
+        {
+          "ordinal": "3",
+          "name": "old_due_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "—",
+          "description": "Hạn trước"
+        },
+        {
+          "ordinal": "4",
+          "name": "new_due_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "—",
+          "description": "Hạn sau"
+        },
+        {
+          "ordinal": "5",
+          "name": "applied_rules",
+          "type": "jsonb",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "—",
+          "description": "Quy tắc gia hạn đã dùng"
+        },
+        {
+          "ordinal": "6",
+          "name": "created_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ]
+    },
+    {
+      "ordinal": 22,
+      "entity": "ReturnEvent",
+      "label": "Sự kiện đóng mục mượn",
+      "physicalTable": "return_event",
+      "fields": [
+        {
+          "ordinal": "1",
+          "name": "id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "ordinal": "2",
+          "name": "loan_item_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "FK LoanItem.id; UQ",
+          "description": "Mục được đóng"
+        },
+        {
+          "ordinal": "3",
+          "name": "return_kind",
+          "type": "varchar",
+          "width": "16",
+          "notNull": "Có",
+          "constraint": "RETURNED/LOST/VOIDED",
+          "description": "Kiểu xử lý"
+        },
+        {
+          "ordinal": "4",
+          "name": "condition",
+          "type": "varchar",
+          "width": "16",
+          "notNull": "Không",
+          "constraint": "GOOD/DAMAGED",
+          "description": "Tình trạng khi nhận"
+        },
+        {
+          "ordinal": "5",
+          "name": "returned_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "—",
+          "description": "Thời điểm xử lý trả/mất"
+        },
+        {
+          "ordinal": "6",
+          "name": "processed_by",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "FK Account.id",
+          "description": "Người xử lý"
+        },
+        {
+          "ordinal": "7",
+          "name": "notes",
+          "type": "text",
+          "width": "—",
+          "notNull": "Không",
+          "constraint": "—",
+          "description": "Biên bản/lý do"
+        },
+        {
+          "ordinal": "8",
+          "name": "created_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ]
+    },
+    {
+      "ordinal": 23,
+      "entity": "Reservation",
+      "label": "Đặt trước",
+      "physicalTable": "reservation",
+      "fields": [
+        {
+          "ordinal": "1",
+          "name": "id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "ordinal": "2",
+          "name": "reader_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "FK Reader.id",
+          "description": "Độc giả"
+        },
+        {
+          "ordinal": "3",
+          "name": "edition_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "FK BookEdition.id",
+          "description": "Ấn bản xếp hàng"
+        },
+        {
+          "ordinal": "4",
+          "name": "copy_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Không",
+          "constraint": "FK BookCopy.id",
+          "description": "Copy phân bổ khi READY"
+        },
+        {
+          "ordinal": "5",
+          "name": "fulfilled_loan_item_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Không",
+          "constraint": "FK LoanItem.id; UQ",
+          "description": "Mục đã nhận"
+        },
+        {
+          "ordinal": "6",
+          "name": "status",
+          "type": "varchar",
+          "width": "16",
+          "notNull": "Có",
+          "constraint": "QUEUED/READY/FULFILLED/CANCELLED/EXPIRED",
+          "description": "Trạng thái"
+        },
+        {
+          "ordinal": "7",
+          "name": "ready_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Không",
+          "constraint": "—",
+          "description": "Bắt đầu giữ"
+        },
+        {
+          "ordinal": "8",
+          "name": "ready_expires_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Không",
+          "constraint": "—",
+          "description": "Hạn nhận"
+        },
+        {
+          "ordinal": "9",
+          "name": "cancellation_reason",
+          "type": "text",
+          "width": "—",
+          "notNull": "Không",
+          "constraint": "—",
+          "description": "Lý do hủy"
+        },
+        {
+          "ordinal": "10",
+          "name": "policy_version_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "FK PolicyVersion.id",
+          "description": "Policy đặt chỗ"
+        },
+        {
+          "ordinal": "11",
+          "name": "applied_rules",
+          "type": "jsonb",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "—",
+          "description": "Snapshot; hạn READY chốt khi phân bổ"
+        },
+        {
+          "ordinal": "12",
+          "name": "version",
+          "type": "integer",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "DEFAULT 1",
+          "description": "Phiên bản"
+        },
+        {
+          "ordinal": "13",
+          "name": "created_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ]
+    },
+    {
+      "ordinal": 24,
+      "entity": "FineCharge",
+      "label": "Khoản phí phạt",
+      "physicalTable": "fine_charge",
+      "fields": [
+        {
+          "ordinal": "1",
+          "name": "id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "ordinal": "2",
+          "name": "reader_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "FK Reader.id",
+          "description": "Người chịu phí"
+        },
+        {
+          "ordinal": "3",
+          "name": "loan_item_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Không",
+          "constraint": "FK LoanItem.id",
+          "description": "Mục gây phí"
+        },
+        {
+          "ordinal": "4",
+          "name": "policy_version_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "FK PolicyVersion.id",
+          "description": "Policy tính phí"
+        },
+        {
+          "ordinal": "5",
+          "name": "reason",
+          "type": "varchar",
+          "width": "16",
+          "notNull": "Có",
+          "constraint": "LATE/DAMAGE/LOST/MANUAL",
+          "description": "Loại phí"
+        },
+        {
+          "ordinal": "6",
+          "name": "assessed_amount",
+          "type": "numeric",
+          "width": "14,0",
+          "notNull": "Có",
+          "constraint": ">0",
+          "description": "Số tiền phát sinh VND"
+        },
+        {
+          "ordinal": "7",
+          "name": "late_days",
+          "type": "integer",
+          "width": "—",
+          "notNull": "Không",
+          "constraint": ">=0",
+          "description": "Ngày trễ snapshot theo C08"
+        },
+        {
+          "ordinal": "8",
+          "name": "unit_rate",
+          "type": "numeric",
+          "width": "14,0",
+          "notNull": "Không",
+          "constraint": ">=0",
+          "description": "Đơn giá snapshot"
+        },
+        {
+          "ordinal": "9",
+          "name": "calculation",
+          "type": "jsonb",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "—",
+          "description": "Công thức và dữ liệu tính"
+        },
+        {
+          "ordinal": "10",
+          "name": "manual_reason",
+          "type": "text",
+          "width": "—",
+          "notNull": "Không",
+          "constraint": "—",
+          "description": "Lý do thủ công"
+        },
+        {
+          "ordinal": "11",
+          "name": "assessed_by",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "FK Account.id",
+          "description": "Người ghi phí"
+        },
+        {
+          "ordinal": "12",
+          "name": "created_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ]
+    },
+    {
+      "ordinal": 25,
+      "entity": "Payment",
+      "label": "Chứng từ thu",
+      "physicalTable": "payment",
+      "fields": [
+        {
+          "ordinal": "1",
+          "name": "id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "ordinal": "2",
+          "name": "reader_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "FK Reader.id",
+          "description": "Người nộp"
+        },
+        {
+          "ordinal": "3",
+          "name": "receipt_no",
+          "type": "varchar",
+          "width": "64",
+          "notNull": "Có",
+          "constraint": "UQ",
+          "description": "Số biên nhận"
+        },
+        {
+          "ordinal": "4",
+          "name": "amount",
+          "type": "numeric",
+          "width": "14,0",
+          "notNull": "Có",
+          "constraint": ">0",
+          "description": "Tiền thu VND"
+        },
+        {
+          "ordinal": "5",
+          "name": "method",
+          "type": "varchar",
+          "width": "24",
+          "notNull": "Có",
+          "constraint": "CASH/TRANSFER_RECORD",
+          "description": "Phương thức ghi nhận"
+        },
+        {
+          "ordinal": "6",
+          "name": "received_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "—",
+          "description": "Ngày thu"
+        },
+        {
+          "ordinal": "7",
+          "name": "received_by",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "FK Account.id",
+          "description": "Người thu"
+        },
+        {
+          "ordinal": "8",
+          "name": "reference",
+          "type": "text",
+          "width": "—",
+          "notNull": "Không",
+          "constraint": "—",
+          "description": "Tham chiếu chuyển khoản"
+        },
+        {
+          "ordinal": "9",
+          "name": "created_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ]
+    },
+    {
+      "ordinal": 26,
+      "entity": "PaymentAllocation",
+      "label": "Phân bổ tiền thu",
+      "physicalTable": "payment_allocation",
+      "fields": [
+        {
+          "ordinal": "1",
+          "name": "payment_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "PK ghép; FK Payment.id",
+          "description": "Chứng từ thu"
+        },
+        {
+          "ordinal": "2",
+          "name": "charge_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "PK ghép; FK FineCharge.id",
+          "description": "Khoản phí"
+        },
+        {
+          "ordinal": "3",
+          "name": "amount",
+          "type": "numeric",
+          "width": "14,0",
+          "notNull": "Có",
+          "constraint": ">0",
+          "description": "Số tiền phân bổ VND"
+        },
+        {
+          "ordinal": "4",
+          "name": "created_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ]
+    },
+    {
+      "ordinal": 27,
+      "entity": "Waiver",
+      "label": "Miễn giảm",
+      "physicalTable": "waiver",
+      "fields": [
+        {
+          "ordinal": "1",
+          "name": "id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "ordinal": "2",
+          "name": "charge_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "FK FineCharge.id",
+          "description": "Khoản phí"
+        },
+        {
+          "ordinal": "3",
+          "name": "amount",
+          "type": "numeric",
+          "width": "14,0",
+          "notNull": "Có",
+          "constraint": ">0",
+          "description": "Tiền miễn VND"
+        },
+        {
+          "ordinal": "4",
+          "name": "approved_by",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "FK Account.id",
+          "description": "Người duyệt"
+        },
+        {
+          "ordinal": "5",
+          "name": "reason",
+          "type": "text",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "Không rỗng",
+          "description": "Lý do"
+        },
+        {
+          "ordinal": "6",
+          "name": "created_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ]
+    },
+    {
+      "ordinal": 28,
+      "entity": "PaymentReversal",
+      "label": "Đảo chứng từ thu",
+      "physicalTable": "payment_reversal",
+      "fields": [
+        {
+          "ordinal": "1",
+          "name": "id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "ordinal": "2",
+          "name": "payment_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "FK Payment.id",
+          "description": "Chứng từ gốc"
+        },
+        {
+          "ordinal": "3",
+          "name": "amount",
+          "type": "numeric",
+          "width": "14,0",
+          "notNull": "Có",
+          "constraint": ">0",
+          "description": "Tiền đảo VND"
+        },
+        {
+          "ordinal": "4",
+          "name": "actor_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "FK Account.id",
+          "description": "Người duyệt"
+        },
+        {
+          "ordinal": "5",
+          "name": "reason",
+          "type": "text",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "—",
+          "description": "Lý do"
+        },
+        {
+          "ordinal": "6",
+          "name": "created_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ]
+    },
+    {
+      "ordinal": 29,
+      "entity": "AllocationReversal",
+      "label": "Đảo phân bổ",
+      "physicalTable": "allocation_reversal",
+      "fields": [
+        {
+          "ordinal": "1",
+          "name": "id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "ordinal": "2",
+          "name": "payment_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "FK ghép PaymentAllocation.payment_id",
+          "description": "Chứng từ gốc"
+        },
+        {
+          "ordinal": "3",
+          "name": "charge_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "FK ghép PaymentAllocation.charge_id",
+          "description": "Khoản phí gốc"
+        },
+        {
+          "ordinal": "4",
+          "name": "amount",
+          "type": "numeric",
+          "width": "14,0",
+          "notNull": "Có",
+          "constraint": ">0",
+          "description": "Tiền đảo VND"
+        },
+        {
+          "ordinal": "5",
+          "name": "actor_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "FK Account.id",
+          "description": "Người duyệt"
+        },
+        {
+          "ordinal": "6",
+          "name": "reason",
+          "type": "text",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "—",
+          "description": "Lý do"
+        },
+        {
+          "ordinal": "7",
+          "name": "created_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ]
+    },
+    {
+      "ordinal": 30,
+      "entity": "WaiverReversal",
+      "label": "Đảo miễn giảm",
+      "physicalTable": "waiver_reversal",
+      "fields": [
+        {
+          "ordinal": "1",
+          "name": "id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "ordinal": "2",
+          "name": "waiver_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "FK Waiver.id",
+          "description": "Miễn giảm gốc"
+        },
+        {
+          "ordinal": "3",
+          "name": "amount",
+          "type": "numeric",
+          "width": "14,0",
+          "notNull": "Có",
+          "constraint": ">0",
+          "description": "Tiền đảo VND"
+        },
+        {
+          "ordinal": "4",
+          "name": "actor_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "FK Account.id",
+          "description": "Người duyệt"
+        },
+        {
+          "ordinal": "5",
+          "name": "reason",
+          "type": "text",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "—",
+          "description": "Lý do"
+        },
+        {
+          "ordinal": "6",
+          "name": "created_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ]
+    },
+    {
+      "ordinal": 31,
+      "entity": "IdempotencyRecord",
+      "label": "Chống giao dịch trùng",
+      "physicalTable": "idempotency_record",
+      "fields": [
+        {
+          "ordinal": "1",
+          "name": "id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "ordinal": "2",
+          "name": "actor_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "FK Account.id",
+          "description": "Chủ yêu cầu"
+        },
+        {
+          "ordinal": "3",
+          "name": "operation",
+          "type": "varchar",
+          "width": "64",
+          "notNull": "Có",
+          "constraint": "—",
+          "description": "Loại lệnh"
+        },
+        {
+          "ordinal": "4",
+          "name": "key",
+          "type": "varchar",
+          "width": "128",
+          "notNull": "Có",
+          "constraint": "—",
+          "description": "Khóa retry"
+        },
+        {
+          "ordinal": "5",
+          "name": "payload_hash",
+          "type": "char",
+          "width": "64",
+          "notNull": "Có",
+          "constraint": "—",
+          "description": "Hash payload chuẩn hóa"
+        },
+        {
+          "ordinal": "6",
+          "name": "response_status",
+          "type": "smallint",
+          "width": "—",
+          "notNull": "Không",
+          "constraint": "—",
+          "description": "HTTP status sau hoàn tất"
+        },
+        {
+          "ordinal": "7",
+          "name": "response_body",
+          "type": "jsonb",
+          "width": "—",
+          "notNull": "Không",
+          "constraint": "—",
+          "description": "Kết quả đã redaction"
+        },
+        {
+          "ordinal": "8",
+          "name": "state",
+          "type": "varchar",
+          "width": "16",
+          "notNull": "Có",
+          "constraint": "PENDING/COMPLETED",
+          "description": "Trạng thái"
+        },
+        {
+          "ordinal": "9",
+          "name": "expires_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "—",
+          "description": "Hạn giữ"
+        },
+        {
+          "ordinal": "10",
+          "name": "created_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ]
+    },
+    {
+      "ordinal": 32,
+      "entity": "OutboxEvent",
+      "label": "Sự kiện sau commit",
+      "physicalTable": "outbox_event",
+      "fields": [
+        {
+          "ordinal": "1",
+          "name": "id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "ordinal": "2",
+          "name": "aggregate_type",
+          "type": "varchar",
+          "width": "64",
+          "notNull": "Có",
+          "constraint": "—",
+          "description": "Loại aggregate"
+        },
+        {
+          "ordinal": "3",
+          "name": "aggregate_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "—",
+          "description": "Tham chiếu logic, không FK đa hình"
+        },
+        {
+          "ordinal": "4",
+          "name": "event_type",
+          "type": "varchar",
+          "width": "100",
+          "notNull": "Có",
+          "constraint": "—",
+          "description": "Loại sự kiện"
+        },
+        {
+          "ordinal": "5",
+          "name": "payload",
+          "type": "jsonb",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "—",
+          "description": "Dữ liệu tối thiểu đã redaction"
+        },
+        {
+          "ordinal": "6",
+          "name": "processed_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Không",
+          "constraint": "—",
+          "description": "Đã hoàn tất dispatch"
+        },
+        {
+          "ordinal": "7",
+          "name": "created_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ]
+    },
+    {
+      "ordinal": 33,
+      "entity": "Job",
+      "label": "Tác vụ nền",
+      "physicalTable": "job",
+      "fields": [
+        {
+          "ordinal": "1",
+          "name": "id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "ordinal": "2",
+          "name": "outbox_event_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Không",
+          "constraint": "FK OutboxEvent.id",
+          "description": "Nguồn event"
+        },
+        {
+          "ordinal": "3",
+          "name": "dedupe_key",
+          "type": "varchar",
+          "width": "200",
+          "notNull": "Có",
+          "constraint": "UQ",
+          "description": "Khóa chống tạo trùng"
+        },
+        {
+          "ordinal": "4",
+          "name": "job_type",
+          "type": "varchar",
+          "width": "64",
+          "notNull": "Có",
+          "constraint": "—",
+          "description": "Loại tác vụ"
+        },
+        {
+          "ordinal": "5",
+          "name": "payload",
+          "type": "jsonb",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "—",
+          "description": "Dữ liệu handler"
+        },
+        {
+          "ordinal": "6",
+          "name": "status",
+          "type": "varchar",
+          "width": "16",
+          "notNull": "Có",
+          "constraint": "QUEUED/RUNNING/SUCCEEDED/FAILED/DEAD",
+          "description": "Trạng thái"
+        },
+        {
+          "ordinal": "7",
+          "name": "attempt",
+          "type": "integer",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": ">=0; DEFAULT 0",
+          "description": "Lần thử"
+        },
+        {
+          "ordinal": "8",
+          "name": "lease_owner",
+          "type": "varchar",
+          "width": "100",
+          "notNull": "Không",
+          "constraint": "—",
+          "description": "Worker nhận"
+        },
+        {
+          "ordinal": "9",
+          "name": "lease_until",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Không",
+          "constraint": "—",
+          "description": "Hạn lease"
+        },
+        {
+          "ordinal": "10",
+          "name": "next_attempt_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Không",
+          "constraint": "—",
+          "description": "Lịch thử lại"
+        },
+        {
+          "ordinal": "11",
+          "name": "last_error_code",
+          "type": "varchar",
+          "width": "100",
+          "notNull": "Không",
+          "constraint": "—",
+          "description": "Lỗi không chứa secret"
+        },
+        {
+          "ordinal": "12",
+          "name": "created_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ]
+    },
+    {
+      "ordinal": 34,
+      "entity": "ReportJob",
+      "label": "Báo cáo và xuất dữ liệu",
+      "physicalTable": "report_job",
+      "fields": [
+        {
+          "ordinal": "1",
+          "name": "id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "ordinal": "2",
+          "name": "job_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "FK Job.id; UQ",
+          "description": "Tác vụ thực thi"
+        },
+        {
+          "ordinal": "3",
+          "name": "requested_by",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "FK Account.id",
+          "description": "Người yêu cầu"
+        },
+        {
+          "ordinal": "4",
+          "name": "report_type",
+          "type": "varchar",
+          "width": "64",
+          "notNull": "Có",
+          "constraint": "—",
+          "description": "Loại báo cáo"
+        },
+        {
+          "ordinal": "5",
+          "name": "filter_snapshot",
+          "type": "jsonb",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "—",
+          "description": "Bộ lọc và scope đã kiểm quyền"
+        },
+        {
+          "ordinal": "6",
+          "name": "as_of",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "—",
+          "description": "Mốc snapshot báo cáo"
+        },
+        {
+          "ordinal": "7",
+          "name": "artifact_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Không",
+          "constraint": "FK MediaAsset.id",
+          "description": "Tệp riêng tư"
+        },
+        {
+          "ordinal": "8",
+          "name": "expires_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Không",
+          "constraint": "—",
+          "description": "Hạn tải"
+        },
+        {
+          "ordinal": "9",
+          "name": "row_count",
+          "type": "bigint",
+          "width": "—",
+          "notNull": "Không",
+          "constraint": ">=0",
+          "description": "Số dòng xuất"
+        },
+        {
+          "ordinal": "10",
+          "name": "created_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ]
+    },
+    {
+      "ordinal": 35,
+      "entity": "AuditLog",
+      "label": "Nhật ký kiểm toán",
+      "physicalTable": "audit_log",
+      "fields": [
+        {
+          "ordinal": "1",
+          "name": "id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "ordinal": "2",
+          "name": "actor_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Không",
+          "constraint": "FK Account.id",
+          "description": "Người thao tác"
+        },
+        {
+          "ordinal": "3",
+          "name": "actor_type",
+          "type": "varchar",
+          "width": "16",
+          "notNull": "Có",
+          "constraint": "USER/SYSTEM/ANONYMOUS",
+          "description": "Loại chủ thể"
+        },
+        {
+          "ordinal": "4",
+          "name": "action",
+          "type": "varchar",
+          "width": "100",
+          "notNull": "Có",
+          "constraint": "—",
+          "description": "Hành động"
+        },
+        {
+          "ordinal": "5",
+          "name": "permission_code",
+          "type": "varchar",
+          "width": "100",
+          "notNull": "Không",
+          "constraint": "—",
+          "description": "Quyền đã kiểm"
+        },
+        {
+          "ordinal": "6",
+          "name": "target_type",
+          "type": "varchar",
+          "width": "64",
+          "notNull": "Có",
+          "constraint": "—",
+          "description": "Loại đối tượng"
+        },
+        {
+          "ordinal": "7",
+          "name": "target_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Không",
+          "constraint": "—",
+          "description": "ID logic, không FK đa hình"
+        },
+        {
+          "ordinal": "8",
+          "name": "request_id",
+          "type": "varchar",
+          "width": "100",
+          "notNull": "Có",
+          "constraint": "—",
+          "description": "Tương quan"
+        },
+        {
+          "ordinal": "9",
+          "name": "outcome",
+          "type": "varchar",
+          "width": "16",
+          "notNull": "Có",
+          "constraint": "SUCCESS/DENIED/FAILED",
+          "description": "Kết quả"
+        },
+        {
+          "ordinal": "10",
+          "name": "metadata",
+          "type": "jsonb",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "—",
+          "description": "Before/after đã redaction"
+        },
+        {
+          "ordinal": "11",
+          "name": "created_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ]
+    },
+    {
+      "ordinal": 36,
+      "entity": "AcquisitionReceipt",
+      "label": "Phiếu tiếp nhận *",
+      "physicalTable": "acquisition_receipt",
+      "fields": [
+        {
+          "ordinal": "1",
+          "name": "id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "ordinal": "2",
+          "name": "receipt_no",
+          "type": "varchar",
+          "width": "64",
+          "notNull": "Có",
+          "constraint": "UQ",
+          "description": "Số phiếu"
+        },
+        {
+          "ordinal": "3",
+          "name": "supplier",
+          "type": "varchar",
+          "width": "200",
+          "notNull": "Có",
+          "constraint": "—",
+          "description": "Nhà cung cấp"
+        },
+        {
+          "ordinal": "4",
+          "name": "received_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "—",
+          "description": "Ngày nhận"
+        },
+        {
+          "ordinal": "5",
+          "name": "status",
+          "type": "varchar",
+          "width": "16",
+          "notNull": "Có",
+          "constraint": "DRAFT/POSTED/CANCELLED",
+          "description": "Trạng thái"
+        },
+        {
+          "ordinal": "6",
+          "name": "approved_by",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Không",
+          "constraint": "FK Account.id",
+          "description": "Bắt buộc khi POSTED"
+        },
+        {
+          "ordinal": "7",
+          "name": "created_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ]
+    },
+    {
+      "ordinal": 37,
+      "entity": "AcquisitionReceiptItem",
+      "label": "Chi tiết tiếp nhận *",
+      "physicalTable": "acquisition_receipt_item",
+      "fields": [
+        {
+          "ordinal": "1",
+          "name": "id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "ordinal": "2",
+          "name": "receipt_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "FK AcquisitionReceipt.id",
+          "description": "Phiếu nhập"
+        },
+        {
+          "ordinal": "3",
+          "name": "edition_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "FK BookEdition.id",
+          "description": "Ấn bản"
+        },
+        {
+          "ordinal": "4",
+          "name": "quantity",
+          "type": "integer",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": ">0",
+          "description": "Số cuốn"
+        },
+        {
+          "ordinal": "5",
+          "name": "unit_price",
+          "type": "numeric",
+          "width": "14,0",
+          "notNull": "Có",
+          "constraint": ">=0",
+          "description": "Giá VND snapshot"
+        },
+        {
+          "ordinal": "6",
+          "name": "created_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ]
+    },
+    {
+      "ordinal": 38,
+      "entity": "BackupManifest",
+      "label": "Hồ sơ sao lưu *",
+      "physicalTable": "backup_manifest",
+      "fields": [
+        {
+          "ordinal": "1",
+          "name": "id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "PK",
+          "description": "Định danh bất biến"
+        },
+        {
+          "ordinal": "2",
+          "name": "schema_version",
+          "type": "varchar",
+          "width": "64",
+          "notNull": "Có",
+          "constraint": "—",
+          "description": "Version migration"
+        },
+        {
+          "ordinal": "3",
+          "name": "snapshot_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "—",
+          "description": "Mốc dữ liệu"
+        },
+        {
+          "ordinal": "4",
+          "name": "encrypted_object_key",
+          "type": "text",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "UQ",
+          "description": "Vị trí backup mã hóa"
+        },
+        {
+          "ordinal": "5",
+          "name": "sha256",
+          "type": "char",
+          "width": "64",
+          "notNull": "Có",
+          "constraint": "—",
+          "description": "Hash"
+        },
+        {
+          "ordinal": "6",
+          "name": "verified_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Không",
+          "constraint": "—",
+          "description": "Ngày kiểm chứng"
+        },
+        {
+          "ordinal": "7",
+          "name": "restore_drill_result",
+          "type": "jsonb",
+          "width": "—",
+          "notNull": "Không",
+          "constraint": "—",
+          "description": "Kết quả RPO/RTO và toàn vẹn"
+        },
+        {
+          "ordinal": "8",
+          "name": "created_by",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Không",
+          "constraint": "FK Account.id",
+          "description": "Người/worker tạo"
+        },
+        {
+          "ordinal": "9",
+          "name": "created_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "DEFAULT now()",
+          "description": "Thời điểm ghi nhận"
+        }
+      ]
+    },
+    {
+      "ordinal": 39,
+      "entity": "ChargeAssessment",
+      "label": "Hồ sơ đề xuất và quyết định phí",
+      "physicalTable": "charge_assessment",
+      "fields": [
+        {
+          "ordinal": "1",
+          "name": "id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "PK",
+          "description": "Định danh hồ sơ đề xuất phí."
+        },
+        {
+          "ordinal": "2",
+          "name": "reader_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "FK Reader.id; khớp độc giả của Loan",
+          "description": "Độc giả liên quan; máy chủ xác định."
+        },
+        {
+          "ordinal": "3",
+          "name": "return_event_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "FK ReturnEvent.id; UQ ghép với kind",
+          "description": "Sự kiện trả/ghi nhận mất làm căn cứ."
+        },
+        {
+          "ordinal": "4",
+          "name": "kind",
+          "type": "Chuỗi",
+          "width": "Chưa chốt",
+          "notNull": "Có",
+          "constraint": "DAMAGE / LOST; UQ(return_event_id, kind)",
+          "description": "Loại đề xuất phí hỏng/mất."
+        },
+        {
+          "ordinal": "5",
+          "name": "proposed_amount",
+          "type": "numeric",
+          "width": "14,0",
+          "notNull": "Có",
+          "constraint": "≥ 0; chưa tính vào dư nợ",
+          "description": "Số tiền Thủ thư đề xuất, VND."
+        },
+        {
+          "ordinal": "6",
+          "name": "reason",
+          "type": "text",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "Lý do bắt buộc",
+          "description": "Căn cứ đề xuất mức phí."
+        },
+        {
+          "ordinal": "7",
+          "name": "proposed_by",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Có",
+          "constraint": "FK Account.id; lấy từ phiên",
+          "description": "Thủ thư lập đề xuất."
+        },
+        {
+          "ordinal": "8",
+          "name": "status",
+          "type": "Chuỗi",
+          "width": "Chưa chốt",
+          "notNull": "Có",
+          "constraint": "PENDING / ASSESSED / CLOSED_NO_CHARGE",
+          "description": "Trạng thái xử lý hồ sơ."
+        },
+        {
+          "ordinal": "9",
+          "name": "approved_amount",
+          "type": "numeric",
+          "width": "14,0",
+          "notNull": "Không",
+          "constraint": "PENDING: NULL; ASSESSED: > 0; CLOSED_NO_CHARGE: 0",
+          "description": "Mức phí Quản lý quyết định."
+        },
+        {
+          "ordinal": "10",
+          "name": "decided_by",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Không",
+          "constraint": "FK Account.id; bắt buộc khi kết thúc",
+          "description": "Quản lý ra quyết định."
+        },
+        {
+          "ordinal": "11",
+          "name": "decided_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Không",
+          "constraint": "Bắt buộc khi kết thúc; máy chủ ghi",
+          "description": "Thời điểm quyết định."
+        },
+        {
+          "ordinal": "12",
+          "name": "decision_reason",
+          "type": "text",
+          "width": "—",
+          "notNull": "Không",
+          "constraint": "Bắt buộc khi kết thúc",
+          "description": "Lý do duyệt hoặc không thu phí."
+        },
+        {
+          "ordinal": "13",
+          "name": "fine_charge_id",
+          "type": "uuid",
+          "width": "—",
+          "notNull": "Không",
+          "constraint": "FK FineCharge.id; UQ; chỉ có khi ASSESSED",
+          "description": "Khoản phí tạo trong cùng giao dịch."
+        },
+        {
+          "ordinal": "14",
+          "name": "version",
+          "type": "integer",
+          "width": "—",
+          "notNull": "Chưa chốt",
+          "constraint": "> 0; DEFAULT 1; nguồn chưa ghi NN",
+          "description": "Phiên bản kiểm soát cập nhật đồng thời."
+        },
+        {
+          "ordinal": "15",
+          "name": "created_at",
+          "type": "timestamptz",
+          "width": "—",
+          "notNull": "Chưa chốt",
+          "constraint": "DEFAULT now(); nguồn chưa ghi NN",
+          "description": "Thời điểm tạo hồ sơ."
+        }
+      ]
+    }
+  ]
+}

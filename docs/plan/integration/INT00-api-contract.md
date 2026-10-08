@@ -29,3 +29,10 @@ Nghiệm thu xuyên module dựa trên [quyết định](../decisions.md) và [t
 - Playwright cho UI/API thật; pytest/PostgreSQL cho giao dịch; fault injection worker/provider và scope.
 - Không dùng secret production hoặc restore vào DB đang dùng. Fixture phải có hướng dẫn reset an toàn.
 - Task riêng không chạy test trong bước soạn kế hoạch; kiểm thử được thực hiện khi triển khai tương ứng.
+
+## Gate đồng bộ theo Docs mới
+
+- INT00.S1: truy vết 39 bảng/303 trường từ data-dictionary.json; đối chiếu schema DB với DTO projection và command, không đòi DTO chứa toàn bộ cột.
+- INT00.S2: ChargeAssessment.version required trong response là hợp đồng API hiện hành, không chứng minh DB NOT NULL đã chốt. D01 cần quyết định và backfill trước migration.
+- INT00.S3: CI drift dự kiến kiểm tra tên/kiểu/NULL/FK/UQ và mã trạng thái; bộ tài liệu đã đối chiếu không thay thế contract tests/runtime.
+- INT00.S4: notification extensions giữ scope F24; hoàn thiện đặc tả chi tiết ở BE13 trước migration, không thêm trường suy đoán vào nguồn 39/303.

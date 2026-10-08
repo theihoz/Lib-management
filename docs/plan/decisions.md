@@ -5,7 +5,7 @@ Ngày chốt: 2026-10-07. Đây là quyết định đã thống nhất trong ph
 ## Nguồn chuẩn và phạm vi
 
 - Toàn bộ F01–F24, gồm quản trị, nhập/thanh lý, backup/restore và thông báo.
-- DOCX thiết kế chính trong Downloads có danh mục 38 bảng; bản trong repository đã đối chiếu 38 bảng/288 trường, bổ sung 4 bảng thiết kế; migration chưa triển khai. UML là nguồn luồng; PDF chỉ tham khảo, không sao chép.
+- Google Docs mới và data-dictionary.md/json là nguồn mô tả hiện hành: 39 bảng/303 trường (38 bảng/288 trường gốc + ChargeAssessment/15 trường). Ba notification extensions đặc tả riêng, tổng thiết kế 42 bảng; migration chưa triển khai. UML là góc nhìn luồng; PDF tham khảo cấu trúc/nghiệp vụ, không sao chép.
 - PascalCase là thực thể logic, thuộc tính/bảng vật lý theo snake_case; ánh xạ chính xác trong traceability và migration. Không suy diễn schema đã được triển khai.
 - Cập nhật snapshot binary chỉ sau đối chiếu và lưu manifest; bước này chỉ tạo kế hoạch Markdown.
 
@@ -56,3 +56,9 @@ Liên kết docs/ui trong README cũ trỏ đến các tệp đang bị xóa. Kh
 - [Keycloak JavaScript adapter](https://www.keycloak.org/securing-apps/javascript-adapter)
 - [SQLAlchemy transaction](https://docs.sqlalchemy.org/en/20/orm/session_transaction.html)
 - [Alembic](https://alembic.sqlalchemy.org/en/latest/tutorial.html)
+
+## Đồng bộ 08/10/2026 — nguồn mô tả hiện hành
+
+Docs mới/từ điển 7 cột có 39 bảng / 303 trường; 38 bảng / 288 trường là nguồn gốc, ChargeAssessment 15 trường là bổ sung đã mô tả. Notification/NotificationDelivery/NotificationPreference còn đặc tả riêng, chưa tính trong 39/303. Tổng schema thiết kế 42 bảng chưa triển khai.
+
+D01 mới: SQL type/width ChargeAssessment.kind/status; NOT NULL version/created_at còn chưa quy định. Chủ dự án xác nhận trước migration; không đổi C01–C09 hoặc đóng N03–N07 từ việc bổ sung bảng mô tả.

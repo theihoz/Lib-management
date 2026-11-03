@@ -20,7 +20,10 @@ Monorepo gồm backend FastAPI và frontend React, phát triển trong một Dev
 
 - Backend nền tảng ([spec M0 backend](docs/specs/M0-backend-foundation.md)): hợp đồng lỗi
   `ErrorResponse`, request ID, cursor pagination, Unit of Work, idempotency, audit log,
-  outbox và worker job có lease/retry; migration 9 bảng identity/platform.
+  outbox và worker job có lease/retry.
+- Database PostgreSQL 17 đủ schema theo [thiết kế DB](docs/design/database-design.md): 38 bảng
+  danh mục + 4 bảng bổ sung (`charge_assessment`, `notification*`), 6 migration Alembic; bảng của
+  phase 2 đã có schema, chưa có API. Lệnh `seed-demo` nạp dữ liệu mẫu cho máy local.
 - Xác thực: kiểm tra JWT Keycloak, Account ACTIVE và 39 permission/5 role từ DB;
   endpoint `GET /api/v1/auth/me`; CLI `seed-rbac`, `bootstrap-admin`.
 - Lõi thư viện (code, CI xanh; chưa nghiệm thu E2E): danh mục/bản sao/vị trí, độc giả và thẻ,
@@ -35,8 +38,8 @@ Monorepo gồm backend FastAPI và frontend React, phát triển trong một Dev
 
 **Chưa có**
 
-- Phase 2: giữ chỗ F10, bìa F15, lịch sử portal F17, quản trị tài khoản F21, nhập/thanh lý F22,
-  backup/restore F23, thông báo F24.
+- Phase 2 (API và màn hình; schema DB đã có): giữ chỗ F10, bìa F15, lịch sử portal F17, quản trị
+  tài khoản F21, nhập/thanh lý F22, backup/restore F23, thông báo F24.
 - Playwright E2E với Keycloak + API + PostgreSQL thật, Lighthouse và benchmark NFR
   ([audit](docs/quality/2026-11-03-spec-conformance-audit.md)).
 - React Hook Form (quyết định công nghệ); form hiện dùng Zod trực tiếp.
@@ -69,7 +72,8 @@ scripts/local.sh up
 ```
 
 Lệnh tự tạo `.env` với mật khẩu ngẫu nhiên, rồi khởi động PostgreSQL, Keycloak, migration,
-seed quyền + 5 tài khoản, API, worker và bản build production của web. Khi báo xong:
+seed quyền + 5 tài khoản + dữ liệu mẫu (8 đầu sách, 18 bản sao, 5 độc giả có thẻ, quy định đang
+hiệu lực), API, worker và bản build production của web. Khi báo xong:
 
 | Dịch vụ | Địa chỉ |
 | --- | --- |

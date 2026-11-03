@@ -75,6 +75,8 @@ uv run --locked alembic upgrade head
 uv run --locked python -m lib_management.cli seed-rbac
 # Tạo 5 user dev trong Keycloak và liên kết Account + role:
 uv run --locked python ../../.devcontainer/keycloak/create_dev_users.py --link
+# Tùy chọn: thêm dữ liệu mẫu và liên kết reader.dev với độc giả DG0001
+uv run --locked python ../../.devcontainer/keycloak/create_dev_users.py --link --demo-data
 ```
 
 Keycloak dev chạy tại <http://localhost:8080> (realm `lib-management`, admin `admin`).

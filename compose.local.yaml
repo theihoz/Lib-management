@@ -47,7 +47,8 @@ services:
     networks: [backend]
 
   seed:
-    # One-shot, idempotent: permissions/roles, then Keycloak users linked to Accounts.
+    # One-shot, idempotent: permissions/roles, Keycloak users linked to Accounts,
+    # then local demo data (policy, catalog, readers, cards; reader.dev = DG0001).
     build:
       context: .
       dockerfile: docker/api.Dockerfile
@@ -56,7 +57,7 @@ services:
     command:
       - sh
       - -c
-      - python -m lib_management.cli seed-rbac && python /seed/create_dev_users.py --link
+      - python -m lib_management.cli seed-rbac && python /seed/create_dev_users.py --link --demo-data
     environment:
       <<: [*db-env, *oidc-env]
       KEYCLOAK_URL: http://keycloak:8080

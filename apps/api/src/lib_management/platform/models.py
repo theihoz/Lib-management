@@ -1,4 +1,4 @@
-"""Platform tables (database-design.md §31–33, §35)."""
+"""Platform tables (database-design.md §31–33, §35, §38)."""
 
 import uuid
 from datetime import datetime
@@ -13,6 +13,7 @@ from sqlalchemy import (
     Integer,
     SmallInteger,
     String,
+    Text,
     UniqueConstraint,
     text,
 )
@@ -127,4 +128,19 @@ class Job(Base):
     lease_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     next_attempt_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     last_error_code: Mapped[str | None] = mapped_column(String(100))
+    created_at: Mapped[datetime] = created_at()
+
+
+class BackupManifest(Base):
+    """Backup metadata only: never the backup file or a decryption key (F23)."""
+
+    __tablename__ = "backup_manifest"
+    id: Mapped[uuid.UUID] = uuid_pk()
+    schema_version: Mapped[str] = mapped_column(String(64))
+    snapshot_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    encrypted_object_key: Mapped[str] = mapped_column(Text, unique=True)
+    sha256: Mapped[str] = mapped_column(CHAR(64))
+    verified_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    restore_drill_result: Mapped[dict[str, Any] | None] = mapped_column(JSONB)
+    created_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("account.id"))
     created_at: Mapped[datetime] = created_at()

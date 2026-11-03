@@ -3,6 +3,8 @@ name: lib-management
 services:
   db:
     image: postgres:17-bookworm@sha256:3645570cccdfa447589da9f57dd740faa29b30938e861289a5574b6ca6b03826
+    # database-design.md: timestamptz stored in UTC; business time zone is applied in code.
+    command: ["postgres", "-c", "timezone=UTC", "-c", "log_timezone=UTC"]
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-lib_dev}
       POSTGRES_DB: ${POSTGRES_DB:-lib_management}

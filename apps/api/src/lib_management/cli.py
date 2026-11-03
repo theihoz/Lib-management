@@ -65,6 +65,23 @@ def cmd_bootstrap_admin(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_seed_demo(args: argparse.Namespace) -> int:
+    from lib_management.demo_seed import seed_demo
+
+    factory = _session_factory(Settings())
+    with factory() as session, session.begin():
+        report = seed_demo(
+            session, link_issuer=args.link_issuer, link_subject=args.link_subject
+        )
+    if not report.created:
+        print("Demo data already present")
+    for label, count in report.created.items():
+        print(f"{label}: +{count}")
+    if report.linked_reader:
+        print(f"Linked account to reader {report.linked_reader}")
+    return 0
+
+
 def cmd_link_reader_account(args: argparse.Namespace) -> int:
     factory = _session_factory(Settings())
     try:
@@ -105,6 +122,13 @@ def build_parser() -> argparse.ArgumentParser:
     boot.add_argument("--display-name", required=True)
     boot.add_argument("--role", action="append", required=True)
     boot.set_defaults(func=cmd_bootstrap_admin)
+
+    demo = commands.add_parser(
+        "seed-demo", help="LOCAL ONLY: sample catalog, readers, cards and policy"
+    )
+    demo.add_argument("--link-issuer", help="link this READER account to DG0001")
+    demo.add_argument("--link-subject")
+    demo.set_defaults(func=cmd_seed_demo)
 
     link = commands.add_parser(
         "link-reader-account", help="link a READER account to an existing Reader"

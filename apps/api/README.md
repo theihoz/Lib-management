@@ -15,8 +15,8 @@ The password uses Pydantic SecretStr and SQLAlchemy URL.create.
 
 `/health/live` returns 200 with `{"status":"ok"}` without querying PostgreSQL.
 `/health/ready` probes SELECT 1 and returns 200 with `{"status":"ready"}` or
-503 with `{"status":"not_ready"}`. Readiness proves connection availability;
-there is no business schema or migration in this scaffold. Readiness uses dedicated
+503 with `{"status":"not_ready"}`. Readiness also requires the database to be at
+the Alembic head shipped with this code (503 if migrations are missing or behind). Readiness uses dedicated
 async connections with a two-second deadline (including admission and network
 reads), closes timed-out connections before cancellation, and allows at most
 four active probes. It does not wait for the SQLAlchemy business pool.
@@ -31,3 +31,20 @@ It mounts only this package's `src` directory, keeping container dependencies
 in `/opt/venv`, and enables reload. Production builds install the wheel
 noneditable and run one Uvicorn worker as UID/GID 10001. See
 [container operations](../../docs/operations/containers-ci.md).
+
+## M0 backend foundation
+
+Spec: [M0 backend](../../docs/specs/M0-backend-foundation.md).
+
+- Migrations: `uv run --locked alembic upgrade head` (dev) or
+  `python -m lib_management.cli migrate` (images; scripts ship in the wheel).
+  Never `create_all`; migrations run as a separate step, not per replica.
+- RBAC: `python -m lib_management.cli seed-rbac` (idempotent, never removes grants);
+  `python -m lib_management.cli bootstrap-admin --issuer … --subject … --display-name … --role SYSTEM_ADMIN`.
+- Worker: `python -m lib_management.worker` (outbox dispatch + leased jobs).
+- Auth: set `OIDC_ISSUER` (and `OIDC_JWKS_URL` if the JWKS host differs). Unset
+  means `/api/v1/*` routes needing a token answer 503. `GET /api/v1/auth/me` returns
+  the Account and DB permissions; JWT role claims are ignored.
+- Tests: unit tests run by default. PostgreSQL integration tests live in
+  `tests/integration/` and need `RUN_DB_INTEGRATION=1` plus `DB_*` pointing at a
+  **disposable** database (tables are truncated, schema is downgraded/upgraded).

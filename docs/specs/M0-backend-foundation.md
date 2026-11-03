@@ -1,6 +1,6 @@
 # Spec M0 — Nền tảng backend, hợp đồng API và xác thực
 
-**Trạng thái:** Draft · **Ngày:** 2026-11-03 · **Task:** BE00, INT00 (.1/.3), BE01 (.1/.2) · **Chức năng:** F16 (nền cho F01–F20)
+**Trạng thái:** In review (nhánh `feature/m0-backend`) · **Ngày:** 2026-11-03 · **Task:** BE00, INT00 (.1/.3), BE01 (.1/.2) · **Chức năng:** F16 (nền cho F01–F20)
 
 Spec này gom các quyết định đã có thành một bản đủ cụ thể để code. Nó **không** thay nguồn chuẩn: tên bảng/cột lấy từ [thiết kế DB](../design/database-design.md), quyền từ [ma trận quyền](../design/permission-matrix.md), schema HTTP từ [openapi.json](../design/openapi.json), quy tắc từ [decisions](../plan/decisions.md). Khi spec mâu thuẫn với nguồn chuẩn, nguồn chuẩn thắng và spec phải được sửa trong cùng PR.
 
@@ -31,8 +31,11 @@ Modular monolith trong `apps/api/src/lib_management/`:
 ```
 main.py              create_app(): middleware, exception handlers, include router /api/v1
 config.py            Settings (thêm biến ở mục 3)
-db.py                giữ DatabaseProbe; thêm create_session_factory()
-cli.py               seed-rbac, bootstrap-admin
+db.py                giữ DatabaseProbe (+ kiểm revision); thêm create_session_factory()
+models.py            DeclarativeBase + naming convention
+migrate.py           Alembic qua code (script nằm trong wheel)
+migrations/          env.py, versions/0001_identity.py, 0002_platform.py
+cli.py               migrate, downgrade, seed-rbac, bootstrap-admin
 core/
   errors.py          AppError + subclass, exception handlers → ErrorResponse
   request_id.py      middleware X-Request-ID, contextvar
@@ -46,7 +49,8 @@ platform/
 identity/
   models.py          Account, Role, Permission, AccountRole, RolePermission
   repository.py      truy vấn account/permission, không commit
-  service.py         AuthContext, gán role (dùng bởi CLI)
+  rbac_seed.py       39 permission + 5 role mặc định
+  service.py         seed_rbac, bootstrap_account (dùng bởi CLI)
   auth.py            JwtVerifier, dependency current_account / require_permission
   schemas.py         AccountView, AuthContext (Pydantic)
   router.py          GET /auth/me
@@ -55,7 +59,7 @@ worker/
   dispatcher.py      outbox → job
   runner.py          claim/lease/retry
   registry.py        allowlist consumer + handler
-apps/api/alembic.ini, apps/api/migrations/
+apps/api/alembic.ini  (lối vào dev: `uv run --locked alembic …`)
 ```
 
 Quy tắc bắt buộc (theo [kiến trúc](../design/system-architecture.md)):
@@ -71,7 +75,7 @@ Thêm vào `Settings` (env, không prefix, giống biến DB hiện có):
 
 | Biến | Mặc định | Ghi chú |
 | --- | --- | --- |
-| `OIDC_ISSUER` | bắt buộc | VD local `http://localhost:8080/realms/lib-management` |
+| `OIDC_ISSUER` | trống | VD local `http://localhost:8080/realms/lib-management`. Trống thì route cần token trả 503 `SERVICE_UNAVAILABLE` (fail closed); health vẫn chạy |
 | `OIDC_AUDIENCE` | `lib-management-api` | |
 | `OIDC_JWKS_URL` | `{OIDC_ISSUER}/protocol/openid-connect/certs` | |
 | `OIDC_CLOCK_SKEW_SECONDS` | `30` | |
@@ -98,7 +102,9 @@ Lưu ý:
 - `audit_log` append-only: service chỉ INSERT. Quyền DB riêng cho bảng này thuộc việc tách DB role production (chưa làm ở M0).
 - Mỗi migration có `downgrade()` chạy được trên DB trống.
 - Readiness: ngoài `SELECT 1`, so `SELECT version_num FROM alembic_version` với head của script directory (đọc lúc startup). Lệch hoặc chưa có bảng → 503 `{"status":"not_ready"}`. Không thay đổi schema phản hồi health.
-- Compose (`compose.yaml`): thêm service one-shot `migrate` dùng cùng image, chạy `alembic upgrade head`; `api` và `worker` `depends_on: migrate: condition: service_completed_successfully`. Dev Container: chạy tay `uv run --locked alembic upgrade head`.
+- Script migration nằm trong package (`lib_management/migrations`) để image production chạy được `python -m lib_management.cli migrate`. Dev dùng thêm `alembic.ini` ở `apps/api`.
+- Compose (`compose.yaml`): service one-shot `migrate` chạy `python -m lib_management.cli migrate`; `api` và `worker` `depends_on: migrate: condition: service_completed_successfully`. Dev Container: chạy tay `uv run --locked alembic upgrade head`.
+- `alembic check` (CI) bảo đảm model ORM khớp migration.
 
 ## 5. Hợp đồng HTTP chung
 
@@ -169,6 +175,7 @@ uow.commit()
 
 ### 6.1 Keycloak local
 
+- Service `keycloak` trong `.devcontainer/compose.yaml`: `quay.io/keycloak/keycloak:26.8.0` pin digest, lệnh `start-dev --import-realm --hostname=http://localhost:8080 --hostname-backchannel-dynamic=true`, cổng `127.0.0.1:8080`, dữ liệu dev trong volume riêng. Mật khẩu admin do `prepare.py` sinh vào `.devcontainer/.env`. API trong workspace dùng `OIDC_ISSUER=http://localhost:8080/...` (khớp `iss` trình duyệt thấy) và `OIDC_JWKS_URL=http://keycloak:8080/...` (mạng nội bộ). Keycloak dùng storage riêng, không dùng credential DB ứng dụng. Đây chỉ là môi trường phát triển.
 - Thêm service `keycloak` vào `.devcontainer/compose.yaml`: image `quay.io/keycloak/keycloak` pin **digest** khi triển khai (chọn bản 26.x đã phát hành ≥ 2 tuần), lệnh `start-dev --import-realm`, cổng `127.0.0.1:8080`, dữ liệu dev trong volume riêng. Keycloak dùng storage riêng, không dùng credential DB ứng dụng. Đây chỉ là môi trường phát triển.
 - Realm import `.devcontainer/keycloak/lib-management-realm.json`:
   - realm `lib-management`; `registrationAllowed=false`;
@@ -295,7 +302,7 @@ PR 1–3 có thể làm song song với PR 4 (Keycloak/verifier không cần b�
 
 ## 9. Kiểm thử và CI
 
-- Theo pattern hiện có ở `apps/api/tests/`: unit test không DB chạy mặc định; integration gated `RUN_DB_INTEGRATION=1` như `tests/test_db_integration.py`. Fixture PG tạo schema bằng `alembic upgrade head` (không `create_all`) và truncate giữa test.
+- Theo pattern hiện có ở `apps/api/tests/`: unit test không DB chạy mặc định; integration nằm ở `tests/integration/`, gated `RUN_DB_INTEGRATION=1` như `tests/test_db_integration.py`. Fixture PG tạo schema bằng migration (không `create_all`) và truncate giữa test.
 - Test HTTP dùng `create_app(settings)` + `TestClient`, inject `JwtVerifier` giả qua `app.dependency_overrides` hoặc settings.
 - CI (`.github/workflows/ci.yml`, job `quality`): thêm bước migration round-trip trước integration tests; tách tệp integration mới bằng marker hoặc thư mục `tests/integration/` và cập nhật lệnh `--ignore` tương ứng. Giữ ruff, ruff format, mypy strict.
 - Sau PR 5: cập nhật AT16 trong [acceptance-matrix](../quality/acceptance-matrix.md) kèm link CI run; BE00/BE01/INT00 trong [mục lục kế hoạch](../plan/README.md) chỉ đổi trạng thái khi PR merge.
@@ -307,7 +314,7 @@ uv sync --locked --group dev
 uv run --locked alembic upgrade head
 uv run --locked ruff check . && uv run --locked ruff format --check . && uv run --locked mypy src
 uv run --locked pytest
-RUN_DB_INTEGRATION=1 uv run --locked pytest tests/test_db_integration.py   # + tệp integration mới
+RUN_DB_INTEGRATION=1 uv run --locked pytest tests/test_db_integration.py tests/integration
 uv run --locked python -m lib_management.cli seed-rbac
 ```
 
@@ -322,3 +329,12 @@ Smoke thủ công sau PR 5: lấy token từ Keycloak dev → `curl -H "Authoriz
 | — | Version/digest Keycloak | Chọn khi làm PR 4 |
 | — | Hosting production, DB role tách quyền ghi audit_log | Không; trước deployment |
 | — | TTL idempotency 24h, lease 60s, retry 5 lần | Mặc định cấu hình; xem lại theo workload |
+
+## 11. Kết quả triển khai
+
+Ghi nhận ngày 2026-11-03 trên máy macOS, PostgreSQL 17 container tạm và Keycloak 26.8.0 container tạm. Đây là bằng chứng local; CI GitHub chưa chạy cho tới khi mở PR.
+
+- Unit: 59 pass (ruff, ruff format, mypy strict sạch). Integration trên PostgreSQL 17: 43 pass.
+- Migration round trip `upgrade head → downgrade base → upgrade head` và `alembic check` sạch; image production chạy `python -m lib_management.cli migrate` được.
+- E2E với Keycloak thật: realm import, tạo 5 user dev, `--link` tạo Account; token qua `lib-management-dev-cli` có `aud=lib-management-api`; `GET /api/v1/auth/me` trả 200 với quyền từ DB; token bị sửa → 401; client `lib-management-web` từ chối password grant.
+- Worker chạy job `noop.v1` → SUCCEEDED và dừng sạch khi nhận SIGTERM.

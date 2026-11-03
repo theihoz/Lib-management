@@ -67,6 +67,33 @@ uv run --locked uvicorn lib_management.main:create_app --factory --host 0.0.0.0 
 Swagger: <http://localhost:8000/docs>. Không chạy API Compose khác cùng cổng 8000.
 DB chỉ truy cập qua `db:5432` trong network; không cần cổng DB trên host.
 
+## Migration, quyền và Keycloak local
+
+```bash
+cd /workspaces/lib-management/apps/api
+uv run --locked alembic upgrade head
+uv run --locked python -m lib_management.cli seed-rbac
+# Tạo 5 user dev trong Keycloak và liên kết Account + role:
+uv run --locked python ../../.devcontainer/keycloak/create_dev_users.py --link
+```
+
+Keycloak dev chạy tại <http://localhost:8080> (realm `lib-management`, admin `admin`).
+`prepare.py` sinh `KEYCLOAK_ADMIN_PASSWORD` và `KEYCLOAK_DEV_USER_PASSWORD` vào
+`.devcontainer/.env` (không commit); máy đã có `.env` cũ chỉ được bổ sung hai dòng này,
+nên chạy lại bootstrap/Rebuild sau khi pull. Realm và client `lib-management-dev-cli`
+(password grant) **chỉ dùng local**; không import vào môi trường khác.
+
+Lấy token thử và gọi API (trong terminal container, từ `apps/api`, API đang chạy):
+
+```bash
+TOKEN=$(uv run --locked python ../../.devcontainer/keycloak/create_dev_users.py --token librarian.dev)
+uv run --locked python -c "import os,urllib.request as u; r=u.Request('http://localhost:8000/api/v1/auth/me', headers={'Authorization': 'Bearer ' + os.environ['TOKEN']}); print(u.urlopen(r).read().decode())"
+```
+
+Cần `export TOKEN` hoặc chạy hai lệnh trong cùng dòng `TOKEN=… uv run …`.
+
+Worker: `uv run --locked python -m lib_management.worker`.
+
 ## Dùng terminal, không có VS Code
 
 Từ root clone, bootstrap bằng Docker rồi tạo workspace:

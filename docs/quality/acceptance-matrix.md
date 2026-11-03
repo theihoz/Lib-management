@@ -19,7 +19,7 @@ Ngày: 2026-10-07. Các ca dưới đây **Not run**: dự án mới có health 
 | AT13 | F13 | Báo cáo | Join nhiều ledger/phiếu, rỗng | Không nhân tiền/số phiếu; rỗng hợp lệ | Not run |
 | AT14 | F14 | Policy | Chồng hiệu lực/sửaACTIVE | 409; lịch sử không hồi tố | Not run |
 | AT15 | F15 | Ảnh | Magic bytes sai/DB lỗi | Không ACTIVE; dọn orphan | Not run |
-| AT16 | F16 | Auth | Issuer/audience sai/khóaAccount | 401/403, không JIT | Not run |
+| AT16 | F16 | Auth | Issuer/audience sai/khóaAccount | 401/403, không JIT | Pass local 2026-11-03 (pytest + Keycloak dev); chờ CI |
 | AT17 | F17 | Lịch sử | ReaderA xemB | 404 scoped; không PII | Not run |
 | AT18 | F18 | Search | Input SQL/text dài, publiccatalog | Parameterized, bounded, không readerPII | Not run |
 | AT19 | F19 | Quá hạn | Đúng dueAt/gia hạn | Derived từ dueAt, không flag cũ | Not run |

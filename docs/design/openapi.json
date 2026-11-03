@@ -3,7 +3,7 @@
   "info": {
     "title": "Lib-management API design contract",
     "version": "0.1.0-design",
-    "description": "Thiết kế nghiệp vụ planned; chỉ health hiện được triển khai. Không suy ra runtime hỗ trợ endpoint từ hợp đồng này."
+    "description": "Thiết kế nghiệp vụ planned; health và GET /api/v1/auth/me đã triển khai (x-status=implemented). Không suy ra runtime hỗ trợ endpoint từ hợp đồng này."
   },
   "servers": [
     {
@@ -6488,7 +6488,7 @@
         "x-functions": [
           "F16"
         ],
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []

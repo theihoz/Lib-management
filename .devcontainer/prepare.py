@@ -17,6 +17,19 @@ if not credentials.exists():
     if os.geteuid() == 0:
         owner = folder.stat()
         os.chown(credentials, owner.st_uid, owner.st_gid)
+# Local Keycloak secrets: appended once, existing values are never changed.
+existing = credentials.read_text()
+present = {line.split("=", 1)[0] for line in existing.splitlines() if "=" in line}
+additions = [
+    f"{name}={secrets.token_hex(16)}"
+    for name in ("KEYCLOAK_ADMIN_PASSWORD", "KEYCLOAK_DEV_USER_PASSWORD")
+    if name not in present
+]
+if additions:
+    with credentials.open("a") as stream:
+        if existing and not existing.endswith("\n"):
+            stream.write("\n")
+        stream.write("\n".join(additions) + "\n")
 
 owner = folder.stat()
 workspace = {"build": {"args": {

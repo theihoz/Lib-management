@@ -1,9 +1,11 @@
 """Typed REST entity projections from the approved API contract."""
 
 from __future__ import annotations
-from datetime import date, datetime
+
+from datetime import datetime
 from typing import Any, Literal
 from uuid import UUID
+
 from pydantic import BaseModel, ConfigDict, Field
 
 

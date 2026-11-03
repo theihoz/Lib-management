@@ -121,10 +121,11 @@ def validate_year(session: Session, year: int) -> None:
 
 
 def set_links(session: Session, row: models.BookEdition, data: dict[str, Any]) -> None:
-    for field, link, foreign, reference_model in [
+    links: list[tuple[str, Any, str, Any]] = [
         ("author_ids", models.BookAuthor, "author_id", models.Author),
         ("category_ids", models.BookCategory, "category_id", models.Category),
-    ]:
+    ]
+    for field, link, foreign, reference_model in links:
         if field not in data:
             continue
         identities = data.pop(field)
@@ -132,7 +133,7 @@ def set_links(session: Session, row: models.BookEdition, data: dict[str, Any]) -
             raise ValidationFailed("Định danh tham chiếu bị trùng")
         for identity in sorted(identities):
             reference(session, reference_model, identity)
-        session.execute(delete(link).where(getattr(link, "edition_id") == row.id))
+        session.execute(delete(link).where(link.edition_id == row.id))
         for index, identity in enumerate(identities, 1):
             values = {"edition_id": row.id, foreign: identity}
             if field == "author_ids":

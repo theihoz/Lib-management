@@ -375,9 +375,7 @@ function Returns() {
                 </label>
               ))}
             </fieldset>
-            {!canAssess && (
-              <p className="muted">Ghi nhận sách hỏng / mất cần quyền đề xuất phí.</p>
-            )}
+            {!canAssess && <p className="muted">Ghi nhận sách hỏng / mất cần quyền đề xuất phí.</p>}
             {condition !== "GOOD" && (
               <div className="form-grid">
                 <Field
@@ -397,8 +395,8 @@ function Returns() {
               </div>
             )}
             <Notice>
-              Nhận trả không bị chặn bởi dư nợ hoặc hạn thẻ. Phí trễ do hệ thống tính; phí hỏng / mất
-              chờ Quản lý xác nhận.
+              Nhận trả không bị chặn bởi dư nợ hoặc hạn thẻ. Phí trễ do hệ thống tính; phí hỏng /
+              mất chờ Quản lý xác nhận.
             </Notice>
             <div className="actions">
               <Button type="submit" disabled={save.isPending} aria-busy={save.isPending}>
@@ -533,7 +531,12 @@ function Renew() {
   const services = useServices();
   const cache = useQueryClient();
   const key = useRef(createIdempotencyKey()).current;
-  const [target, setTarget] = useState<{ id: string; no: string; version: number; count: number }>();
+  const [target, setTarget] = useState<{
+    id: string;
+    no: string;
+    version: number;
+    count: number;
+  }>();
   const renew = useMutation({
     mutationFn: async (loan: NonNullable<typeof target>) => {
       const body = { expectedVersion: loan.version };
@@ -580,7 +583,10 @@ function Renew() {
                   <Table
                     caption={`Khoản mượn của phiếu ${loan.loan_no}`}
                     headers={["Mã vạch", "Hạn trả"]}
-                    rows={items.map((item) => [item.copy.barcode, formatDateTime(item.loanItem.due_at)])}
+                    rows={items.map((item) => [
+                      item.copy.barcode,
+                      formatDateTime(item.loanItem.due_at),
+                    ])}
                   />
                   <div className="actions">
                     <Button
@@ -612,10 +618,7 @@ function Renew() {
                 Gia hạn {target?.count} khoản đang mở của phiếu <strong>{target?.no}</strong>?
               </p>
               <div className="actions">
-                <Button
-                  disabled={renew.isPending}
-                  onClick={() => target && renew.mutate(target)}
-                >
+                <Button disabled={renew.isPending} onClick={() => target && renew.mutate(target)}>
                   {renew.isPending ? "Đang gia hạn…" : "Xác nhận gia hạn"}
                 </Button>
                 <Button variant="secondary" onClick={() => setTarget(undefined)}>
@@ -656,8 +659,7 @@ function LoanDetail({ loanId }: { loanId: string }) {
   const result = useQuery({
     queryKey: ["loans", loanId],
     queryFn: async ({ signal }) =>
-      (await services.circulation.get_loans_id({ params: { path: { id: loanId } }, signal }))
-        .data!,
+      (await services.circulation.get_loans_id({ params: { path: { id: loanId } }, signal })).data!,
   });
   if (result.isPending) return <LoadingSkeleton />;
   if (result.error) return <ApiFailure error={result.error} retry={() => void result.refetch()} />;

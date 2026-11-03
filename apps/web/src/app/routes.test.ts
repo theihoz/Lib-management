@@ -2,7 +2,13 @@ import { groups, screens } from "./screens";
 
 // Core 10-week scope: F01–F09, F11–F14, F16, F18–F20. Phase 2 must stay out of the app.
 const PHASE_2_GROUPS = ["10", "11"];
-const PHASE_2_PATHS = ["/me/loans", "/me/reservations", "/staff/reservations", "/staff/acquisitions", "/ops"];
+const PHASE_2_PATHS = [
+  "/me/loans",
+  "/me/reservations",
+  "/staff/reservations",
+  "/staff/acquisitions",
+  "/ops",
+];
 
 describe("route registry", () => {
   it("has unique ids and paths", () => {

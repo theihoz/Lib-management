@@ -83,11 +83,7 @@ function ApplicationRoutes() {
       <Route path="/" element={<Navigate to="/catalog" replace />} />
       <Route path="/staff" element={<StaffHome />} />
       {screens.map((screen) => (
-        <Route
-          key={screen.id}
-          path={screen.path}
-          element={<LivePage screen={screen} />}
-        />
+        <Route key={screen.id} path={screen.path} element={<LivePage screen={screen} />} />
       ))}
       <Route
         path="*"
@@ -111,7 +107,8 @@ export function App({ config }: { config: RuntimeConfig }) {
             gcTime: 5 * 60_000,
             // Never retry client errors; retry transient network/5xx failures at most twice.
             retry: (count, error) =>
-              count < 2 && !(error instanceof ApiError && error.status >= 400 && error.status < 500),
+              count < 2 &&
+              !(error instanceof ApiError && error.status >= 400 && error.status < 500),
             refetchOnWindowFocus: true,
           },
           mutations: { retry: false },

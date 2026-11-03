@@ -103,7 +103,7 @@ def configured_handler(context: JobContext) -> None:
     from lib_management.config import Settings
     from lib_management.db import create_engine_from_settings, create_session_factory
 
-    settings = Settings()  # type: ignore[call-arg]  # Loaded from environment.
+    settings = Settings()
     options = ReportingSettings()
     engine = create_engine_from_settings(settings)
     try:

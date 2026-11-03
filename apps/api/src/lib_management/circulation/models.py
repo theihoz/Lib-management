@@ -195,7 +195,8 @@ class ReturnEvent(Base):
         Index("ix_return_event_created_id", "created_at", "id"),
         CheckConstraint(
             (
-                "(return_kind = 'RETURNED' AND condition IS NOT NULL AND condition IN ('GOOD','DAMAGED')) OR "
+                "(return_kind = 'RETURNED' AND condition IS NOT NULL AND "
+                "condition IN ('GOOD','DAMAGED')) OR "
                 "(return_kind IN ('LOST','VOIDED') AND condition IS NULL)"
             ),
             name="kind_condition",
@@ -439,10 +440,13 @@ class ChargeAssessment(Base):
                 "NULL AND decided_at IS NULL AND decision_reason IS NULL AND "
                 "fine_charge_id IS NULL) OR (status = 'ASSESSED' AND approved_amount "
                 "> 0 AND decided_by IS NOT NULL AND decided_at IS NOT NULL AND "
-                "decision_reason IS NOT NULL AND length(trim(decision_reason)) > 0 AND fine_charge_id IS NOT NULL) OR"
+                "decision_reason IS NOT NULL AND "
+                "length(trim(decision_reason)) > 0 AND "
+                "fine_charge_id IS NOT NULL) OR"
                 " (status = 'CLOSED_NO_CHARGE' AND approved_amount = 0 AND decided_by"
                 " IS NOT NULL AND decided_at IS NOT NULL AND "
-                "decision_reason IS NOT NULL AND length(trim(decision_reason)) > 0 AND fine_charge_id IS NULL)"
+                "decision_reason IS NOT NULL AND "
+                "length(trim(decision_reason)) > 0 AND fine_charge_id IS NULL)"
             ),
             name="decision_state",
         ),

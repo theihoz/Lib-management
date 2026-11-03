@@ -45,6 +45,7 @@ function PolicyList() {
   const key = useRef(createIdempotencyKey()).current;
   const canApprove = session.permissions.includes("policy.approve");
   const [target, setTarget] = useState<{ id: string; versionNo: number; from: string }>();
+  const [now] = useState(() => Date.now());
   const list = useQuery({
     queryKey: ["policies"],
     queryFn: async ({ signal }) =>
@@ -73,7 +74,6 @@ function PolicyList() {
   });
   if (list.isPending) return <LoadingSkeleton />;
   if (list.error) return <ApiFailure error={list.error} retry={() => void list.refetch()} />;
-  const now = Date.now();
   return (
     <div className="stack">
       <Notice>
@@ -184,7 +184,8 @@ function PolicyCreate() {
       void navigate("/manager/policies");
     },
   });
-  const past = from !== "" && new Date(`${from}:00+07:00`).getTime() <= Date.now();
+  const [openedAt] = useState(() => Date.now());
+  const past = from !== "" && new Date(`${from}:00+07:00`).getTime() <= openedAt;
   return (
     <Panel title="Tạo bản nháp quy định">
       <form

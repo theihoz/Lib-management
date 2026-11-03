@@ -49,9 +49,9 @@ def lookup_reader(
     cardNo: Annotated[str | None, Query(min_length=1, max_length=64)] = None,
 ) -> dict[str, Any]:
     from sqlalchemy import or_, select
+
     from lib_management.circulation.service import view
-    from lib_management.core.errors import ValidationFailed
-    from lib_management.core.errors import Forbidden
+    from lib_management.core.errors import Forbidden, ValidationFailed
 
     if not staff_reader_scope(actor):
         raise Forbidden("PERMISSION_DENIED", "Tra cứu độc giả dành cho nhân viên")
@@ -154,7 +154,6 @@ def issue_card(id: uuid.UUID, key: Key, uow: Uow, actor: Issue) -> JSONResponse:
 )
 def eligibility(id: uuid.UUID, uow: Uow, actor: Eligible) -> dict[str, Any]:
     from lib_management.circulation.service import eligibility as evaluate
-
     from lib_management.core.errors import NotFound
 
     if not staff_reader_scope(actor) and actor.account.reader_id != id:

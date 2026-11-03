@@ -364,6 +364,7 @@ def lookup_copy(
     uow: Uow, actor: Read, barcode: Annotated[str, Query(min_length=1, max_length=64)]
 ) -> dict[str, Any]:
     from sqlalchemy import select
+
     from lib_management.circulation.models import Loan, LoanItem
     from lib_management.circulation.service import view
     from lib_management.core.errors import NotFound

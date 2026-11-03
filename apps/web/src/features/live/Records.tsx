@@ -22,8 +22,7 @@ function OverdueList({ screen }: { screen: ScreenDefinition }) {
     getNextPageParam: (page) => page.nextCursor ?? undefined,
   });
   if (result.isPending) return <LoadingSkeleton />;
-  if (result.error)
-    return <ApiFailure error={result.error} retry={() => void result.refetch()} />;
+  if (result.error) return <ApiFailure error={result.error} retry={() => void result.refetch()} />;
   const items = result.data.pages.flatMap((page) => page.data);
   return (
     <Panel title={screen.title}>

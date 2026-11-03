@@ -53,7 +53,9 @@ export function MePage({ onLogout }: { onLogout: () => void }) {
           </div>
           <div>
             <dt>Hồ sơ độc giả</dt>
-            <dd>{session.account?.reader_id ? "Đã liên kết" : "Chưa liên kết (tài khoản nhân viên)"}</dd>
+            <dd>
+              {session.account?.reader_id ? "Đã liên kết" : "Chưa liên kết (tài khoản nhân viên)"}
+            </dd>
           </div>
         </dl>
         <div className="actions">
@@ -62,7 +64,10 @@ export function MePage({ onLogout }: { onLogout: () => void }) {
           </Button>
         </div>
       </Panel>
-      <Panel title="Lối tắt công việc" subtitle="Chỉ hiển thị chức năng tài khoản này được phép dùng.">
+      <Panel
+        title="Lối tắt công việc"
+        subtitle="Chỉ hiển thị chức năng tài khoản này được phép dùng."
+      >
         {shortcuts.length ? (
           <ul className="shortcut-list">
             {shortcuts.map((item) => (

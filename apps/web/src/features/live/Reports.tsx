@@ -35,7 +35,13 @@ function useJob(jobId: string | undefined) {
   });
 }
 
-function RequestForm({ kind, onCreated }: { kind: "report" | "export"; onCreated: (id: string) => void }) {
+function RequestForm({
+  kind,
+  onCreated,
+}: {
+  kind: "report" | "export";
+  onCreated: (id: string) => void;
+}) {
   const services = useServices();
   const key = useRef(createIdempotencyKey()).current;
   const [type, setType] = useState<(typeof TYPES)[number][0]>("LENDING_SUMMARY");
@@ -87,7 +93,13 @@ function RequestForm({ kind, onCreated }: { kind: "report" | "export"; onCreated
               ))}
             </select>
           </div>
-          <Field label="Từ ngày" type="date" required value={from} onChange={(e) => setFrom(e.target.value)} />
+          <Field
+            label="Từ ngày"
+            type="date"
+            required
+            value={from}
+            onChange={(e) => setFrom(e.target.value)}
+          />
           <Field
             label="Đến ngày (gồm cả ngày này)"
             type="date"
@@ -97,11 +109,17 @@ function RequestForm({ kind, onCreated }: { kind: "report" | "export"; onCreated
             onChange={(e) => setTo(e.target.value)}
           />
         </div>
-        <p className="data-description">Khoảng thời gian tính theo giờ thư viện (Asia/Ho_Chi_Minh).</p>
+        <p className="data-description">
+          Khoảng thời gian tính theo giờ thư viện (Asia/Ho_Chi_Minh).
+        </p>
         <MutationFeedback error={create.error} />
         <div className="actions">
           <Button type="submit" disabled={create.isPending || invalid} aria-busy={create.isPending}>
-            {create.isPending ? "Đang gửi…" : kind === "export" ? "Yêu cầu xuất CSV" : "Tạo báo cáo"}
+            {create.isPending
+              ? "Đang gửi…"
+              : kind === "export"
+                ? "Yêu cầu xuất CSV"
+                : "Tạo báo cáo"}
           </Button>
         </div>
       </form>
@@ -133,7 +151,8 @@ function ReportResultView({ jobId }: { jobId: string }) {
           signal,
         })
       ).data!,
-    retry: (count, error) => !(error instanceof ApiError && [404, 409, 410].includes(error.status)) && count < 2,
+    retry: (count, error) =>
+      !(error instanceof ApiError && [404, 409, 410].includes(error.status)) && count < 2,
     placeholderData: (previous) => previous,
   });
   if (result.isPending) return <LoadingSkeleton />;
@@ -146,6 +165,12 @@ function ReportResultView({ jobId }: { jobId: string }) {
     );
   }
   const data = result.data;
+  const cellText = (value: unknown): string => {
+    if (value === null || value === undefined) return "—";
+    if (typeof value === "string") return value;
+    if (typeof value === "number" || typeof value === "boolean") return String(value);
+    return JSON.stringify(value);
+  };
   const columns = data.rows[0] ? Object.keys(data.rows[0]) : [];
   return (
     <div className="stack">
@@ -164,7 +189,7 @@ function ReportResultView({ jobId }: { jobId: string }) {
         <Table
           caption="Chi tiết báo cáo"
           headers={columns}
-          rows={data.rows.map((row) => columns.map((column) => String(row[column] ?? "—")))}
+          rows={data.rows.map((row) => columns.map((column) => cellText(row[column])))}
         />
         <div className="actions">
           {cursor && (

@@ -20,10 +20,10 @@ export default function LiveFeature({ screen }: { screen: ScreenDefinition }) {
           : screen.group === "07"
             ? Finance
             : ["FE09.02", "FE09.03", "FE09.04"].includes(screen.id)
-            ? Reports
-            : ["FE09.05", "FE09.06"].includes(screen.id)
-              ? Policies
-              : Records;
+              ? Reports
+              : ["FE09.05", "FE09.06"].includes(screen.id)
+                ? Policies
+                : Records;
   return (
     <Suspense fallback={<LoadingSkeleton books={screen.kind === "catalog"} />}>
       <View screen={screen} />

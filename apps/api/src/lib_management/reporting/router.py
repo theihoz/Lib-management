@@ -136,9 +136,11 @@ def download_link(
     service.ready_artifact(uow.session, report, job)
     assert report.expires_at is not None
     response.headers["Cache-Control"] = "no-store"
-    return schemas.DownloadLink(
-        downloadUrl=str(request.url_for("export_content", id=id)),
-        expiresAt=report.expires_at,
+    return schemas.DownloadLink.model_validate(
+        {
+            "downloadUrl": str(request.url_for("export_content", id=id)),
+            "expiresAt": report.expires_at,
+        }
     )
 
 

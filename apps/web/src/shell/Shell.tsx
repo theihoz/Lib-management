@@ -37,11 +37,7 @@ export function Shell({
   }, [screen.id]);
   const navigation = (
     <>
-      <Link
-        className="brand"
-        to="/catalog"
-        onClick={() => setDrawer(false)}
-      >
+      <Link className="brand" to="/catalog" onClick={() => setDrawer(false)}>
         <span className="brand-icon">
           <Icon name="book" size={25} />
         </span>
@@ -70,9 +66,7 @@ export function Shell({
         })}
       </nav>
       <div className="sidebar-footer">
-        <div className="sidebar-avatar">
-          {accountName?.slice(0, 1).toUpperCase() ?? "K"}
-        </div>
+        <div className="sidebar-avatar">{accountName?.slice(0, 1).toUpperCase() ?? "K"}</div>
         <div>
           <strong>{accountName ?? "Khách thư viện"}</strong>
           <small>{accountName ? "Phiên làm việc hiện tại" : "Danh mục công khai"}</small>

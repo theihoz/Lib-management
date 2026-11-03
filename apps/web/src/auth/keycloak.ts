@@ -5,26 +5,40 @@ import { ApiError } from "../api/errors";
 export function createIdentity(config: RuntimeConfig) {
   let client: Keycloak | undefined;
   let loading: Promise<Keycloak> | undefined;
-  const getClient = () => (loading ??= import("keycloak-js").then(({ default: Identity }) => (client ??= new Identity({ url: config.oidcUrl, realm: config.oidcRealm, clientId: config.oidcClientId }))));
+  const getClient = () =>
+    (loading ??= import("keycloak-js").then(
+      ({ default: Identity }) =>
+        (client ??= new Identity({
+          url: config.oidcUrl,
+          realm: config.oidcRealm,
+          clientId: config.oidcClientId,
+        })),
+    ));
   let initializing: Promise<boolean> | undefined;
   const init = () =>
-    (initializing ??= getClient().then((identity) => identity.init({
-      onLoad: "check-sso",
-      silentCheckSsoRedirectUri: `${window.location.origin}${import.meta.env.BASE_URL}silent-check-sso.html`,
-      pkceMethod: "S256",
-      checkLoginIframe: false,
-      responseMode: "query",
-      messageReceiveTimeout: 5000,
-    })));
+    (initializing ??= getClient().then((identity) =>
+      identity.init({
+        onLoad: "check-sso",
+        silentCheckSsoRedirectUri: `${window.location.origin}${import.meta.env.BASE_URL}silent-check-sso.html`,
+        pkceMethod: "S256",
+        checkLoginIframe: false,
+        responseMode: "query",
+        messageReceiveTimeout: 5000,
+      }),
+    ));
   return {
     init,
     async login() {
       await init();
-      await (await getClient()).login({ redirectUri: `${window.location.origin}${import.meta.env.BASE_URL}me` });
+      await (
+        await getClient()
+      ).login({ redirectUri: `${window.location.origin}${import.meta.env.BASE_URL}me` });
     },
     async logout() {
       if (!client) return;
-      await client.logout({ redirectUri: `${window.location.origin}${import.meta.env.BASE_URL}catalog` });
+      await client.logout({
+        redirectUri: `${window.location.origin}${import.meta.env.BASE_URL}catalog`,
+      });
     },
     async getToken() {
       if (!client?.authenticated) return undefined;

@@ -36,9 +36,9 @@ def created_at() -> Mapped[datetime]:
 def load_all_models() -> type[Base]:
     """Import every module's models so Base.metadata is complete."""
     import lib_management.catalog.models  # noqa: F401
-    import lib_management.readers.models  # noqa: F401
     import lib_management.circulation.models  # noqa: F401
     import lib_management.identity.models  # noqa: F401
     import lib_management.platform.models  # noqa: F401
+    import lib_management.readers.models  # noqa: F401
 
     return Base

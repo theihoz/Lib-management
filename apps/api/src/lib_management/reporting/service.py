@@ -5,7 +5,7 @@ import io
 import json
 import uuid
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, cast
 
 from fastapi.encoders import jsonable_encoder
 from sqlalchemy import or_, select, text
@@ -196,15 +196,18 @@ def snapshot(session: Session, report: ReportJob, as_of: datetime) -> dict[str, 
             params,
         ).mappings()
     ]
-    return jsonable_encoder(
-        {
-            "report_id": report.id,
-            "report_type": report.report_type,
-            "as_of": as_of,
-            "period": {**report.filter_snapshot, "timezone": LIBRARY_TIMEZONE},
-            "metrics": metrics,
-            "rows": rows,
-        }
+    return cast(
+        dict[str, Any],
+        jsonable_encoder(
+            {
+                "report_id": report.id,
+                "report_type": report.report_type,
+                "as_of": as_of,
+                "period": {**report.filter_snapshot, "timezone": LIBRARY_TIMEZONE},
+                "metrics": metrics,
+                "rows": rows,
+            }
+        ),
     )
 
 

@@ -339,7 +339,11 @@ function AssessmentDecision({ id }: { id: string }) {
               Đã ghi nhận quyết định.
             </MutationFeedback>
             <div className="actions">
-              <Button type="submit" disabled={decide.isPending || invalid} aria-busy={decide.isPending}>
+              <Button
+                type="submit"
+                disabled={decide.isPending || invalid}
+                aria-busy={decide.isPending}
+              >
                 Xác nhận quyết định
               </Button>
             </div>

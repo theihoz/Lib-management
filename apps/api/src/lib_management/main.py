@@ -8,6 +8,8 @@ from fastapi import APIRouter, FastAPI
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict
 
+from lib_management.catalog.router import router as catalog_router
+from lib_management.circulation.router import router as circulation_router
 from lib_management.config import Settings
 from lib_management.core.errors import install_error_handlers
 from lib_management.core.request_id import RequestIdMiddleware
@@ -19,11 +21,9 @@ from lib_management.db import (
 from lib_management.identity.auth import JwksKeySource, JwtVerifier
 from lib_management.identity.router import router as identity_router
 from lib_management.migrate import head_revision
-from lib_management.catalog.router import router as catalog_router
-from lib_management.readers.router import router as readers_router
-from lib_management.circulation.router import router as circulation_router
-from lib_management.reporting.router import router as reporting_router
 from lib_management.performance import install_performance
+from lib_management.readers.router import router as readers_router
+from lib_management.reporting.router import router as reporting_router
 
 API_PREFIX = "/api/v1"
 

@@ -17,7 +17,7 @@ export type RuntimeConfig = z.infer<typeof RuntimeConfigSchema>;
 export type ConfigResult =
   { ok: true; config: RuntimeConfig } | { ok: false; reason: string; issues: string[] };
 
-export const CONFIG_PATH = "/config.json";
+export const CONFIG_PATH = `${import.meta.env.BASE_URL}config.json`;
 
 export async function loadConfig(fetchFn: typeof fetch = fetch): Promise<ConfigResult> {
   let response: Response;

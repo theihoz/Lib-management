@@ -1,15 +1,15 @@
 # Rà soát khoảng thiếu lõi — 03/11/2026
 
-Nguồn: thread `01a1a043-34b0-7a33-abbe-b028a8dc251d` đã kết thúc; mã gốc `main@84441fb`. Người dùng chọn triển khai toàn bộ lõi 10 tuần gồm gia hạn, phí, báo cáo và CSV. Spec bổ sung: [core-library-design](../superpowers/specs/2026-11-03-core-library-design.md), hiện chờ duyệt các quyết định mới.
+Nguồn: thread `01a1a043-34b0-7a33-abbe-b028a8dc251d` đã kết thúc; mã gốc `main@84441fb`. Người dùng chọn triển khai toàn bộ lõi 10 tuần gồm gia hạn, phí, báo cáo và CSV. Spec bổ sung: [core-library-design](../superpowers/specs/2026-11-03-core-library-design.md), đã được người dùng duyệt và yêu cầu thực thi toàn bộ lõi.
 
 | Nhóm | Quan sát trên main | Xử lý / trạng thái |
 | --- | --- | --- |
 | Backend M0 | 9 bảng identity/platform, auth/me, worker, UoW/idempotency/audit/outbox | Có mã và CI main đạt; hai lỗi dưới được sửa tại branch hiện tại |
 | DB outage | auth/me trả500 khi kết nối DB thất bại, lệch spec503 | Regression qua kết nối thật tới port đóng: đã sửa503; response không lộ chi tiết |
-| Worker lease | Không tự heartbeat; lease hết hạn có thể bị hồi sinh; attempt cũ cùng owner có thể finish lượt mới | Đã thêm heartbeat tự động và guard owner/attempt/expiry; 13 worker integration test đạt |
+| Worker lease | Không tự heartbeat; lease hết hạn có thể bị hồi sinh; attempt cũ cùng owner có thể finish lượt mới | Đã thêm heartbeat tự động và guard owner/attempt/expiry; 18 worker integration test đạt |
 | Frontend | FE00.1 scaffold; thiếu M0 PR2–5 | Dùng spec M0 có sẵn, sau đó nối từng module thật |
 | F14 | Không có trong hai danh sách scope; chưa có policy DB/API/UI | Spec đề xuất đưa BE02/FE09.3 vào lõi; chưa đánh Implemented |
-| Tài chính D01 | Kiểu/NULL của assessment còn mở | Đề xuất cụ thể trong spec; chưa ghi đã được chủ dự án duyệt |
+| Tài chính D01 | Kiểu/NULL của assessment còn mở | Đề xuất cụ thể trong spec; đã được chủ dự án duyệt cùng spec |
 | Catalog/reader/circulation | Thiết kế có, runtime chưa có | Lập mốc C2–C4; nghiệm thu UI/API/PG thật, không thay bằng mock |
 | F09 lookup | Chưa có tra cứu loan cho nhân viên nếu không biết UUID | Spec bổ sung GET loans theo barcode/card/reader; tách khỏi F17 |
 | Reports/CSV | Có operation thiết kế, thiếu result DTO/read path/storage | Spec bổ sung result endpoint, private content download, snapshot/metric/CSV rules |
@@ -19,7 +19,7 @@ Nguồn: thread `01a1a043-34b0-7a33-abbe-b028a8dc251d` đã kết thúc; mã g�
 ## Bằng chứng sửa M0 trong branch
 
 - TDD: ca DB outage thất bại với500 trước sửa; ba ca lease mới thất bại trước sửa.
-- Sau sửa: `pytest -q` với RUN_DB_INTEGRATION=1 trên database PostgreSQL mới riêng, tự xóa sau chạy: **106 passed**.
+- Sau sửa: `pytest -q` với RUN_DB_INTEGRATION=1 trên database PostgreSQL mới riêng, tự xóa sau chạy: **111 passed**.
 - `ruff check .`, `ruff format --check .`, `mypy src`: đạt.
 - Chưa có luồng nghiệp vụ UI/API/DB mới; các AT nghiệp vụ giữ Not run. Kết quả test branch không thay bằng chứng merge/release.
 

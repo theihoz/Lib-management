@@ -1,6 +1,6 @@
 # Hoàn thiện lõi thư viện 10 tuần — đặc tả triển khai
 
-**Ngày:** 03/11/2026 · **Trạng thái:** Draft, chờ duyệt thiết kế · **Mốc gốc:** `main@84441fb`
+**Ngày:** 03/11/2026 · **Trạng thái:** Approved — người dùng duyệt và yêu cầu triển khai toàn bộ lõi ngày03/11/2026 · **Mốc gốc:** `main@84441fb`
 
 ## Yêu cầu và căn cứ
 
@@ -76,9 +76,9 @@ Snapshot là DTO immutable gồm policy_version_id, rules_schema_version, rules 
 
 ## 4. Phí, checkout, trả và gia hạn
 
-### D01 cần duyệt cùng spec này
+### D01 đã duyệt cùng spec này
 
-Đề xuất cụ thể để đóng D01 trước migration: `ChargeAssessment.kind varchar(16)` CHECK DAMAGE/LOST; `status varchar(24)` CHECK PENDING/ASSESSED/CLOSED_NO_CHARGE; `version integer NOT NULL DEFAULT 1` CHECK >0; `created_at timestamptz NOT NULL DEFAULT now()`. Giữ đủ 15 cột nguồn, nullable của trường quyết định theo trạng thái; không thêm cột nguồn giả. Chỉ ghi D01 đã đóng khi người dùng duyệt spec này.
+Quyết định D01 được người dùng duyệt trước migration: `ChargeAssessment.kind varchar(16)` CHECK DAMAGE/LOST; `status varchar(24)` CHECK PENDING/ASSESSED/CLOSED_NO_CHARGE; `version integer NOT NULL DEFAULT 1` CHECK >0; `created_at timestamptz NOT NULL DEFAULT now()`. Giữ đủ 15 cột nguồn, nullable của trường quyết định theo trạng thái; không thêm cột nguồn giả. D01 được đóng bằng lần duyệt spec này; migration vẫn phải qua kiểm thử.
 
 ### Tài chính F11 và nhận trả F08
 
@@ -136,6 +136,6 @@ Mỗi mốc có schema/contract/implementation/test riêng, không đánh cả l
 
 ## 8. Điều kiện mở còn lại
 
-- Spec này đề xuất đưa F14 đầy đủ vào lõi và đóng D01 bằng kiểu cụ thể ở mục4; cần duyệt trước migration nghiệp vụ.
+- Người dùng đã duyệt F14 đầy đủ trong lõi và kiểu D01 tại mục4; không cần hỏi lại trước khi triển khai theo spec.
 - Hosting, retention/ngân sách production, tài khoản SMTP/R2 và extension N03–N07 thuộc phase2/vận hành; không tự mua hay cấu hình bên ngoài.
 - Mã hiện tại đã có một số test M0 nhưng không phải bằng chứng hoàn thành luồng nghiệp vụ. Báo cáo nghiệm thu sẽ cập nhật từng mốc với lệnh, commit và kết quả thật.

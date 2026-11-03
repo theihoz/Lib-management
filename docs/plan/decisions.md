@@ -67,7 +67,11 @@ D01 mới: SQL type/width ChargeAssessment.kind/status; NOT NULL version/created
 
 Theo kế hoạch dự án 10 tuần/5 người (rủi ro số 1: phạm vi F01–F24 quá lớn), ưu tiên triển khai được điều chỉnh. Mục này thay thứ tự ưu tiên ở dòng "Toàn bộ F01–F24" phía trên; không xóa chức năng khỏi thiết kế.
 
-- Lõi cam kết trong 10 tuần: F01–F09, F11–F13, F16, F18–F20.
+- Lõi cam kết trong 10 tuần: F01–F09, F11–F14, F16, F18–F20.
 - Phase 2: F10 (giữ chỗ), F15 (ảnh bìa), F17 (lịch sử portal), F21 (quản trị tài khoản qua API), F22 (nhập/thanh lý), F23 (backup/restore), F24 (thông báo).
 - Nền tảng (audit, idempotency, outbox/job, RBAC đủ 39 permission) vẫn làm đầy đủ ở M0 để phase 2 không phải đổi schema nền. Trong lõi, role được gán bằng CLI vận hành thay cho API F21.
 - Thiết kế, C01–C09 và các quyết định khác giữ nguyên. Spec triển khai: [docs/specs](../specs/README.md).
+
+## Quyết định bổ sung 03/11/2026 — F14, D01 và triển khai lõi
+
+Người dùng đã duyệt [spec toàn bộ lõi](../superpowers/specs/2026-11-03-core-library-design.md) và yêu cầu triển khai: F14 (BE02 và UI FE09.3) thuộc lõi; D01 dùng kind varchar(16), status varchar(24), version integer NOT NULL DEFAULT1 và created_at timestamptz NOT NULL DEFAULT now(). C01–C09 giữ nguyên. Báo cáo lấy snapshot lúc worker bắt đầu, không hỗ trợ client asOf lịch sử trong lõi. API provisioning F16/F21 hoãn, CLI liên kết Account–Reader thuộc lõi. Gate release lõi độc lập phase2; artifact storage private phục vụ CSV vẫn thuộc lõi.

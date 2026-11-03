@@ -1,0 +1,122 @@
+# Standalone local deployment preview; intentionally separate from compose.yaml.
+name: lib-management-performance
+
+x-db-env: &db-env
+  DB_HOST: db
+  DB_PORT: 5432
+  DB_USER: ${POSTGRES_USER:-lib_dev}
+  DB_NAME: ${POSTGRES_DB:-lib_management}
+  DB_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+  DB_POOL_SIZE: ${DB_POOL_SIZE:-5}
+  DB_POOL_MAX_OVERFLOW: ${DB_POOL_MAX_OVERFLOW:-5}
+  DB_POOL_TIMEOUT_SECONDS: ${DB_POOL_TIMEOUT_SECONDS:-2}
+  DB_POOL_RECYCLE_SECONDS: ${DB_POOL_RECYCLE_SECONDS:-1800}
+
+x-api: &api
+  build:
+    context: ..
+    dockerfile: docker/api.Dockerfile
+    target: production
+  init: true
+  environment:
+    <<: *db-env
+    OIDC_ISSUER: ${OIDC_ISSUER:?Set a reachable OIDC_ISSUER for this deployment}
+    OIDC_AUDIENCE: ${OIDC_AUDIENCE:-lib-management-api}
+    OIDC_JWKS_URL: ${OIDC_JWKS_URL:-}
+  depends_on:
+    migrate:
+      condition: service_completed_successfully
+  restart: unless-stopped
+  read_only: true
+  security_opt: [no-new-privileges:true]
+  cap_drop: [ALL]
+  tmpfs: [/tmp]
+  networks: [backend, edge]
+
+services:
+  db:
+    image: postgres:17-bookworm@sha256:3645570cccdfa447589da9f57dd740faa29b30938e861289a5574b6ca6b03826
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-lib_dev}
+      POSTGRES_DB: ${POSTGRES_DB:-lib_management}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - performance-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+    security_opt: [no-new-privileges:true]
+    networks: [backend]
+
+  migrate:
+    build:
+      context: ..
+      dockerfile: docker/api.Dockerfile
+      target: production
+    command: ["python", "-m", "lib_management.cli", "migrate"]
+    environment: *db-env
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+    read_only: true
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    tmpfs: [/tmp]
+    networks: [backend]
+
+  api-1:
+    <<: *api
+
+  api-2:
+    <<: *api
+
+  worker:
+    build:
+      context: ..
+      dockerfile: docker/api.Dockerfile
+      target: production
+    init: true
+    command: ["python", "-m", "lib_management.worker"]
+    environment: *db-env
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    restart: unless-stopped
+    read_only: true
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    tmpfs: [/tmp]
+    networks: [backend]
+
+  web:
+    build:
+      context: ..
+      dockerfile: docker/web.performance.Dockerfile
+    ports:
+      - "127.0.0.1:${WEB_PORT:-8088}:8080"
+    volumes:
+      - ${RUNTIME_CONFIG_FILE:-./runtime-config.example.json}:/usr/share/nginx/html/config.json:ro
+    depends_on:
+      api-1:
+        condition: service_healthy
+      api-2:
+        condition: service_healthy
+    restart: unless-stopped
+    read_only: true
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    tmpfs: [/tmp]
+    networks: [edge]
+
+volumes:
+  performance-pgdata:
+
+networks:
+  backend:
+    internal: true
+  edge:

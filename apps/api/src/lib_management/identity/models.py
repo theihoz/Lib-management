@@ -28,8 +28,9 @@ class Account(Base):
     id: Mapped[uuid.UUID] = uuid_pk()
     issuer: Mapped[str] = mapped_column(Text, nullable=False)
     subject: Mapped[str] = mapped_column(Text, nullable=False)
-    # FK to reader.id is added by the first BE04 migration (reader table).
-    reader_id: Mapped[uuid.UUID | None] = mapped_column(unique=True)
+    reader_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("reader.id"), unique=True
+    )
     display_name: Mapped[str] = mapped_column(String(200), nullable=False)
     status: Mapped[str] = mapped_column(String(16), nullable=False)
     auth_version: Mapped[int] = mapped_column(

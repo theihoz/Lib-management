@@ -4,7 +4,9 @@ import { classifySessionError, canAccess } from "./session-state";
 describe("server-derived session permissions", () => {
   it("keeps locked and unlinked accounts out of staff content", () => {
     expect(classifySessionError(new ApiError(403, "ACCOUNT_INACTIVE", "locked"))).toBe("inactive");
-    expect(classifySessionError(new ApiError(403, "ACCOUNT_NOT_LINKED", "unlinked"))).toBe("not_linked");
+    expect(classifySessionError(new ApiError(403, "ACCOUNT_NOT_LINKED", "unlinked"))).toBe(
+      "not_linked",
+    );
     expect(classifySessionError(new ApiError(401, "INVALID_TOKEN", "expired"))).toBe("expired");
     expect(classifySessionError(new ApiError(503, "AUTH_UNAVAILABLE", "offline"))).toBe("offline");
   });

@@ -5,6 +5,7 @@ None of these run automatically at startup.
 
 import argparse
 import sys
+import uuid
 
 from lib_management import migrate
 from lib_management.config import Settings
@@ -61,6 +62,25 @@ def cmd_bootstrap_admin(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_link_reader_account(args: argparse.Namespace) -> int:
+    factory = _session_factory(Settings())
+    try:
+        with factory() as session, session.begin():
+            account = service.link_reader_account(
+                session,
+                actor_id=args.actor_id,
+                issuer=args.issuer,
+                subject=args.subject,
+                reader_id=args.reader_id,
+            )
+            account_id = account.id
+    except service.LinkError as error:
+        print(error, file=sys.stderr)
+        return 2
+    print(f"Account {account_id} linked to reader {args.reader_id}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="python -m lib_management.cli")
     commands = parser.add_subparsers(dest="command", required=True)
@@ -82,6 +102,15 @@ def build_parser() -> argparse.ArgumentParser:
     boot.add_argument("--display-name", required=True)
     boot.add_argument("--role", action="append", required=True)
     boot.set_defaults(func=cmd_bootstrap_admin)
+
+    link = commands.add_parser(
+        "link-reader-account", help="link a READER account to an existing Reader"
+    )
+    link.add_argument("--issuer", required=True)
+    link.add_argument("--subject", required=True)
+    link.add_argument("--reader-id", required=True, type=uuid.UUID)
+    link.add_argument("--actor-id", required=True, type=uuid.UUID)
+    link.set_defaults(func=cmd_link_reader_account)
     return parser
 
 

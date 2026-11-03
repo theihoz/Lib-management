@@ -70,3 +70,36 @@ Kiểm tra HTTP frontend/config/modules và proxy readiness đến PostgreSQL th
 Kiểm thử các ranh giới quan trọng: API error, idempotency, permission guard,
 điều hướng thiết kế, validation, trạng thái endpoint chưa có. Ghi rõ giới hạn
 nếu không có trình duyệt để kiểm tra hình ảnh/keyboard trực tiếp.
+
+## Bổ sung phạm vi được người dùng yêu cầu trong khi triển khai
+
+Sau khi duyệt thiết kế, người dùng yêu cầu bổ sung REST API còn thiếu cho các
+màn hình. Phần giới hạn không triển khai backend ở trên được thay bằng: API
+nghiệp vụ dùng Python/FastAPI trong `apps/api`, giữ hợp đồng OpenAPI, RBAC,
+giao dịch, idempotency và migration. TypeScript trong `apps/web/src/api` chỉ là
+client HTTP; không chứa backend hoặc thay quyền do server kiểm tra.
+
+Người dùng cũng yêu cầu tối ưu ảnh/lazy loading, chia chunk, cache API, debounce,
+phân trang, skeleton, giảm render dư, nén payload, connection pool, index,
+cache tính toán server, CDN, load balancer và Lighthouse. Áp dụng trực tiếp các
+tối ưu ứng dụng; CDN/load balancer có cấu hình triển khai riêng, không tự mua
+dịch vụ hoặc tuyên bố đã triển khai cloud. Không cache chung dữ liệu phiên,
+PII hoặc phản hồi có kiểm tra RBAC. Báo cáo Lighthouse ghi đúng URL, bản build,
+thiết bị và môi trường đã chạy.
+
+## Điều chỉnh 03/11/2026: giao diện thật theo spec lõi
+
+Người dùng yêu cầu giao diện thật, không phải bản demo. Phạm vi 71 màn, chế độ xem
+thiết kế và dữ liệu minh họa ở trên không còn là hướng triển khai:
+
+- Đăng ký route chỉ gồm lõi 10 tuần (F01–F09, F11–F14, F16, F18–F20); mượn giữ chỗ,
+  lịch sử portal, tài khoản/nhập kho/thanh lý và vận hành (nhóm 10, 11) thuộc phase 2.
+- Không còn `DesignBrowser`, `fixtures` hay khám phá chức năng qua `/openapi.json`;
+  mỗi màn gọi API thật và hiển thị lỗi thật (401/403/404/409/422/503).
+- Quyền của route theo [ma trận quyền](permission-matrix.md); API vẫn là nơi quyết định.
+- Quầy mượn/trả/gia hạn tra cứu theo số thẻ và mã vạch (`/readers/lookup`,
+  `/copies/lookup`, `GET /loans`), không yêu cầu nhập UUID.
+- Báo cáo/CSV: tạo job → theo dõi trạng thái → xem kết quả đã vật hóa → tải CSV qua
+  client có Bearer. Phiên khôi phục bằng Keycloak `check-sso` + silent SSO.
+- Lighthouse, CDN, load balancer: xem `deploy/PERFORMANCE.md`; chưa có số đo Lighthouse
+  thật cho đến khi chạy được trên bản build production.

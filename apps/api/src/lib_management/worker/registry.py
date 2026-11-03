@@ -47,5 +47,12 @@ def noop(context: JobContext) -> None:
 
 
 def default_registry() -> Registry:
-    # Business handlers are registered by their modules in later milestones.
-    return Registry(handlers={"noop.v1": noop})
+    from lib_management.reporting.handlers import configured_handler
+
+    return Registry(
+        handlers={
+            "noop.v1": noop,
+            "report": configured_handler,
+            "export": configured_handler,
+        }
+    )

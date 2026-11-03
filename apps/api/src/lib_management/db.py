@@ -22,6 +22,11 @@ def create_engine_from_settings(settings: Settings) -> Engine:
     return create_engine(
         url,
         pool_pre_ping=True,
+        pool_size=settings.db_pool_size,
+        max_overflow=settings.db_pool_max_overflow,
+        pool_timeout=settings.db_pool_timeout_seconds,
+        pool_recycle=settings.db_pool_recycle_seconds,
+        pool_use_lifo=True,
         connect_args={"connect_timeout": 2, "options": "-c statement_timeout=2000"},
     )
 

@@ -2,7 +2,7 @@
 
 Ngày: 2026-10-07, cập nhật 2026-11-03. Trạng thái dùng: **Not run**; **Partial** = có pytest chạy trên PostgreSQL thật trong CI (`tests/business`, `tests/integration`, CI xanh trên `main`) nhưng chưa đủ biên lỗi/UI; **Pass** chỉ khi đủ bằng chứng. Chưa có Playwright E2E, nên không ca nào được ghi Pass cho luồng UI→API→DB.
 
-Ghi chú 2026-11-03: Partial = `test_checkout_scanner_renewal_and_good_return` (AT07–AT09), `test_damage_assessment_payment_replay_and_reversal` (AT08, AT11), `test_overdue_items_include_reader_title_and_late_days` (AT19), `test_stale_reader_patch_and_invalid_policy` (AT06, AT14), `test_public_catalog_does_not_require_auth` (AT18). Các ca còn lại của spec lõi §7 (5 cuốn, nửa đêm, cuối tháng, lịch policy cạnh tranh, CSV 410/formula) chưa có test riêng. Mỗi feature gắn [truy vết](../plan/traceability.md), OpenAPI và wireframe tương ứng.
+Ghi chú 2026-11-03: Partial = `test_checkout_scanner_renewal_and_good_return` (AT07–AT09), `test_damage_assessment_payment_replay_and_reversal` (AT08, AT11), `test_overdue_items_include_reader_title_and_late_days` (AT19), `test_public_catalog_does_not_require_auth` (AT18). Các ca còn lại của spec lõi §7 (5 cuốn, nửa đêm, cuối tháng, lịch policy cạnh tranh, CSV 410/formula) chưa có test riêng. Mỗi feature gắn [truy vết](../plan/traceability.md), OpenAPI và wireframe tương ứng.
 
 | ID | F | Luồng | Dữ liệu/biên lỗi | Kết quả mong đợi | Trạng thái |
 | --- | --- | --- | --- | --- | --- |

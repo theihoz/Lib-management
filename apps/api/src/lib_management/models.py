@@ -40,5 +40,6 @@ def load_all_models() -> type[Base]:
     import lib_management.identity.models  # noqa: F401
     import lib_management.platform.models  # noqa: F401
     import lib_management.readers.models  # noqa: F401
+    import lib_management.reporting.models  # noqa: F401
 
     return Base

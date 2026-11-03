@@ -15,7 +15,7 @@ hoặc image; chỉ cung cấp credentials lúc chạy.
 
 Mốc hạ tầng hiện tại gồm API tối thiểu, DB local, health endpoints, Docker và CI,
 cùng hợp đồng publish API thủ công lên GHCR sau quality gates trên cùng SHA.
-Chưa triển khai CRUD, đăng nhập, schema nghiệp vụ hoặc frontend. Frontend/Nginx chưa được cấu hình trong stack hiện tại.
+Mốc M0 đã có: migration identity/platform, xác thực Keycloak JWT + permission DB, `GET /api/v1/auth/me`, worker outbox/job, và scaffold frontend `apps/web` (chưa có màn hình đăng nhập). Chưa triển khai module nghiệp vụ/CRUD; Nginx/hosting frontend chưa được cấu hình. Xem [docs/specs](docs/specs/README.md).
 
 ## Tiêu chí hoàn thành
 

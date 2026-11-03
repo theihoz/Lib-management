@@ -1,0 +1,7 @@
+{
+  "oidcUrl": "http://localhost:8080",
+  "oidcRealm": "lib-management",
+  "oidcClientId": "lib-management-web",
+  "apiBaseUrl": "",
+  "mock": false
+}

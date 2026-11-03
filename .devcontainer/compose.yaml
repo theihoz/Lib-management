@@ -24,6 +24,7 @@ services:
         condition: service_healthy
     ports:
       - "127.0.0.1:8000:8000"
+      - "127.0.0.1:5173:5173"
     security_opt: [no-new-privileges:true]
     cap_drop: [ALL]
   db:

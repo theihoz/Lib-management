@@ -1,29 +1,74 @@
 # Lib-management — Quản lý thư viện
 
-Backend **Python 3.13 + FastAPI + PostgreSQL 17**, dependencies khóa bằng `uv.lock`.
-Hiện có scaffold, health endpoints, Docker và CI; chưa có CRUD, schema nghiệp vụ,
-đăng nhập hoặc giao diện hoàn chỉnh. C01–C09 đã được người dùng đồng ý áp dụng.
+Phần mềm quản lý thư viện: quầy mượn/trả cho nhân viên và portal cho độc giả.
+Monorepo gồm backend FastAPI và frontend React, phát triển trong một Dev Container chung.
 
-## Bắt đầu cho thành viên mới
+| Phần | Công nghệ | Thư mục |
+| --- | --- | --- |
+| Backend | Python 3.13, FastAPI, SQLAlchemy 2, Alembic, PostgreSQL 17; dependencies khóa bằng `uv.lock` | [`apps/api`](apps/api/README.md) |
+| Frontend | React 19, TypeScript, Vite; dependencies khóa bằng `package-lock.json` | [`apps/web`](apps/web/README.md) |
+| Đăng nhập | Keycloak OIDC, Authorization Code + PKCE; quyền lưu trong DB ứng dụng | `.devcontainer/keycloak` |
+
+## Trạng thái hiện tại (mốc M0)
+
+**Đã có**
+
+- Backend nền tảng ([spec M0 backend](docs/specs/M0-backend-foundation.md)): hợp đồng lỗi
+  `ErrorResponse`, request ID, cursor pagination, Unit of Work, idempotency, audit log,
+  outbox và worker job có lease/retry; migration 9 bảng identity/platform.
+- Xác thực: kiểm tra JWT Keycloak, Account ACTIVE và 39 permission/5 role từ DB;
+  endpoint `GET /api/v1/auth/me`; CLI `seed-rbac`, `bootstrap-admin`.
+- Frontend scaffold ([spec M0 frontend](docs/specs/M0-frontend-foundation.md), PR 1):
+  app Vite, cấu hình runtime `/config.json` kiểm tra bằng Zod, lint/test/build.
+- Dev Container có Python, uv, Node 24, PostgreSQL và Keycloak dev; CI cho cả backend và frontend.
+
+**Chưa có**
+
+- Module nghiệp vụ (danh mục, độc giả, mượn/trả, phí…) và các màn hình tương ứng.
+- Đăng nhập trên giao diện, app shell và component (PR 2–5 của spec frontend).
+- Hosting/deployment production chưa được quyết định; publish image không có nghĩa là đã triển khai.
+
+Phạm vi 10 tuần: F01–F09, F11–F13, F16, F18–F20; phần còn lại thuộc phase 2
+([quyết định 03/11/2026](docs/plan/decisions.md#quyết-định-03112026--phạm-vi-lõi-10-tuần)).
+Quy tắc C01–C09 đã được chủ dự án đồng ý áp dụng.
+
+## Bắt đầu
 
 ```bash
 git clone https://github.com/theihoz/Lib-management.git
 cd Lib-management
 ```
 
-**Code trong Dev Container (khuyến nghị):** cài Docker Desktop/Engine, Git,
-VS Code với extension Dev Containers. Windows dùng Docker Desktop Linux containers/WSL2. Mở thư mục repository,
-chọn **Dev Containers: Rebuild and Reopen in Container** khi cập nhật cấu hình. Toàn bộ dự án được mount vào workspace;
-Python, uv, Git và dependencies Linux có sẵn. Trong terminal container:
+### Cách 1 — Dev Container (khuyến nghị để code)
+
+Cài Docker Desktop/Engine, Git, VS Code với extension Dev Containers (Windows: Docker Desktop
+Linux containers trên WSL2). Mở thư mục repository, chọn **Dev Containers: Rebuild and Reopen
+in Container**. Container đã có Python, uv, Node 24 và chạy sẵn `uv sync` + `npm ci`.
+
+Trong terminal container:
 
 ```bash
+# Backend: migration, quyền, user Keycloak dev
 cd apps/api
+uv run --locked alembic upgrade head
+uv run --locked python -m lib_management.cli seed-rbac
+uv run --locked python ../../.devcontainer/keycloak/create_dev_users.py --link
 uv run --locked uvicorn lib_management.main:create_app --factory --host 0.0.0.0 --port 8000 --reload
+
+# Frontend (terminal khác)
+cd apps/web
+npm run dev
 ```
 
-Swagger: <http://localhost:8000/docs>. Xem [hướng dẫn Dev Container](.devcontainer/README.md).
+| Dịch vụ | Địa chỉ |
+| --- | --- |
+| Frontend | <http://localhost:5173> (cổng cố định vì redirect Keycloak) |
+| API + Swagger | <http://localhost:8000/docs> |
+| Keycloak dev | <http://localhost:8080> (realm `lib-management`) |
 
-**Chỉ chạy app bằng Compose:**
+Chi tiết, cách lấy token thử và xử lý lỗi: [hướng dẫn Dev Container](.devcontainer/README.md).
+
+### Cách 2 — Chỉ chạy backend bằng Compose
 
 ```bash
 cp .env.example .env
@@ -31,41 +76,54 @@ cp .env.example .env
 docker compose up --build -d --wait
 ```
 
-Compose này chạy API tự động, khác workspace Dev Container. Chọn một cách chạy
-trên cổng 8000; hai stack có volume PostgreSQL riêng. `docker compose down` giữ dữ liệu.
+Compose chạy `db` → `migrate` (một lần) → `api` + `worker`. Đây là stack riêng, khác workspace
+Dev Container; chỉ chạy một trong hai trên cổng 8000. `docker compose down` giữ dữ liệu.
+`OIDC_ISSUER` để trống thì route cần đăng nhập trả 503, health vẫn chạy.
 Có thể [chạy API trên host](apps/api/README.md) bằng uv và DB Compose.
 
-## Tài liệu cho team
+## Kiểm tra trước khi mở PR
 
-- [Onboarding, chia công việc, Git và review](docs/operations/team-development.md)
-- [Docker, biến môi trường, dữ liệu, CI/CD, xử lý lỗi](docs/operations/containers-ci.md)
-- [Hợp đồng hạ tầng hiện hành](docs/operations/fastapi-infrastructure-spec.md)
-- [Thiết kế hiện hành: DB/API/quyền/UML và báo cáo đồng bộ](docs/design/README.md)
-- [Nguồn DOCX/PDF và chỉ mục tài liệu](docs/README.md)
+```bash
+# apps/api
+uv run --locked ruff check . && uv run --locked ruff format --check . && uv run --locked mypy src
+uv run --locked pytest
+
+# apps/web
+npm run lint && npm run format:check && npm run typecheck && npm test && npm run build
+```
+
+CI (`.github/workflows/ci.yml`) chạy các bước trên, thêm integration test PostgreSQL,
+migration round trip và build production image. Check bắt buộc của `main` là `ci-result`.
+Workflow `Publish API image` xuất bản GHCR thủ công từ default branch sau CI cùng SHA.
+
+## Tài liệu
+
+- [Spec triển khai](docs/specs/README.md) — bản đủ chi tiết để code từng mốc
+- [Kế hoạch backend/frontend/tích hợp](docs/plan/README.md), [quyết định](docs/plan/decisions.md)
+- [Thiết kế: DB, OpenAPI, quyền, identity, kiến trúc](docs/design/README.md)
+- [Onboarding, chia việc, Git và review](docs/operations/team-development.md)
+- [Docker, biến môi trường, CI/CD](docs/operations/containers-ci.md)
 - [Bối cảnh và phạm vi dự án](PROJECT-CONTEXT.md)
 - [Bằng chứng kiểm tra đã thực hiện](docs/operations/verification.md)
-
-CI kiểm tra source/lock, lint, format, types, tests, wheel và production image.
-Workflow `Publish API image` xuất bản GHCR thủ công từ default branch sau CI cùng SHA;
-**publish image chưa triển khai server**. Frontend React/TypeScript/Vite và Keycloak OIDC/PKCE đã chốt ở thiết kế; hosting còn cần quyết định.
-Maintainer cần bật review PR, required check `ci-result` và environment `image-publish`
-trên GitHub. Trạng thái bảo vệ main cần xem trực tiếp trên GitHub; tài liệu lịch sử tại [trạng thái và cấu hình rule](docs/operations/branch-protection.md). Environment image-publish chưa được xác nhận đã bật.
 
 ## Cấu trúc repository
 
 ```text
-.devcontainer/       Workspace Linux cho team; mount toàn bộ project
-.github/             CI, publish, Dependabot, PR template và payload bảo vệ main
-apps/api/            FastAPI src, tests, pyproject.toml, uv.lock
+.devcontainer/       Workspace Linux cho team: Python, Node, PostgreSQL, Keycloak dev
+.github/             CI, publish image, Dependabot, payload bảo vệ main
+apps/api/            FastAPI: src/lib_management, migrations, tests, uv.lock
+apps/web/            React + Vite: src, public/config.json, package-lock.json
 docker/              Dockerfile API dev/build/production
-compose.yaml         Chạy API + PostgreSQL local
+compose.yaml         db + migrate + api + worker local
 PROJECT-CONTEXT.md   Mục đích, phạm vi và quyết định hiện hành
 docs/
-  design/            DOCX, DB, API/OpenAPI, quyền, identity, events và bảo mật
-  diagrams/          UML một canvas, chỉnh sửa bằng diagrams.net
-  plan/              Kế hoạch nhỏ backend/frontend/tích hợp, wireframes và motion
-  quality/           Ma trận nghiệm thu F01–F24 (chưa chạy)
+  specs/             Spec triển khai theo mốc (M0 backend, M0 frontend)
+  design/            DOCX, DB, API/OpenAPI, quyền, identity, events, bảo mật
+  plan/              Kế hoạch module backend/frontend/tích hợp, wireframe, motion
+  diagrams/          UML (diagrams.net)
+  quality/           Ma trận nghiệm thu F01–F24
   operations/        Onboarding, Docker/CI, bảo vệ main, bằng chứng kiểm tra
   archive/           Kế hoạch và nguồn tham khảo lịch sử
-  source-manifest.json  Nguồn, thời điểm tải và hash binary
 ```
+
+Không ghi secret vào repository, tài liệu hoặc image; credentials chỉ cung cấp lúc chạy.

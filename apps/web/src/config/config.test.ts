@@ -45,6 +45,11 @@ describe("loadConfig", () => {
     expect(result.ok).toBe(false);
   });
 
+  it("allows an empty oidcUrl only for the mock build", async () => {
+    expect((await loadConfig(respond({ ...valid, oidcUrl: "" }))).ok).toBe(false);
+    expect((await loadConfig(respond({ ...valid, oidcUrl: "", mock: true }))).ok).toBe(true);
+  });
+
   it("reports HTTP errors", async () => {
     const result = await loadConfig(respond("missing", { status: 404 }));
     expect(result.ok).toBe(false);

@@ -3,14 +3,20 @@ import { z } from "zod";
 const httpUrl = z.url({ protocol: /^https?$/, error: "Phải là URL http(s) hợp lệ" });
 
 /** Public runtime settings served as /config.json; never holds secrets. */
-export const RuntimeConfigSchema = z.strictObject({
-  oidcUrl: httpUrl,
-  oidcRealm: z.string().min(1),
-  oidcClientId: z.string().min(1),
-  /** Empty string means same origin as the app. */
-  apiBaseUrl: z.union([z.literal(""), httpUrl]),
-  mock: z.boolean(),
-});
+export const RuntimeConfigSchema = z
+  .strictObject({
+    /** Empty only for the demo build (mock: true), which has no identity provider. */
+    oidcUrl: z.union([z.literal(""), httpUrl]),
+    oidcRealm: z.string().min(1),
+    oidcClientId: z.string().min(1),
+    /** Empty string means same origin as the app. */
+    apiBaseUrl: z.union([z.literal(""), httpUrl]),
+    mock: z.boolean(),
+  })
+  .refine((c) => c.oidcUrl !== "" || (c.mock && import.meta.env.MODE !== "production"), {
+    path: ["oidcUrl"],
+    error: "Phải là URL http(s) hợp lệ",
+  });
 
 export type RuntimeConfig = z.infer<typeof RuntimeConfigSchema>;
 

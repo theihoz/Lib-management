@@ -127,7 +127,7 @@ jobs:
       - run: npm run build
       - name: Production bundle contains no design-preview or fixture code
         run: |
-          if grep -rIl --include='*.js' -e 'DesignBrowser' -e 'fixtureFor' -e 'dữ liệu minh họa' dist; then
+          if grep -rIl --include='*.js' -e 'DesignBrowser' -e 'fixtureFor' -e 'dữ liệu minh họa' -e '__LIB_MOCK__' dist; then
             echo "Demo markers found in dist"; exit 1
           fi
   container:

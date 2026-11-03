@@ -1,5 +1,5 @@
 {
-  "name": "Lib-management — Python + PostgreSQL",
+  "name": "Lib-management — Python + Node + PostgreSQL",
   "initializeCommand": [
     "docker",
     "run",
@@ -23,14 +23,17 @@
   "shutdownAction": "stopCompose",
   "postCreateCommand": "bash .devcontainer/setup.sh",
   "forwardPorts": [
-    8000
+    8000,
+    5173
   ],
   "customizations": {
     "vscode": {
       "extensions": [
         "ms-python.python",
         "ms-python.vscode-pylance",
-        "charliermarsh.ruff"
+        "charliermarsh.ruff",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode"
       ],
       "settings": {
         "python.defaultInterpreterPath": "/home/developer/.venv/bin/python"

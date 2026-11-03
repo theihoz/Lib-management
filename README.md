@@ -18,17 +18,25 @@ Monorepo gồm backend FastAPI và frontend React, phát triển trong một Dev
   outbox và worker job có lease/retry; migration 9 bảng identity/platform.
 - Xác thực: kiểm tra JWT Keycloak, Account ACTIVE và 39 permission/5 role từ DB;
   endpoint `GET /api/v1/auth/me`; CLI `seed-rbac`, `bootstrap-admin`.
-- Frontend scaffold ([spec M0 frontend](docs/specs/M0-frontend-foundation.md), PR 1):
-  app Vite, cấu hình runtime `/config.json` kiểm tra bằng Zod, lint/test/build.
+- Lõi thư viện (code, CI xanh; chưa nghiệm thu E2E): danh mục/bản sao/vị trí, độc giả và thẻ,
+  eligibility, mượn/trả/gia hạn, phí (assessment, thu, miễn, đảo), quá hạn, báo cáo + CSV
+  qua worker và storage private, policy có phiên bản (F14); CLI `link-reader-account`.
+  66/85 operation OpenAPI được phục vụ; 19 còn lại thuộc phase 2.
+- Frontend ([spec M0 frontend](docs/specs/M0-frontend-foundation.md)): Keycloak PKCE, client sinh từ
+  OpenAPI, route/menu theo permission, 36 màn thuộc lõi; cấu hình runtime `/config.json` kiểm tra bằng Zod.
+- GitHub Pages triển khai bản build tĩnh sau khi toàn bộ CI đạt.
 - Dev Container có Python, uv, Node 24, PostgreSQL và Keycloak dev; CI cho cả backend và frontend.
 
 **Chưa có**
 
-- Module nghiệp vụ (danh mục, độc giả, mượn/trả, phí…) và các màn hình tương ứng.
-- Đăng nhập trên giao diện, app shell và component (PR 2–5 của spec frontend).
+- Phase 2: giữ chỗ F10, bìa F15, lịch sử portal F17, quản trị tài khoản F21, nhập/thanh lý F22,
+  backup/restore F23, thông báo F24.
+- Playwright E2E với Keycloak + API + PostgreSQL thật, Lighthouse và benchmark NFR
+  ([audit](docs/quality/2026-11-03-spec-conformance-audit.md)).
+- React Hook Form (quyết định công nghệ); form hiện dùng Zod trực tiếp.
 - Hosting/deployment production chưa được quyết định; publish image không có nghĩa là đã triển khai.
 
-Phạm vi 10 tuần: F01–F09, F11–F13, F16, F18–F20; phần còn lại thuộc phase 2
+Phạm vi 10 tuần: F01–F09, F11–F14, F16, F18–F20; phần còn lại thuộc phase 2
 ([quyết định 03/11/2026](docs/plan/decisions.md#quyết-định-03112026--phạm-vi-lõi-10-tuần)).
 Quy tắc C01–C09 đã được chủ dự án đồng ý áp dụng.
 

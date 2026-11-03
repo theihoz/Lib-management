@@ -1,8 +1,8 @@
 # Kế hoạch triển khai Lib-management
 
-**Trạng thái:** Planned · **Ngày:** 2026-10-07
+**Trạng thái:** In progress (lõi 10 tuần có code, chưa nghiệm thu E2E) · **Ngày:** 2026-10-07 · cập nhật 2026-11-03
 
-Bộ kế hoạch mới bao phủ F01–F24. Mỗi module một file Markdown, task bên trong là đơn vị PR. Đây là tài liệu triển khai, chưa có code nghiệp vụ được tạo trong bước này.
+Bộ kế hoạch mới bao phủ F01–F24. Mỗi module một file Markdown, task bên trong là đơn vị PR. Đây là tài liệu triển khai; code lõi đã có theo [spec lõi](../superpowers/specs/2026-11-03-core-library-design.md). Trạng thái từng task chỉ đổi khi có bằng chứng.
 
 ## Đọc trước
 
@@ -98,7 +98,7 @@ Google Docs báo cáo mới là bản hiện hành: 71 bảng tài liệu, trong
 
 Từ điển hiện hành: docs/design/data-dictionary.md và data-dictionary.json (đường dẫn tính từ root repo). docs/design/live-report.docx là export trực tiếp từ Docs mới; library-software-design.docx vẫn giữ bản nguồn đã hiệu chỉnh 07/10 để truy vết, không phải export mới. source-data-dictionary.json là dữ liệu trích xuất 38 bảng nguồn. Không dùng bảng 5 cột cũ để phủ định Docs mới.
 
-D01 đã được người dùng chốt03/11/2026 trong spec core: kind varchar(16), status varchar(24), version integer NOT NULL DEFAULT1, created_at timestamptz NOT NULL DEFAULT now(); giữ snapshot nguồn lịch sử để truy vết. N03–N07 còn mở. Các task BE00.S, BE05.S, FE07.S và INT00.S mô tả gate triển khai; chưa đổi trạng thái Planned.
+D01 đã được chủ dự án chốt 03/11/2026 trong spec lõi: kind varchar(16), status varchar(24), version integer NOT NULL DEFAULT 1, created_at timestamptz NOT NULL DEFAULT now(); giữ snapshot nguồn lịch sử để truy vết. N03–N07 còn mở. Các task BE00.S, BE05.S, FE07.S và INT00.S mô tả gate triển khai; chưa đổi trạng thái Planned.
 
 ## Spec triển khai và phạm vi 03/11/2026
 

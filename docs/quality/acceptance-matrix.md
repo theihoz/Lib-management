@@ -1,6 +1,8 @@
 # Ma trận nghiệm thu Lib-management
 
-Ngày: 2026-10-07. Các ca dưới đây **Not run**: dự án mới có health code. Mỗi feature gắn [truy vết](../plan/traceability.md), OpenAPI và wireframe tương ứng.
+Ngày: 2026-10-07, cập nhật 2026-11-03. Trạng thái dùng: **Not run**; **Partial** = có pytest chạy trên PostgreSQL thật trong CI (`tests/business`, `tests/integration`, CI xanh trên `main`) nhưng chưa đủ biên lỗi/UI; **Pass** chỉ khi đủ bằng chứng. Chưa có Playwright E2E, nên không ca nào được ghi Pass cho luồng UI→API→DB.
+
+Ghi chú 2026-11-03: Partial = `test_checkout_scanner_renewal_and_good_return` (AT07–AT09), `test_damage_assessment_payment_replay_and_reversal` (AT08, AT11), `test_overdue_items_include_reader_title_and_late_days` (AT19), `test_public_catalog_does_not_require_auth` (AT18). Các ca còn lại của spec lõi §7 (5 cuốn, nửa đêm, cuối tháng, lịch policy cạnh tranh, CSV 410/formula) chưa có test riêng. Mỗi feature gắn [truy vết](../plan/traceability.md), OpenAPI và wireframe tương ứng.
 
 | ID | F | Luồng | Dữ liệu/biên lỗi | Kết quả mong đợi | Trạng thái |
 | --- | --- | --- | --- | --- | --- |
@@ -10,19 +12,19 @@ Ngày: 2026-10-07. Các ca dưới đây **Not run**: dự án mới có health 
 | AT04 | F04 | Tác giả | Hai tác giả trùng tên | ID riêng, không tự hợp nhất | Not run |
 | AT05 | F05 | NXB | Xóa khi đang tham chiếu | Chặn, giữ FK | Not run |
 | AT06 | F06 | Thẻ | Tuổi12/55, ngày31 và expiresAt | Biên hợp lệ, hết hạn đúng mốc | Not run |
-| AT07 | F07 | Mượn | 4/5copy, hai quầy, retry | Một OPEN/copy, atomic, cùng key cùng receipt | Not run |
-| AT08 | F08 | Trả | Nợ/thẻ hết hạn, hỏng/mất | Vẫn trả; PENDING assessment, copy đúng trạng thái | Not run |
-| AT09 | F09 | Gia hạn | Lần2, mục đã trả, có hold | Không sửa từng phần; due cũ+4ngày | Not run |
+| AT07 | F07 | Mượn | 4/5copy, hai quầy, retry | Một OPEN/copy, atomic, cùng key cùng receipt | Partial |
+| AT08 | F08 | Trả | Nợ/thẻ hết hạn, hỏng/mất | Vẫn trả; PENDING assessment, copy đúng trạng thái | Partial |
+| AT09 | F09 | Gia hạn | Lần2, mục đã trả, có hold | Không sửa từng phần; due cũ+4ngày | Partial |
 | AT10 | F10 | Giữ chỗ | FIFO trùng thời gian/expiry | ID tie-break; không pickup expired | Not run |
-| AT11 | F11 | Phí | Duyệt đồng thời/thu quá dư/miễn/đảo | Một charge; ledger không âm, không xóa lịch sử | Not run |
+| AT11 | F11 | Phí | Duyệt đồng thời/thu quá dư/miễn/đảo | Một charge; ledger không âm, không xóa lịch sử | Partial |
 | AT12 | F12 | Điều kiện | Preview allowed rồi dữ liệu đổi | Transaction kiểm lại; trả reasons đúng | Not run |
 | AT13 | F13 | Báo cáo | Join nhiều ledger/phiếu, rỗng | Không nhân tiền/số phiếu; rỗng hợp lệ | Not run |
 | AT14 | F14 | Policy | Chồng hiệu lực/sửaACTIVE | 409; lịch sử không hồi tố | Not run |
 | AT15 | F15 | Ảnh | Magic bytes sai/DB lỗi | Không ACTIVE; dọn orphan | Not run |
 | AT16 | F16 | Auth | Issuer/audience sai/khóaAccount | 401/403, không JIT | Pass local 2026-11-03 (pytest + Keycloak dev); chờ CI |
 | AT17 | F17 | Lịch sử | ReaderA xemB | 404 scoped; không PII | Not run |
-| AT18 | F18 | Search | Input SQL/text dài, publiccatalog | Parameterized, bounded, không readerPII | Not run |
-| AT19 | F19 | Quá hạn | Đúng dueAt/gia hạn | Derived từ dueAt, không flag cũ | Not run |
+| AT18 | F18 | Search | Input SQL/text dài, publiccatalog | Parameterized, bounded, không readerPII | Partial |
+| AT19 | F19 | Quá hạn | Đúng dueAt/gia hạn | Derived từ dueAt, không flag cũ | Partial |
 | AT20 | F20 | CSV | Formula/revoked/expired | Escape,403/404 scope,410expiry | Not run |
 | AT21 | F21 | Quyền | Staff grantadmin | 403, không tự tăng quyền | Not run |
 | AT22 | F22 | Nhập/thanh lý | Barcode trùng/ON_LOANdispose | Atomic receipt; guard chặn | Not run |

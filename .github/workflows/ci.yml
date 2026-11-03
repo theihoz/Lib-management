@@ -61,7 +61,19 @@ jobs:
       - run: uv run --locked ruff format --check .
       - run: uv run --locked mypy src
       - name: Unit tests independent of database
-        run: uv run --locked pytest --ignore=tests/test_db_integration.py
+        run: uv run --locked pytest --ignore=tests/test_db_integration.py --ignore=tests/integration
+      - name: Migration round trip on empty database
+        env:
+          DB_HOST: 127.0.0.1
+          DB_PORT: "5432"
+          DB_USER: ci_fixture
+          DB_NAME: ci_fixture
+          DB_PASSWORD: ci-disposable-fixture
+        run: |
+          uv run --locked python -m lib_management.cli migrate
+          uv run --locked python -m lib_management.cli downgrade base
+          uv run --locked python -m lib_management.cli migrate
+          uv run --locked alembic check
       - name: PostgreSQL integration tests
         env:
           RUN_DB_INTEGRATION: "1"
@@ -70,7 +82,7 @@ jobs:
           DB_USER: ci_fixture
           DB_NAME: ci_fixture
           DB_PASSWORD: ci-disposable-fixture
-        run: uv run --locked pytest tests/test_db_integration.py
+        run: uv run --locked pytest tests/test_db_integration.py tests/integration
       - run: uv build --wheel
   container:
     needs: quality

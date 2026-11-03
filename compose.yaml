@@ -20,6 +20,30 @@ services:
     security_opt: [no-new-privileges:true]
     networks: [backend]
 
+  migrate:
+    # One-shot schema upgrade before api/worker; never run per replica.
+    build:
+      context: .
+      dockerfile: docker/api.Dockerfile
+      target: dev
+    init: true
+    command: ["python", "-m", "lib_management.cli", "migrate"]
+    environment: &db-env
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: ${POSTGRES_USER:-lib_dev}
+      DB_NAME: ${POSTGRES_DB:-lib_management}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+    volumes:
+      - ./apps/api/src:/app/src
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    networks: [backend]
+
   api:
     build:
       context: .
@@ -27,24 +51,40 @@ services:
       target: dev
     init: true
     environment:
-      DB_HOST: db
-      DB_PORT: 5432
-      DB_USER: ${POSTGRES_USER:-lib_dev}
-      DB_NAME: ${POSTGRES_DB:-lib_management}
-      DB_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      <<: *db-env
+      OIDC_ISSUER: ${OIDC_ISSUER:-}
+      OIDC_JWKS_URL: ${OIDC_JWKS_URL:-}
     ports:
       - "127.0.0.1:${API_PORT:-8000}:8000"
     volumes:
       - ./apps/api/src:/app/src
     depends_on:
-      db:
-        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/ready', timeout=2.5)"]
       interval: 10s
       timeout: 3s
       retries: 10
       start_period: 10s
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    tmpfs: [/tmp]
+    networks: [backend]
+
+  worker:
+    build:
+      context: .
+      dockerfile: docker/api.Dockerfile
+      target: dev
+    init: true
+    command: ["python", "-m", "lib_management.worker"]
+    environment: *db-env
+    volumes:
+      - ./apps/api/src:/app/src
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
     security_opt: [no-new-privileges:true]
     cap_drop: [ALL]
     tmpfs: [/tmp]

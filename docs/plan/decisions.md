@@ -62,3 +62,12 @@ Liên kết docs/ui trong README cũ trỏ đến các tệp đang bị xóa. Kh
 Docs mới/từ điển 7 cột có 39 bảng / 303 trường; 38 bảng / 288 trường là nguồn gốc, ChargeAssessment 15 trường là bổ sung đã mô tả. Notification/NotificationDelivery/NotificationPreference còn đặc tả riêng, chưa tính trong 39/303. Tổng schema thiết kế 42 bảng chưa triển khai.
 
 D01 mới: SQL type/width ChargeAssessment.kind/status; NOT NULL version/created_at còn chưa quy định. Chủ dự án xác nhận trước migration; không đổi C01–C09 hoặc đóng N03–N07 từ việc bổ sung bảng mô tả.
+
+## Quyết định 03/11/2026 — phạm vi lõi 10 tuần
+
+Theo kế hoạch dự án 10 tuần/5 người (rủi ro số 1: phạm vi F01–F24 quá lớn), ưu tiên triển khai được điều chỉnh. Mục này thay thứ tự ưu tiên ở dòng "Toàn bộ F01–F24" phía trên; không xóa chức năng khỏi thiết kế.
+
+- Lõi cam kết trong 10 tuần: F01–F09, F11–F13, F16, F18–F20.
+- Phase 2: F10 (giữ chỗ), F15 (ảnh bìa), F17 (lịch sử portal), F21 (quản trị tài khoản qua API), F22 (nhập/thanh lý), F23 (backup/restore), F24 (thông báo).
+- Nền tảng (audit, idempotency, outbox/job, RBAC đủ 39 permission) vẫn làm đầy đủ ở M0 để phase 2 không phải đổi schema nền. Trong lõi, role được gán bằng CLI vận hành thay cho API F21.
+- Thiết kế, C01–C09 và các quyết định khác giữ nguyên. Spec triển khai: [docs/specs](../specs/README.md).

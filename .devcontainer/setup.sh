@@ -5,3 +5,5 @@ repository_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
 git config --global --add safe.directory "$repository_root"
 cd "$repository_root/apps/api"
 uv sync --locked --group dev
+cd "$repository_root/apps/web"
+npm ci

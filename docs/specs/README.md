@@ -7,5 +7,6 @@ Trạng thái: **Draft** (đang review) → **Approved** (team đồng ý, bắt
 | Spec | Mốc | Task | Trạng thái |
 | --- | --- | --- | --- |
 | [M0 — Nền tảng backend, hợp đồng API và xác thực](M0-backend-foundation.md) | M0 | BE00, INT00.1/.3, BE01.1/.2 | In review |
+| [M0 — Nền tảng frontend, client API và đăng nhập](M0-frontend-foundation.md) | M0 | FE00, FE01.1–.3, INT00.2 | Draft |
 
 Phạm vi sản phẩm: lõi 10 tuần theo [quyết định 03/11/2026](../plan/decisions.md#quyết-định-03112026--phạm-vi-lõi-10-tuần).

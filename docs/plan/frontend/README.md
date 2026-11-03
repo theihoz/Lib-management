@@ -8,6 +8,10 @@
 2. [Motion](MOTION.md): timing, trigger, focus và reduced motion.
 3. Chọn module bên dưới; áp dụng task chức năng và D1/D2/D3 cho redesign.
 
+## Spec triển khai
+
+Spec đủ chi tiết để code mốc M0 (FE00, FE01, INT00.2): [M0 frontend](../../specs/M0-frontend-foundation.md).
+
 ## Wireframe
 
 [Board 12 màn hình desktop/mobile](wireframes.html) và [ánh xạ](WIREFRAMES.md). Đây là thiết kế tĩnh, không phải app.

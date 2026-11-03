@@ -7,6 +7,8 @@ import { defineConfig } from "vitest/config";
 const apiTarget = process.env.API_PROXY_TARGET ?? "http://localhost:8000";
 
 export default defineConfig({
+  // GitHub Pages serves under /<repo>/; CI sets VITE_BASE. Local/container builds use "/".
+  base: process.env.VITE_BASE ?? "/",
   plugins: [react()],
   server: {
     host: "0.0.0.0",
@@ -15,6 +17,7 @@ export default defineConfig({
     proxy: {
       "/api": apiTarget,
       "/health": apiTarget,
+      "/openapi.json": apiTarget,
     },
   },
   preview: {

@@ -1,5 +1,6 @@
 """Identity commands used by the operator CLI (no public API in M0)."""
 
+import uuid
 from dataclasses import dataclass, field
 
 from sqlalchemy import select
@@ -130,6 +131,80 @@ def bootstrap_account(
         outcome="SUCCESS",
         actor_type="SYSTEM",
         metadata={"created": created, "roles_added": added},
+    )
+    session.flush()
+    return account
+
+
+class LinkError(ValueError):
+    """Reader linking was refused; the message is safe to show to the operator."""
+
+
+def link_reader_account(
+    session: Session,
+    *,
+    actor_id: uuid.UUID,
+    issuer: str,
+    subject: str,
+    reader_id: uuid.UUID,
+) -> Account:
+    """Link an existing READER account to an ACTIVE Reader (F16, operator CLI).
+
+    The actor must hold ``account.provision_reader``. Staff/admin accounts are
+    never linked, and one Reader is linked to at most one Account.
+    """
+    from lib_management.readers.models import Reader
+
+    allowed = session.execute(
+        select(Permission.code)
+        .join(RolePermission, RolePermission.permission_id == Permission.id)
+        .join(AccountRole, AccountRole.role_id == RolePermission.role_id)
+        .join(Account, Account.id == AccountRole.account_id)
+        .where(
+            Account.id == actor_id,
+            Account.status == "ACTIVE",
+            Permission.code == "account.provision_reader",
+        )
+    ).first()
+    if allowed is None:
+        raise LinkError("Người thực hiện thiếu quyền account.provision_reader")
+    reader = session.get(Reader, reader_id)
+    if reader is None or reader.status != "ACTIVE":
+        raise LinkError("Độc giả không tồn tại hoặc không ở trạng thái ACTIVE")
+    account = session.execute(
+        select(Account)
+        .where(Account.issuer == issuer, Account.subject == subject)
+        .with_for_update()
+    ).scalar_one_or_none()
+    if account is None or account.status != "ACTIVE":
+        raise LinkError("Tài khoản không tồn tại hoặc không ACTIVE")
+    codes = set(
+        session.execute(
+            select(Role.code)
+            .join(AccountRole, AccountRole.role_id == Role.id)
+            .where(AccountRole.account_id == account.id)
+        ).scalars()
+    )
+    if codes != {"READER"}:
+        raise LinkError("Chỉ liên kết tài khoản có đúng vai trò READER")
+    other = session.execute(
+        select(Account.id).where(
+            Account.reader_id == reader_id, Account.id != account.id
+        )
+    ).first()
+    if other is not None:
+        raise LinkError("Độc giả đã được liên kết với tài khoản khác")
+    account.reader_id = reader_id
+    account.auth_version += 1
+    audit.record(
+        session,
+        action="account.link_reader",
+        target_type="account",
+        target_id=account.id,
+        outcome="SUCCESS",
+        actor_id=actor_id,
+        permission_code="account.provision_reader",
+        metadata={"reader_id": str(reader_id)},
     )
     session.flush()
     return account

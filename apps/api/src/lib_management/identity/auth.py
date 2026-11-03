@@ -180,3 +180,18 @@ def _audit_denied(
             permission_code=code,
             metadata={"method": request.method, "path": request.url.path},
         )
+
+
+def staff_reader_scope(principal: Principal) -> bool:
+    """Staff-only collections cannot be opened with a portal reader grant."""
+    return principal.account.reader_id is None and bool(
+        principal.permissions
+        & {
+            "reader.write",
+            "loan.checkout",
+            "return.create",
+            "loan.renew",
+            "overdue.read",
+            "account.manage",
+        }
+    )

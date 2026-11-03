@@ -1,0 +1,79 @@
+name: Deploy web to GitHub Pages
+
+# Publishes the static React build only. The API, PostgreSQL and the identity
+# provider are NOT hosted by Pages; point the build at an existing API through the
+# repository variables below. Without them the site shows its configuration-error page.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: apps/web
+    env:
+      # Repository variables (Settings → Secrets and variables → Actions → Variables).
+      # Public values only; never put secrets here.
+      OIDC_URL: ${{ vars.PAGES_OIDC_URL }}
+      OIDC_REALM: ${{ vars.PAGES_OIDC_REALM }}
+      OIDC_CLIENT_ID: ${{ vars.PAGES_OIDC_CLIENT_ID }}
+      API_BASE_URL: ${{ vars.PAGES_API_BASE_URL }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - id: pages
+        uses: actions/configure-pages@v5 # TODO: pin to a commit SHA like the other actions
+      - run: npm ci
+      - run: npm test
+      - name: Build for the Pages base path
+        env:
+          VITE_BASE: ${{ steps.pages.outputs.base_path }}/
+        run: npm run build
+      - name: Write runtime config (public values only)
+        run: |
+          node -e '
+            const fs = require("fs");
+            const e = process.env;
+            fs.writeFileSync("dist/config.json", JSON.stringify({
+              oidcUrl: e.OIDC_URL || "",
+              oidcRealm: e.OIDC_REALM || "lib-management",
+              oidcClientId: e.OIDC_CLIENT_ID || "lib-management-web",
+              apiBaseUrl: e.API_BASE_URL || "",
+              mock: false,
+            }, null, 2));
+          '
+      - name: SPA fallback for deep links
+        run: cp dist/index.html dist/404.html
+      - uses: actions/upload-pages-artifact@v3 # TODO: pin to a commit SHA
+        with:
+          path: apps/web/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4 # TODO: pin to a commit SHA

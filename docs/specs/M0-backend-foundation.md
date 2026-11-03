@@ -4,7 +4,7 @@
 
 Spec này gom các quyết định đã có thành một bản đủ cụ thể để code. Nó **không** thay nguồn chuẩn: tên bảng/cột lấy từ [thiết kế DB](../design/database-design.md), quyền từ [ma trận quyền](../design/permission-matrix.md), schema HTTP từ [openapi.json](../design/openapi.json), quy tắc từ [decisions](../plan/decisions.md). Khi spec mâu thuẫn với nguồn chuẩn, nguồn chuẩn thắng và spec phải được sửa trong cùng PR.
 
-Phạm vi sản phẩm theo [quyết định 03/11/2026](../plan/decisions.md#quyết-định-03112026--phạm-vi-lõi-10-tuần): lõi 10 tuần F01–F09, F11–F13, F16, F18–F20.
+Phạm vi sản phẩm theo [quyết định 03/11/2026](../plan/decisions.md#quyết-định-03112026--phạm-vi-lõi-10-tuần): lõi 10 tuần F01–F09, F11–F14, F16, F18–F20.
 
 ## 1. Phạm vi
 

@@ -88,6 +88,15 @@ jobs:
           DB_NAME: ci_fixture
           DB_PASSWORD: ci-disposable-fixture
         run: uv run --locked pytest tests/test_db_integration.py tests/integration
+      - name: Business flows on a disposable PostgreSQL database
+        env:
+          RUN_BUSINESS_DB_TESTS: "1"
+          DB_HOST: 127.0.0.1
+          DB_PORT: "5432"
+          DB_USER: ci_fixture
+          DB_NAME: ci_fixture
+          DB_PASSWORD: ci-disposable-fixture
+        run: uv run --locked pytest tests/business
       - run: uv build --wheel
   web:
     needs: configuration
@@ -107,11 +116,20 @@ jobs:
           cache-dependency-path: apps/web/package-lock.json
       # npm ci fails when package.json and package-lock.json disagree.
       - run: npm ci
+      - name: Generated API client matches the design contract
+        run: |
+          npm run gen:api
+          git diff --exit-code src/api/schema.d.ts
       - run: npm run lint
       - run: npm run format:check
       - run: npm run typecheck
       - run: npm test
       - run: npm run build
+      - name: Production bundle contains no design-preview or fixture code
+        run: |
+          if grep -rIl --include='*.js' -e 'DesignBrowser' -e 'fixtureFor' -e 'dữ liệu minh họa' dist; then
+            echo "Demo markers found in dist"; exit 1
+          fi
   container:
     needs: quality
     runs-on: ubuntu-24.04

@@ -2,7 +2,7 @@ import threading
 import uuid
 
 import pytest
-from sqlalchemy import select, text, update
+from sqlalchemy import func, select, text, update
 
 from lib_management.core import outbox
 from lib_management.platform.models import AuditLog, Job, OutboxEvent
@@ -191,5 +191,150 @@ def test_heartbeat_extends_own_lease_only(session_factory):
     make_job(session_factory)
     runner = Runner(session_factory, registry(), "w1")
     job_id, *_ = runner.claim()
-    assert runner.heartbeat(job_id) is True
-    assert Runner(session_factory, registry(), "w2").heartbeat(job_id) is False
+    assert runner.heartbeat(job_id, 1) is True
+    assert Runner(session_factory, registry(), "w2").heartbeat(job_id, 1) is False
+
+
+def test_long_handler_renews_lease_without_manual_heartbeat(session_factory):
+    """A second worker must not reclaim a live handler that outlasts its lease."""
+    make_job(session_factory)
+    started = threading.Event()
+    release = threading.Event()
+
+    def handler(ctx):
+        started.set()
+        assert release.wait(5), "test did not release handler"
+
+    runner = Runner(session_factory, registry(handler), "long-worker", lease_seconds=1)
+    worker = threading.Thread(target=runner.run_once)
+    worker.start()
+    try:
+        assert started.wait(2)
+        # Deliberately outlast the initial one-second lease.
+        threading.Event().wait(1.4)
+        assert Runner(session_factory, registry(), "rival").claim() is None
+    finally:
+        release.set()
+        worker.join(timeout=5)
+    assert not worker.is_alive()
+    job = jobs(session_factory)[0]
+    assert (job.status, job.attempt) == ("SUCCEEDED", 1)
+
+
+def test_expired_worker_cannot_resurrect_its_lease(session_factory):
+    make_job(session_factory)
+    runner = Runner(session_factory, registry(), "w1")
+    job_id, *_ = runner.claim()
+    with session_factory() as session, session.begin():
+        session.execute(
+            text("UPDATE job SET lease_until = now() - interval '1 second'")
+        )
+    assert runner.heartbeat(job_id, 1) is False
+
+
+def test_stale_attempt_cannot_finish_reclaimed_job_with_same_owner(session_factory):
+    make_job(session_factory)
+    first = Runner(session_factory, registry(), "same-process")
+    job_id, *_ = first.claim()
+    with session_factory() as session, session.begin():
+        session.execute(
+            text("UPDATE job SET lease_until = now() - interval '1 second'")
+        )
+    second = Runner(session_factory, registry(), "same-process")
+    assert second.claim()[2] == 2
+    first._finish(job_id, 1, None)
+    job = jobs(session_factory)[0]
+    assert (job.status, job.attempt) == ("RUNNING", 2)
+
+
+@pytest.mark.parametrize("action", ["heartbeat", "finish"])
+def test_lease_expiring_while_waiting_for_lock_cannot_be_used(session_factory, action):
+    import time
+
+    job_id = make_job(session_factory)
+    runner = Runner(session_factory, registry(), "blocked-worker", lease_seconds=1)
+    runner.claim()
+    results = []
+
+    def use_lease():
+        if action == "heartbeat":
+            results.append(runner.heartbeat(job_id, 1))
+        else:
+            runner._finish(job_id, 1, None)
+
+    with session_factory() as blocker, blocker.begin():
+        blocker.execute(select(Job).where(Job.id == job_id).with_for_update())
+        blocker_pid = blocker.scalar(text("SELECT pg_backend_pid()"))
+        contender = threading.Thread(target=use_lease)
+        contender.start()
+        try:
+            deadline = time.monotonic() + 1
+            while True:
+                with session_factory() as observer:
+                    waiting = observer.scalar(
+                        text(
+                            "SELECT count(*) FROM pg_stat_activity "
+                            "WHERE :pid = ANY(pg_blocking_pids(pid))"
+                        ),
+                        {"pid": blocker_pid},
+                    )
+                if waiting:
+                    break
+                assert time.monotonic() < deadline, "worker did not block before expiry"
+                threading.Event().wait(0.01)
+            # Cross expiry while the contender's DB operation remains blocked.
+            blocker.execute(
+                text(
+                    "SELECT pg_sleep(GREATEST(0, EXTRACT(EPOCH FROM "
+                    "(lease_until - clock_timestamp()))) + 0.1) FROM job WHERE id=:id"
+                ),
+                {"id": job_id},
+            )
+        finally:
+            blocker.commit()
+            contender.join(timeout=5)
+    assert not contender.is_alive()
+    if action == "heartbeat":
+        assert results == [False]
+    job = jobs(session_factory)[0]
+    assert job.status == "RUNNING"
+    with session_factory() as observer:
+        assert observer.scalar(
+            select(Job.lease_until < func.clock_timestamp()).where(Job.id == job_id)
+        )
+
+
+@pytest.mark.parametrize("failure", ["lost", "error"])
+def test_failed_auto_renewal_cannot_publish_completion_or_leave_thread(
+    session_factory, monkeypatch, failure
+):
+    job_id = make_job(session_factory)
+    renewed = threading.Event()
+
+    def handler(ctx):
+        assert renewed.wait(2)
+
+    runner = Runner(session_factory, registry(handler), "w1", lease_seconds=1)
+
+    def failed_renewal(job_id, attempt):
+        renewed.set()
+        if failure == "error":
+            raise RuntimeError("database unavailable")
+        return False
+
+    monkeypatch.setattr(runner, "heartbeat", failed_renewal)
+    assert runner.run_once()
+    assert jobs(session_factory)[0].status == "RUNNING"
+    assert not any(t.name == f"lease-{job_id}" for t in threading.enumerate())
+
+
+def test_stale_heartbeat_cannot_renew_new_attempt_with_same_owner(session_factory):
+    job_id = make_job(session_factory)
+    runner = Runner(session_factory, registry(), "same-process")
+    runner.claim()
+    with session_factory() as session, session.begin():
+        session.execute(
+            text("UPDATE job SET lease_until = now() - interval '1 second'")
+        )
+    assert Runner(session_factory, registry(), "same-process").claim()[2] == 2
+    assert runner.heartbeat(job_id, 1) is False

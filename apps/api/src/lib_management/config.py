@@ -13,6 +13,15 @@ class Settings(BaseSettings):
     db_name: str = "lib_management"
     db_password: SecretStr
 
+    # Per process: keep the replica/worker total below Postgres capacity.
+    # Zero pool_size and negative overflow mean unlimited in SQLAlchemy.
+    db_pool_size: int = Field(default=5, ge=1, le=100)
+    db_pool_max_overflow: int = Field(default=5, ge=0, le=100)
+    db_pool_timeout_seconds: float = Field(
+        default=2.0, gt=0, le=60, allow_inf_nan=False
+    )
+    db_pool_recycle_seconds: int = Field(default=1800, ge=1, le=86400)
+
     # OIDC is optional so health-only deployments still start; business routes
     # that need a token fail closed with 503 while it is unset.
     oidc_issuer: str | None = None

@@ -1,0 +1,19 @@
+:root {
+  --canvas: #f7f5ef;
+  --surface: #fff;
+  --ink: #17212b;
+  --muted: #53616b;
+  --primary: #174b73;
+  --accent: #9b4b2f;
+  --border: #d8dcd8;
+  --control-border: #6b7780;
+  --success: #146c43;
+  --warning: #8a4b08;
+  --danger: #b42318;
+  --nav: #142c35;
+  --motion-fast: 120ms;
+  --motion-base: 180ms;
+  --motion-panel: 240ms;
+  --motion-page: 280ms;
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}

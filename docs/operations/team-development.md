@@ -8,8 +8,7 @@ C01–C09 đã được người dùng đồng ý áp dụng. Kế hoạch 20 b�
 NestJS/Drizzle trong bản đó không phải lựa chọn backend hiện tại. Khi nguồn mâu thuẫn,
 ghi rõ vấn đề trong issue/PR để thống nhất trước khi thay đổi quy tắc nghiệp vụ.
 
-Hạ tầng hiện có chỉ gồm health endpoints và DB trống. 38 bảng/288 trường là dữ liệu
-thiết kế được nhắc trong báo cáo, chưa là schema được tạo. Frontend/auth/hosting chưa chốt.
+M0 hiện có health/auth endpoints, 9 bảng identity/platform, Alembic, JWT Keycloak, CLI và scaffold web React/Vite. Danh mục thiết kế đầy đủ vẫn chưa phải schema nghiệp vụ đã tạo; frontend client/auth/shell và module nghiệp vụ còn thiếu. Hosting production chưa chốt.
 Mỗi PR nghiệp vụ cần ánh xạ chức năng → UC → API → dữ liệu → màn hình → kiểm thử.
 
 ## 2. Môi trường thống nhất
@@ -58,7 +57,7 @@ hạn chế bypass; những thiết lập này ở GitHub, không được YAML 
 | Mượn / trả / giữ chỗ | Transaction, khóa, trạng thái, retry; trả độc lập thu tiền |
 | Vi phạm / ledger | Charge, payment, allocation, waiver, reversal; giữ lịch sử |
 | Nền tảng | Auth/quyền, migration, outbox, CI và vận hành theo quyết định được duyệt |
-| Giao diện | Prototype đã có; lựa chọn công nghệ phải được thống nhất trước triển khai |
+| Giao diện | React/TypeScript/Vite đã chốt; hoàn tất client/auth/shell và tích hợp từng module theo spec M0 |
 
 Team tự phân người phụ trách từng module; không suy diễn tên thành viên. PR đầu tiên
 của module chốt contract chung và chủ sở hữu migration để tránh đổi tên bảng/API lệch nhau.
@@ -72,7 +71,7 @@ uv sync --locked --group dev
 uv run --locked ruff check .
 uv run --locked ruff format --check .
 uv run --locked mypy src
-uv run --locked pytest --ignore=tests/test_db_integration.py
+uv run --locked pytest --ignore=tests/test_db_integration.py --ignore=tests/integration
 uv build --no-sources
 ```
 
@@ -87,7 +86,7 @@ Không coi kết quả cũ là kiểm tra cho mọi commit mới.
 
 Sửa manifest → `uv lock` → review diff → `uv sync --locked`; không sửa lock thủ công.
 Docker pin image digest, CI pin action SHA; cập nhật qua PR và đọc compatibility notes.
-Schema nghiệp vụ chưa có Alembic. Khi bổ sung, cần một migration owner, revision
+M0 có Alembic cho identity/platform; khi bổ sung schema nghiệp vụ cần một migration owner, revision
 không trùng, thử DB rỗng/upgrade và rollback theo dữ liệu; không tạo 38 bảng suy đoán.
 
 Release image chỉ maintainer chạy workflow thủ công trên default branch sau merge.

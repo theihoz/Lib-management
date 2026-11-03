@@ -45,3 +45,20 @@ def test_db_port_rejects_invalid_tcp_ports(port):
 @pytest.mark.parametrize("port", [1, 5432, 65535])
 def test_db_port_accepts_valid_tcp_ports(port):
     assert Settings(db_password="unit-test-fixture", db_port=port).db_port == port
+
+
+@pytest.mark.parametrize(
+    "name,value",
+    [
+        ("DB_POOL_SIZE", "0"),
+        ("DB_POOL_MAX_OVERFLOW", "-1"),
+        ("DB_POOL_TIMEOUT_SECONDS", "0"),
+        ("DB_POOL_RECYCLE_SECONDS", "0"),
+    ],
+)
+def test_pool_environment_rejects_unbounded_or_nonpositive_values(
+    monkeypatch, name, value
+):
+    monkeypatch.setenv(name, value)
+    with pytest.raises(ValidationError):
+        Settings(db_password="unit-test-fixture")

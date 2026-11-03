@@ -8,6 +8,8 @@ from fastapi import APIRouter, FastAPI
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict
 
+from lib_management.catalog.router import router as catalog_router
+from lib_management.circulation.router import router as circulation_router
 from lib_management.config import Settings
 from lib_management.core.errors import install_error_handlers
 from lib_management.core.request_id import RequestIdMiddleware
@@ -19,6 +21,9 @@ from lib_management.db import (
 from lib_management.identity.auth import JwksKeySource, JwtVerifier
 from lib_management.identity.router import router as identity_router
 from lib_management.migrate import head_revision
+from lib_management.performance import install_performance
+from lib_management.readers.router import router as readers_router
+from lib_management.reporting.router import router as reporting_router
 
 API_PREFIX = "/api/v1"
 
@@ -74,6 +79,7 @@ def create_app(
             engine.dispose()
 
     app = FastAPI(title="Lib-management API", version="0.1.0", lifespan=lifespan)
+    install_performance(app)
     app.add_middleware(RequestIdMiddleware)
     install_error_handlers(app)
 
@@ -96,5 +102,9 @@ def create_app(
 
     api = APIRouter(prefix=API_PREFIX)
     api.include_router(identity_router)
+    api.include_router(catalog_router)
+    api.include_router(readers_router)
+    api.include_router(circulation_router)
+    api.include_router(reporting_router)
     app.include_router(api)
     return app

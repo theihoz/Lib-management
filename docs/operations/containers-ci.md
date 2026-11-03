@@ -91,20 +91,19 @@ metadata registry, review thay đổi và build/smoke lại, không dùng latest
 
 `GET /health/live` trả 200 `{"status":"ok"}` độc lập DB.
 `GET /health/ready` chạy SELECT 1, trả 200 `{"status":"ready"}` hoặc
-503 `{"status":"not_ready"}`. Readiness chưa kiểm tra 38 bảng hoặc revision
-migration. Readiness có deadline client 2 giây gồm chờ slot, connect và đọc; tối đa 4 probe async. Kết nối được đóng trước khi hủy task hết hạn. Liveness async không dùng DB hoặc worker đồng bộ. SQLAlchemy pool dành cho nghiệp vụ tương lai không tham gia readiness. DB connect timeout 2 giây, statement timeout 2000 ms.
+503 `{"status":"not_ready"}`. Readiness kiểm tra Alembic revision khớp head của mã đã chạy; không suy ra toàn bộ bảng nghiệp vụ thiết kế đã có. Readiness có deadline client 2 giây gồm chờ slot, connect và đọc; tối đa 4 probe async. Kết nối được đóng trước khi hủy task hết hạn. Liveness async không dùng DB hoặc worker đồng bộ. SQLAlchemy pool dành cho nghiệp vụ tương lai không tham gia readiness. DB connect timeout 2 giây, statement timeout 2000 ms.
 
 ## CI và publish
 
 CI `.github/workflows/ci.yml` chạy khi PR, push main, dispatch hoặc được gọi
 qua workflow_call. Backend luôn bắt buộc: thiếu pyproject.toml, uv.lock,
 main.py hoặc .python-version làm job configuration thất bại. Không có detector
-Node hoặc chế độ bootstrap. Ba job configuration → quality → container phải
+bỏ qua frontend khi thiếu package. Các job configuration, quality, web và container phải
 đều thành công để required check `ci-result` pass; skipped/cancelled/failure
 đều làm check thất bại. Concurrency của CI dùng prefix riêng với caller publish.
 
 Quality dùng Python từ .python-version và uv 0.12.21, `uv sync --locked --group dev`,
-Ruff check/format, mypy, 10 unit tests độc lập DB, 5 integration tests, build wheel.
+Ruff check/format, mypy, unit test độc lập DB, migration round trip và PostgreSQL integration suite, build wheel. Số test thay đổi theo commit; không dùng số lịch sử làm cổng hoàn thành.
 PostgreSQL service disposable dùng cùng digest PostgreSQL 17 như Compose,
 credentials fixture công khai, không có volume hoặc secret production. Integration
 chỉ chạy khi `RUN_DB_INTEGRATION=1` và DB_HOST/DB_PORT/DB_USER/DB_NAME/DB_PASSWORD

@@ -30,6 +30,9 @@ packages = ["src/lib_management"]
 target-version = "py313"
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]
+[tool.ruff.lint.per-file-ignores]
+# Migrations embed generated DDL as single-line SQL strings.
+"src/lib_management/migrations/versions/*.py" = ["E501"]
 [tool.mypy]
 python_version = "3.13"
 strict = true

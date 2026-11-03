@@ -158,8 +158,9 @@ def test_readiness_does_not_wait_for_business_engine_pool():
 
     with TestClient(create_app(Settings())) as client, ExitStack() as connections:
         engine = client.app.state.engine
-        # Exhaust the default engine's five persistent + ten overflow slots.
-        for _ in range(15):
+        # Exhaust every persistent and overflow slot of the configured pool.
+        settings = Settings()
+        for _ in range(settings.db_pool_size + settings.db_pool_max_overflow):
             connections.enter_context(engine.connect())
         started = monotonic()
         assert client.get("/health/ready").status_code == 200

@@ -4,7 +4,7 @@
 
 Spec này gom các quyết định đã có thành một bản đủ cụ thể để code frontend mốc M0. Nó **không** thay nguồn chuẩn: stack và token lấy từ [decisions](../plan/decisions.md), trình bày từ [định hướng thiết kế](../plan/frontend/DESIGN-DIRECTION.md) và [motion](../plan/frontend/MOTION.md), bố cục từ [wireframe](../plan/frontend/WIREFRAMES.md), schema HTTP từ [openapi.json](../design/openapi.json), quyền từ [ma trận quyền](../design/permission-matrix.md), luồng đăng nhập từ [thiết kế identity](../design/identity-design.md). Khi spec mâu thuẫn với nguồn chuẩn, nguồn chuẩn thắng và spec phải được sửa trong cùng PR.
 
-Phạm vi sản phẩm theo [quyết định 03/11/2026](../plan/decisions.md#quyết-định-03112026--phạm-vi-lõi-10-tuần): lõi 10 tuần F01–F09, F11–F13, F16, F18–F20. Backend tương ứng: [spec M0 backend](M0-backend-foundation.md) — hiện chỉ `GET /api/v1/auth/me` và `/health/*` đã triển khai.
+Phạm vi sản phẩm theo [quyết định 03/11/2026](../plan/decisions.md#quyết-định-03112026--phạm-vi-lõi-10-tuần): lõi 10 tuần F01–F09, F11–F14, F16, F18–F20. Backend tương ứng: [spec M0 backend](M0-backend-foundation.md) — hiện chỉ `GET /api/v1/auth/me` và `/health/*` đã triển khai.
 
 ## 1. Phạm vi
 
@@ -355,7 +355,7 @@ Smoke thủ công với hệ thống thật sau PR 4: chạy API (`uv run --lock
 
 | Mã | Nội dung | Ảnh hưởng M0 |
 | --- | --- | --- |
-| — | F14 (quy định) ngoài lõi nhưng BE02/checkout cần PolicyVersion ACTIVE: tạo bằng seed/CLI hay mở FE09 phần policy sớm | Không; quyết định trước M2 |
+| Đã chốt03/11/2026 | F14 thuộc lõi: BE02 và UI FE09.3 triển khai sớm, policy bootstrap qua cùng service/approval | Theo spec core đã duyệt |
 | — | Portal lõi: `/me/loans` (F17), giữ chỗ (F10), thông báo (F24) đều phase 2 → portal lõi chỉ có catalog và `/me` cơ bản | Không; xác nhận với chủ dự án |
 | — | `/staff/renewals` cần endpoint tra cứu loan theo barcode/độc giả; OpenAPI hiện chỉ có `GET /loans/{id}` và `GET /readers/{id}/history` (F17) | Không; giải quyết ở spec FE06/BE08 |
 | — | Backend chưa có `seed-rbac --dry-run --json` để đối chiếu persona tự động | Đối chiếu thủ công trong review PR 4 |

@@ -24,6 +24,11 @@ jobs:
           for file in apps/api/pyproject.toml apps/api/uv.lock apps/api/src/lib_management/main.py .python-version; do
             test -s "$file" || { echo "Required backend file missing or empty: $file"; exit 1; }
           done
+      - name: Require frontend source and lockfile
+        run: |
+          for file in apps/web/package.json apps/web/package-lock.json apps/web/src/main.tsx; do
+            test -s "$file" || { echo "Required frontend file missing or empty: $file"; exit 1; }
+          done
       - name: Validate Compose model
         run: docker compose --env-file .env.example config --quiet
   quality:
@@ -84,6 +89,29 @@ jobs:
           DB_PASSWORD: ci-disposable-fixture
         run: uv run --locked pytest tests/test_db_integration.py tests/integration
       - run: uv build --wheel
+  web:
+    needs: configuration
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: apps/web
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      # npm ci fails when package.json and package-lock.json disagree.
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
   container:
     needs: quality
     runs-on: ubuntu-24.04
@@ -96,7 +124,7 @@ jobs:
         run: docker build --target production -f docker/api.Dockerfile -t lib-management-api:ci .
   ci-result:
     if: always()
-    needs: [configuration, quality, container]
+    needs: [configuration, quality, web, container]
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
@@ -105,8 +133,9 @@ jobs:
           CONFIGURATION: ${{ needs.configuration.result }}
           QUALITY: ${{ needs.quality.result }}
           CONTAINER: ${{ needs.container.result }}
+          WEB: ${{ needs.web.result }}
         run: |
-          for result in "$CONFIGURATION" "$QUALITY" "$CONTAINER"; do
+          for result in "$CONFIGURATION" "$QUALITY" "$WEB" "$CONTAINER"; do
             if [ "$result" != success ]; then
               echo "Required CI job did not succeed: $result"
               exit 1

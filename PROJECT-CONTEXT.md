@@ -43,6 +43,8 @@ Dùng [quy trình team](docs/operations/team-development.md) và Dev Container m
 
 ## Kế hoạch triển khai hiện hành
 
+Từ 03/11/2026 ưu tiên lõi 10 tuần F01–F09, F11–F13, F16, F18–F20 (còn lại phase 2), xem [quyết định](docs/plan/decisions.md#quyết-định-03112026--phạm-vi-lõi-10-tuần). Bắt đầu code theo [spec M0 backend](docs/specs/M0-backend-foundation.md).
+
 [docs/plan](docs/plan/README.md) chia theo backend, frontend và tích hợp, mỗi module có task nhỏ theo PR. Đây là kế hoạch chưa triển khai: schema nghiệp vụ, Keycloak và frontend chưa được tạo. C01–C09 đã duyệt; phí hỏng/mất do Quản lý xác nhận, khoản chờ duyệt chặn mượn/gia hạn/đặt trước nhưng không chặn trả; thông báo portal và email.
 
 ## Nguồn hiện hành sau đồng bộ 08/10/2026

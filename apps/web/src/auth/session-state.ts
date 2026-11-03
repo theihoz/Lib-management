@@ -18,3 +18,27 @@ export function canAccess(
     status === "authenticated" && (permission === "session" || permissions.includes(permission))
   );
 }
+// The READER role's grants: on their own they only reach /me data, never staff screens.
+const PORTAL_PERMISSIONS = new Set([
+  "catalog.read",
+  "reader.read",
+  "eligibility.read",
+  "reservation.read",
+  "reservation.create",
+  "reservation.cancel",
+  "finance.read",
+  "notification.read",
+  "preference.write",
+]);
+export function isStaff(permissions: readonly string[]): boolean {
+  return permissions.some((permission) => !PORTAL_PERMISSIONS.has(permission));
+}
+/** canAccess, plus staff/manager screens stay hidden from portal-only accounts. */
+export function canOpen(
+  status: SessionStatus,
+  permissions: readonly string[],
+  screen: { path: string; permission?: string },
+): boolean {
+  const staffOnly = /^\/(staff|manager)(\/|$)/.test(screen.path);
+  return canAccess(status, permissions, screen.permission) && (!staffOnly || isStaff(permissions));
+}

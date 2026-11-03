@@ -33,9 +33,28 @@ def test_roles_only_grant_known_permissions():
         assert len(codes) == len(set(codes))
 
 
-def test_separation_of_duties():
+def test_staff_roles_are_cumulative_by_name():
+    reader, librarian, manager, admin, ops = (
+        set(ROLES[code][1])
+        for code in ("READER", "LIBRARIAN", "MANAGER", "SYSTEM_ADMIN", "OPS_ADMIN")
+    )
+    assert librarian < manager < admin
+    assert admin == set(PERMISSIONS)
+    assert ops < admin
+
+
+def test_lower_roles_keep_their_limits():
     librarian = set(ROLES["LIBRARIAN"][1])
-    admin = set(ROLES["SYSTEM_ADMIN"][1])
-    assert "assessment.decide" not in librarian
-    assert not {"role.manage", "account.manage"} & librarian
-    assert not {"payment.collect", "charge.waive", "restore.approve"} & admin
+    reader = set(ROLES["READER"][1])
+    ops = set(ROLES["OPS_ADMIN"][1])
+    assert not {"assessment.decide", "charge.waive", "ledger.reverse"} & librarian
+    assert not {"role.manage", "account.manage"} & (
+        librarian | set(ROLES["MANAGER"][1])
+    )
+    # Readers only reach /me data; nothing that writes for other readers.
+    assert (
+        not {"reader.write", "loan.checkout", "payment.collect", "overdue.read"}
+        & reader
+    )
+    # Operations never touches the counter or reader records.
+    assert not {"reader.read", "loan.checkout", "payment.collect"} & ops

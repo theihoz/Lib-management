@@ -5,7 +5,7 @@ import type { RuntimeConfig } from "../config/config";
 import { ApiError } from "../api/errors";
 import { SessionProvider, useSession } from "../auth/session";
 import type { DemoMode } from "../auth/session";
-import { canAccess } from "../auth/session-state";
+import { canOpen } from "../auth/session-state";
 import { Shell } from "../shell/Shell";
 import { SessionPage } from "../pages/SessionPage";
 import { MePage } from "../pages/MePage";
@@ -25,9 +25,8 @@ function LivePage({ screen }: { screen: ScreenDefinition }) {
     refetchInterval: 30_000,
     retry: 1,
   });
-  const allowed = (item: ScreenDefinition) =>
-    canAccess(session.status, session.permissions, item.permission);
-  const hasPermission = canAccess(session.status, session.permissions, screen.permission);
+  const allowed = (item: ScreenDefinition) => canOpen(session.status, session.permissions, item);
+  const hasPermission = allowed(screen);
   const authPage = screen.group === "01" || ["FE08.01", "FE08.06"].includes(screen.id);
   return (
     <Shell
@@ -74,7 +73,7 @@ function StaffHome() {
       !item.path.includes(":") &&
       item.permission &&
       item.permission !== "session" &&
-      canAccess(session.status, session.permissions, item.permission),
+      canOpen(session.status, session.permissions, item),
   );
   return <Navigate to={first?.path ?? "/catalog"} replace />;
 }

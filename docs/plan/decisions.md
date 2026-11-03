@@ -75,3 +75,16 @@ Theo kế hoạch dự án 10 tuần/5 người (rủi ro số 1: phạm vi F01�
 ## Quyết định bổ sung 03/11/2026 — F14, D01 và triển khai lõi
 
 Người dùng đã duyệt [spec toàn bộ lõi](../superpowers/specs/2026-11-03-core-library-design.md) và yêu cầu triển khai: F14 (BE02 và UI FE09.3) thuộc lõi; D01 dùng kind varchar(16), status varchar(24), version integer NOT NULL DEFAULT1 và created_at timestamptz NOT NULL DEFAULT now(). C01–C09 giữ nguyên. Báo cáo lấy snapshot lúc worker bắt đầu, không hỗ trợ client asOf lịch sử trong lõi. API provisioning F16/F21 hoãn, CLI liên kết Account–Reader thuộc lõi. Gate release lõi độc lập phase2; artifact storage private phục vụ CSV vẫn thuộc lõi.
+
+## Quyết định 03/11/2026 — phân quyền theo tên vai trò
+
+Chủ dự án yêu cầu phân quyền "đúng với tên vai trò", thay mô hình tách nhiệm vụ trong ma trận quyền cũ (khi đó Admin hệ thống chỉ có quản trị tài khoản, Quản lý không làm nghiệp vụ quầy, nên các tài khoản này gần như không dùng được màn hình nào trong lõi).
+
+- Thủ thư giữ nguyên quyền nghiệp vụ quầy.
+- Quản lý = toàn bộ quyền Thủ thư + duyệt phí, miễn/đảo, xuất CSV, quy định, duyệt nhập/thanh lý, xem tác vụ nền.
+- Admin hệ thống = toàn bộ 39 permission.
+- Admin vận hành = sao lưu/khôi phục, tác vụ nền, xem báo cáo và CSV; không có quyền quầy hay hồ sơ độc giả.
+- Độc giả giữ quyền own; UI ẩn màn nhân viên với tài khoản chỉ có quyền độc giả.
+
+Chi tiết: [ma trận quyền](../design/permission-matrix.md).
+

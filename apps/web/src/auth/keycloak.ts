@@ -2,18 +2,7 @@ import type Keycloak from "keycloak-js";
 import type { RuntimeConfig } from "../config/config";
 import { ApiError } from "../api/errors";
 
-/** Sign-in provider seen by the session; the demo build swaps in a persona picker. */
-export type Identity = {
-  init(): Promise<boolean>;
-  /** Resolves true when signed in without leaving the page (demo personas). */
-  login(persona?: string): Promise<boolean>;
-  logout(): Promise<void>;
-  getToken(): Promise<string | undefined>;
-  refresh(): Promise<boolean>;
-  clear(): void;
-};
-
-export function createIdentity(config: RuntimeConfig): Identity {
+export function createIdentity(config: RuntimeConfig) {
   let client: Keycloak | undefined;
   let loading: Promise<Keycloak> | undefined;
   const getClient = () =>
@@ -44,7 +33,6 @@ export function createIdentity(config: RuntimeConfig): Identity {
       await (
         await getClient()
       ).login({ redirectUri: `${window.location.origin}${import.meta.env.BASE_URL}me` });
-      return false;
     },
     async logout() {
       if (!client) return;

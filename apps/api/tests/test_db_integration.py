@@ -156,10 +156,10 @@ def test_established_connection_blackhole_concurrency():
 def test_readiness_does_not_wait_for_business_engine_pool():
     from contextlib import ExitStack
 
-    settings = Settings()
-    with TestClient(create_app(settings)) as client, ExitStack() as connections:
+    with TestClient(create_app(Settings())) as client, ExitStack() as connections:
         engine = client.app.state.engine
-        # Exhaust every persistent and overflow slot of the business engine.
+        # Exhaust every persistent and overflow slot of the configured pool.
+        settings = Settings()
         for _ in range(settings.db_pool_size + settings.db_pool_max_overflow):
             connections.enter_context(engine.connect())
         started = monotonic()

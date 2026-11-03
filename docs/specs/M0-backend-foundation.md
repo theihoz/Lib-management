@@ -176,14 +176,14 @@ uow.commit()
 ### 6.1 Keycloak local
 
 - Service `keycloak` trong `.devcontainer/compose.yaml`: `quay.io/keycloak/keycloak:26.8.0` pin digest, lệnh `start-dev --import-realm --hostname=http://localhost:8080 --hostname-backchannel-dynamic=true`, cổng `127.0.0.1:8080`, dữ liệu dev trong volume riêng. Mật khẩu admin do `prepare.py` sinh vào `.devcontainer/.env`. API trong workspace dùng `OIDC_ISSUER=http://localhost:8080/...` (khớp `iss` trình duyệt thấy) và `OIDC_JWKS_URL=http://keycloak:8080/...` (mạng nội bộ). Keycloak dùng storage riêng, không dùng credential DB ứng dụng. Đây chỉ là môi trường phát triển.
-- Thêm service `keycloak` vào `.devcontainer/compose.yaml`: image `quay.io/keycloak/keycloak` pin **digest** khi triển khai (chọn bản 26.x đã phát hành ≥ 2 tuần), lệnh `start-dev --import-realm`, cổng `127.0.0.1:8080`, dữ liệu dev trong volume riêng. Keycloak dùng storage riêng, không dùng credential DB ứng dụng. Đây chỉ là môi trường phát triển.
 - Realm import `.devcontainer/keycloak/lib-management-realm.json`:
   - realm `lib-management`; `registrationAllowed=false`;
   - public client `lib-management-web`: standard flow, PKCE `S256`, tắt implicit và direct access grant, redirect/origin chính xác `http://localhost:5173/*` (không wildcard rộng hơn);
   - audience mapper thêm `lib-management-api` vào `aud` của access token;
-  - access token lifespan 300s.
-- Script `.devcontainer/keycloak/create-dev-users.sh` tạo user thử (`librarian.dev`, `manager.dev`, `admin.dev`, `reader.dev`) bằng `kcadm.sh`, mật khẩu đọc từ `.devcontainer/.env` (`KEYCLOAK_DEV_USER_PASSWORD`). Không commit mật khẩu, không đưa user vào realm JSON.
-- Lấy token thử khi chưa có frontend: tài liệu hướng dẫn dùng client tạm có direct grant **chỉ trong realm dev**, hoặc Postman OAuth2 PKCE; ghi trong `.devcontainer/README.md`.
+  - access token lifespan 300s;
+  - client `lib-management-dev-cli` (**chỉ realm dev**): public, chỉ bật direct access grant để lấy token thử khi chưa có frontend.
+- Script `.devcontainer/keycloak/create_dev_users.py` tạo user thử (`librarian.dev`, `manager.dev`, `admin.dev`, `ops.dev`, `reader.dev`) qua Admin REST API, mật khẩu đọc từ `.devcontainer/.env` (`KEYCLOAK_DEV_USER_PASSWORD`); `--link` gọi `bootstrap-admin` để tạo Account + role tương ứng. Không commit mật khẩu, không đưa user vào realm JSON.
+- Cách lấy token thử ghi trong `.devcontainer/README.md`.
 
 ### 6.2 Kiểm tra JWT
 

@@ -1,0 +1,26 @@
+import { useState } from "react";
+import { Badge, Button, Field, Notice, Panel, Stats, Table } from "../ui/components";
+import { PreviewAction } from "./shared";
+import type { ViewProps } from "./types";
+
+export function ProfileView({ sample, navigate }: ViewProps) {
+  const [tab, setTab] = useState("Cá nhân");
+  const values = sample?.values;
+  const tabs = ["Cá nhân", "Thẻ", "Đang mượn", "Giữ chỗ", "Tài chính", "Lịch sử"];
+  return <><Panel className="reader-profile"><div className="profile-avatar">{values?.readerName?.split(" ").at(-1)?.slice(0, 1) ?? "?"}</div><div><span className="eyebrow">HỒ SƠ ĐỘC GIẢ</span><h2>{values?.readerName ?? "Chưa có hồ sơ"}</h2><p className="muted">{values?.readerCode ?? "—"} · Tài khoản thư viện</p><Badge tone={sample ? "success" : "neutral"}>{values?.card ?? "Chưa có thông tin thẻ"}</Badge></div><div className="profile-summary"><span className="muted">Dư nợ hiện tại</span><strong>{values?.debt ?? "—"}</strong><span className="muted">{sample ? "Không có phí chờ duyệt" : "Chờ dữ liệu từ thư viện"}</span></div></Panel><div className="tabs" role="tablist" aria-label="Thông tin độc giả">{tabs.map((item) => <button key={item} role="tab" aria-selected={tab === item} onClick={() => setTab(item)}>{item}</button>)}</div><Panel title={tab}>{tab === "Cá nhân" ? <dl className="detail-list">{[["Họ tên", values?.readerName], ["Email", values?.email], ["Điện thoại", values?.phone], ["Mã độc giả", values?.readerCode]].map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value ?? "—"}</dd></div>)}</dl> : <><p className="muted">Xem thông tin {tab.toLowerCase()} của độc giả.</p><Button variant="secondary" disabled={!sample} onClick={() => navigate?.(({ "Thẻ": "FE03.04", "Đang mượn": "FE08.02", "Giữ chỗ": "FE08.03", "Tài chính": "FE08.05", "Lịch sử": "FE08.04" } as Record<string, string>)[tab] ?? "FE03.02")}>Mở chi tiết</Button></>}</Panel></>;
+}
+export function PortalView({ sample, navigate }: ViewProps) {
+  return <><div className="portal-greeting"><span className="eyebrow">KHÔNG GIAN CỦA BẠN</span><h2>{sample?.values?.readerName ? `Chào ${sample.values.readerName}.` : "Chào bạn."}</h2><p className="muted">Theo dõi sách đang mượn và những việc cần làm.</p></div><Stats items={[{ label: "Sách đang mượn", value: sample ? "2" : "—", note: "Xem hạn trả của từng cuốn" }, { label: "Đặt trước", value: sample ? "1" : "—", note: "Một cuốn sách đang đợi bạn" }, { label: "Dư nợ", value: sample?.values?.debt ?? "—", note: "Theo sổ tài chính thư viện" }]} /><div className="two-columns"><Panel title="Sách của bạn" subtitle="Theo dõi hành trình đọc"><p className="muted">Kiểm tra hạn trả, xem lịch sử và các yêu cầu của bạn.</p><div className="portal-links">{[["FE08.02", "Sách đang mượn"], ["FE08.03", "Đặt trước của tôi"], ["FE08.05", "Tài chính của tôi"], ["FE08.06", "Hồ sơ và thẻ"]].map(([id, label]) => <Button key={id} variant="secondary" icon="arrow" onClick={() => navigate?.(id!)}>{label}</Button>)}</div></Panel><Panel title="Thẻ thư viện"><span className="eyebrow">LIB / THƯ VIỆN</span><h3>{sample?.values?.readerName ?? "Chưa có thông tin"}</h3><p>{sample?.values?.readerCode ?? "—"}</p><Badge tone={sample ? "success" : "neutral"}>{sample?.values?.card ?? "Chờ xác minh"}</Badge><p className="muted">Hạn thẻ hiển thị theo hồ sơ cấp thẻ của thư viện.</p></Panel></div></>;
+}
+export function NotificationsView({ sample, preview }: ViewProps) {
+  const [read, setRead] = useState<string[]>([]);
+  const notifications = sample ? [{ id: "one", title: "Sách giữ chỗ đã sẵn sàng", text: "Bạn có thể đến thư viện nhận sách theo hạn giữ chỗ.", time: "19/10/2026 · 09:00" }, { id: "two", title: "Nhắc hạn trả sách", text: "Kiểm tra sách đang mượn và kế hoạch trả sách của bạn.", time: "18/10/2026 · 08:30" }] : [];
+  return <Panel title="Hộp thư thư viện">{notifications.length ? <ul className="notification-list">{notifications.map((item) => <li key={item.id} className={read.includes(item.id) ? "is-read" : ""}><div><Badge tone={read.includes(item.id) ? "neutral" : "success"}>{read.includes(item.id) ? "Đã đọc mẫu" : "Chưa đọc"}</Badge><h3>{item.title}</h3><p>{item.text}</p><small className="muted">{item.time}</small></div><Button variant="ghost" disabled={!preview || read.includes(item.id)} onClick={() => setRead([...read, item.id])}>Đánh dấu đã đọc</Button></li>)}</ul> : <div className="empty-state">Chưa có thông báo.</div>}</Panel>;
+}
+export function PreferencesView({ preview, sample }: ViewProps) {
+  const [enabled, setEnabled] = useState(true);
+  return <Panel title="Tùy chọn nhận email"><p className="muted">Chọn cách thư viện liên hệ với bạn.</p><Field label="Email liên hệ" type="email" defaultValue={sample?.values?.email ?? ""} /><label className="checkbox-field"><input type="checkbox" checked={enabled} onChange={(event) => setEnabled(event.target.checked)} />Nhận nhắc hạn trả và thông báo giữ chỗ qua email</label><Notice>Tắt email không làm thay đổi nghĩa vụ trả sách hoặc các khoản phải thu.</Notice><div className="actions"><PreviewAction preview={preview}>Lưu tùy chọn</PreviewAction></div></Panel>;
+}
+export function HistoryView({ sample, screen }: ViewProps) {
+  return <Panel title="Lịch sử tại thư viện"><Table headers={["Số phiếu", "Ngày ghi nhận", "Nội dung", "Trạng thái"]} rows={sample?.rows ?? []} caption={screen.title} /></Panel>;
+}

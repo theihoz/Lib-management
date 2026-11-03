@@ -7,6 +7,8 @@ from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
+from sqlalchemy.exc import DisconnectionError, OperationalError
+from sqlalchemy.exc import TimeoutError as DatabaseTimeout
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from lib_management.core.request_id import HEADER, accept_or_generate
@@ -158,7 +160,21 @@ def install_error_handlers(app: FastAPI) -> None:
         logger.exception("Unhandled error", extra={"request_id": _request_id(request)})
         return _respond(request, 500, "INTERNAL_ERROR", "Lỗi hệ thống")
 
+    async def database_unavailable(request: Request, exc: Exception) -> JSONResponse:
+        # Do not log SQL/parameters or driver messages that may contain PII.
+        logger.warning(
+            "Database unavailable",
+            extra={
+                "request_id": _request_id(request),
+                "error_type": type(exc).__name__,
+            },
+        )
+        error = ServiceUnavailable()
+        return _respond(request, error.status_code, error.code, error.message)
+
     app.add_exception_handler(AppError, app_error)
     app.add_exception_handler(StarletteHTTPException, http_error)
     app.add_exception_handler(RequestValidationError, validation_error)
+    for error_type in (OperationalError, DisconnectionError, DatabaseTimeout):
+        app.add_exception_handler(error_type, database_unavailable)
     app.add_exception_handler(Exception, unexpected)

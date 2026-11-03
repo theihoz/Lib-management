@@ -67,16 +67,6 @@ uv run --locked uvicorn lib_management.main:create_app --factory --host 0.0.0.0 
 Swagger: <http://localhost:8000/docs>. Không chạy API Compose khác cùng cổng 8000.
 DB chỉ truy cập qua `db:5432` trong network; không cần cổng DB trên host.
 
-## Chạy frontend trong terminal container
-
-```bash
-cd /workspaces/lib-management/apps/web
-npm ci          # setup.sh đã chạy khi tạo container
-npm run dev     # http://localhost:5173
-```
-
-Vite proxy `/api` và `/health` sang API ở cổng 8000 cùng container, nên chạy API trước. Cổng 5173 cố định vì realm Keycloak dev chỉ cho redirect tới `http://localhost:5173/*`. Xem [apps/web/README.md](../apps/web/README.md).
-
 ## Migration, quyền và Keycloak local
 
 ```bash

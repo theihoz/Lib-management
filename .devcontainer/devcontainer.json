@@ -24,8 +24,14 @@
   "postCreateCommand": "bash .devcontainer/setup.sh",
   "forwardPorts": [
     8000,
-    5173
+    5173,
+    8080
   ],
+  "portsAttributes": {
+    "8000": { "label": "API (FastAPI)" },
+    "5173": { "label": "Web (Vite)" },
+    "8080": { "label": "Keycloak (dev only)" }
+  },
   "customizations": {
     "vscode": {
       "extensions": [
@@ -38,7 +44,10 @@
         "Anthropic.claude-code"
       ],
       "settings": {
-        "python.defaultInterpreterPath": "/home/developer/.venv/bin/python"
+        "python.defaultInterpreterPath": "/home/developer/.venv/bin/python",
+        "editor.formatOnSave": true,
+        "[python]": { "editor.defaultFormatter": "charliermarsh.ruff" },
+        "[typescript][typescriptreact][json][yaml]": { "editor.defaultFormatter": "esbenp.prettier-vscode" }
       }
     }
   },

@@ -30,7 +30,10 @@ jobs:
             test -s "$file" || { echo "Required frontend file missing or empty: $file"; exit 1; }
           done
       - name: Validate Compose model
-        run: docker compose --env-file .env.example config --quiet
+        run: |
+          docker compose --env-file .env.example config --quiet
+          KEYCLOAK_ADMIN_PASSWORD=ci KEYCLOAK_DEV_USER_PASSWORD=ci \
+            docker compose -f compose.yaml -f compose.local.yaml --env-file .env.example config --quiet
   quality:
     needs: configuration
     runs-on: ubuntu-24.04

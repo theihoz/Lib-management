@@ -3,6 +3,11 @@
 Phần mềm quản lý thư viện: quầy mượn/trả cho nhân viên và portal cho độc giả.
 Monorepo gồm backend FastAPI và frontend React, phát triển trong một Dev Container chung.
 
+> **Demo hay bản thật?** Trang [GitHub Pages](https://theihoz.github.io/Lib-management/) chỉ là
+> **bản demo**: dữ liệu giả lập trong trình duyệt, chọn vai trò để đăng nhập, không có database.
+> Muốn dùng **bản thật** (PostgreSQL, Keycloak, API, worker) trên máy cá nhân, chạy một lệnh:
+> `scripts/local.sh up` — xem [Bắt đầu](#bắt-đầu).
+
 | Phần | Công nghệ | Thư mục |
 | --- | --- | --- |
 | Backend | Python 3.13, FastAPI, SQLAlchemy 2, Alembic, PostgreSQL 17; dependencies khóa bằng `uv.lock` | [`apps/api`](apps/api/README.md) |
@@ -24,7 +29,8 @@ Monorepo gồm backend FastAPI và frontend React, phát triển trong một Dev
   66/85 operation OpenAPI được phục vụ; 19 còn lại thuộc phase 2.
 - Frontend ([spec M0 frontend](docs/specs/M0-frontend-foundation.md)): Keycloak PKCE, client sinh từ
   OpenAPI, route/menu theo permission, 36 màn thuộc lõi; cấu hình runtime `/config.json` kiểm tra bằng Zod.
-- GitHub Pages triển khai bản build tĩnh sau khi toàn bộ CI đạt.
+- GitHub Pages triển khai **bản demo** tĩnh (mock API trong trình duyệt) sau khi toàn bộ CI đạt;
+  bản thật chạy local bằng `scripts/local.sh up`.
 - Dev Container có Python, uv, Node 24, PostgreSQL và Keycloak dev; CI cho cả backend và frontend.
 
 **Chưa có**
@@ -47,7 +53,38 @@ git clone https://github.com/theihoz/Lib-management.git
 cd Lib-management
 ```
 
-### Cách 1 — Dev Container (khuyến nghị để code)
+Chọn một trong ba cách. Chỉ chạy một cách tại một thời điểm vì chúng dùng chung cổng
+5173/8000/8080.
+
+| Cách | Dùng khi | Cần cài |
+| --- | --- | --- |
+| 1. Bản thật bằng một lệnh | Dùng thử/demo đầy đủ với dữ liệu thật trên máy | Docker |
+| 2. Dev Container | Viết code backend + frontend | Docker, VS Code + Dev Containers |
+| 3. Chỉ backend bằng Compose | Thử API, không cần đăng nhập | Docker |
+
+### Cách 1 — Bản thật trên máy cá nhân (một lệnh)
+
+```bash
+scripts/local.sh up
+```
+
+Lệnh tự tạo `.env` với mật khẩu ngẫu nhiên, rồi khởi động PostgreSQL, Keycloak, migration,
+seed quyền + 5 tài khoản, API, worker và bản build production của web. Khi báo xong:
+
+| Dịch vụ | Địa chỉ |
+| --- | --- |
+| Ứng dụng | <http://localhost:5173> |
+| API + Swagger | <http://localhost:8000/docs> |
+| Keycloak | <http://localhost:8080> |
+
+Đăng nhập bằng `librarian.dev`, `manager.dev`, `admin.dev`, `ops.dev` hoặc `reader.dev`;
+mật khẩu là `KEYCLOAK_DEV_USER_PASSWORD` trong `.env`. Dừng bằng `scripts/local.sh down`
+(giữ dữ liệu). Windows: chạy trong Git Bash hoặc WSL2.
+
+Toàn bộ lệnh (`status`, `logs`, `token`, `reset`), đổi cổng và xử lý lỗi:
+[hướng dẫn chạy bản thật](docs/operations/local-real.md).
+
+### Cách 2 — Dev Container (khuyến nghị để code)
 
 Cài Docker Desktop/Engine, Git, VS Code với extension Dev Containers (Windows: Docker Desktop
 Linux containers trên WSL2). Mở thư mục repository, chọn **Dev Containers: Rebuild and Reopen
@@ -68,15 +105,10 @@ cd apps/web
 npm run dev
 ```
 
-| Dịch vụ | Địa chỉ |
-| --- | --- |
-| Frontend | <http://localhost:5173> (cổng cố định vì redirect Keycloak) |
-| API + Swagger | <http://localhost:8000/docs> |
-| Keycloak dev | <http://localhost:8080> (realm `lib-management`) |
-
+Địa chỉ giống Cách 1; frontend là Vite dev server có hot reload.
 Chi tiết, cách lấy token thử và xử lý lỗi: [hướng dẫn Dev Container](.devcontainer/README.md).
 
-### Cách 2 — Chỉ chạy backend bằng Compose
+### Cách 3 — Chỉ chạy backend bằng Compose
 
 ```bash
 cp .env.example .env
@@ -84,10 +116,17 @@ cp .env.example .env
 docker compose up --build -d --wait
 ```
 
-Compose chạy `db` → `migrate` (một lần) → `api` + `worker`. Đây là stack riêng, khác workspace
-Dev Container; chỉ chạy một trong hai trên cổng 8000. `docker compose down` giữ dữ liệu.
+Compose chạy `db` → `migrate` (một lần) → `api` + `worker`, không có Keycloak và web.
 `OIDC_ISSUER` để trống thì route cần đăng nhập trả 503, health vẫn chạy.
-Có thể [chạy API trên host](apps/api/README.md) bằng uv và DB Compose.
+Dùng chung database với Cách 1. Có thể [chạy API trên host](apps/api/README.md) bằng uv và DB Compose.
+
+### Bản demo trên GitHub Pages
+
+Workflow `Deploy web to GitHub Pages` build `npm run build:demo` và ghi `config.json` với
+`mock: true`: mọi lời gọi API được trả lời ngay trong trình duyệt theo OpenAPI, đăng nhập bằng
+cách chọn vai trò. Bản build production (`npm run build`) loại bỏ hoàn toàn code mock; CI kiểm
+tra điều này. Nếu đặt biến repository `PAGES_OIDC_URL` (và `PAGES_API_BASE_URL`), Pages build
+bản production trỏ tới API đó thay vì demo.
 
 ## Kiểm tra trước khi mở PR
 
@@ -110,6 +149,7 @@ Workflow `Publish API image` xuất bản GHCR thủ công từ default branch s
 - [Kế hoạch backend/frontend/tích hợp](docs/plan/README.md), [quyết định](docs/plan/decisions.md)
 - [Thiết kế: DB, OpenAPI, quyền, identity, kiến trúc](docs/design/README.md)
 - [Onboarding, chia việc, Git và review](docs/operations/team-development.md)
+- [Chạy bản thật trên máy cá nhân](docs/operations/local-real.md)
 - [Docker, biến môi trường, CI/CD](docs/operations/containers-ci.md)
 - [Bối cảnh và phạm vi dự án](PROJECT-CONTEXT.md)
 - [Bằng chứng kiểm tra đã thực hiện](docs/operations/verification.md)
@@ -121,8 +161,10 @@ Workflow `Publish API image` xuất bản GHCR thủ công từ default branch s
 .github/             CI, publish image, Dependabot, payload bảo vệ main
 apps/api/            FastAPI: src/lib_management, migrations, tests, uv.lock
 apps/web/            React + Vite: src, public/config.json, package-lock.json
-docker/              Dockerfile API dev/build/production
+docker/              Dockerfile API, image web (nginx), cấu hình nginx
 compose.yaml         db + migrate + api + worker local
+compose.local.yaml   Thêm Keycloak, seed, web production cho bản thật local
+scripts/local.sh     Một lệnh chạy/dừng/reset bản thật local
 PROJECT-CONTEXT.md   Mục đích, phạm vi và quyết định hiện hành
 docs/
   specs/             Spec triển khai theo mốc (M0 backend, M0 frontend)

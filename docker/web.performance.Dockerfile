@@ -8,7 +8,9 @@ RUN npm run build
 
 # 1.28 supports open-source upstream DNS re-resolution (introduced in 1.27.3).
 FROM nginx:1.28-alpine AS runtime
-COPY docker/nginx.performance.conf /etc/nginx/nginx.conf
+# compose.local.yaml swaps in the single-API configuration.
+ARG NGINX_CONF=docker/nginx.performance.conf
+COPY ${NGINX_CONF} /etc/nginx/nginx.conf
 COPY --from=build /app/dist/ /usr/share/nginx/html/
 USER nginx
 EXPOSE 8080

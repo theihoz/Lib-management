@@ -3,12 +3,13 @@
 Backend là Python 3.13 + FastAPI + PostgreSQL 17. Chỉ có health endpoints;
 chưa có schema nghiệp vụ, CRUD hoặc migration. Frontend/Nginx chưa được cấu hình; template Node cũ đã được dọn.
 
-## Ba cấu hình Docker — chọn theo mục đích
+## Các cấu hình Docker — chọn theo mục đích
 
 | Cấu hình | Dùng khi | Mount / dependencies | Khởi động | Dữ liệu |
 | --- | --- | --- | --- | --- |
 | `.devcontainer/compose.yaml` + override sinh tự động | Team code toàn bộ repository | Toàn repo + Git metadata worktree; Linux venv workspace `/home/developer/.venv` | workspace chờ terminal; API chạy thủ công | `lib-management-devcontainer_devcontainer-pgdata` |
 | `compose.yaml` | Chạy app local / reload API | Chỉ `apps/api/src` → `/app/src`; dependencies trong image | API tự chạy; DB healthy trước | `lib-management_pgdata` |
+| `compose.yaml` + `compose.local.yaml` (`scripts/local.sh`) | Chạy **bản thật** đầy đủ trên máy cá nhân: Keycloak, seed quyền/user, web production | Như `compose.yaml`; web là bundle production sau nginx | Một lệnh, chờ mọi service healthy | `lib-management_pgdata`, `lib-management_keycloak-data` |
 | `docker/api.Dockerfile --target production` | CI / xuất bản image runtime | Không mount source; wheel và runtime deps | Uvicorn một worker, không reload | DB phải cung cấp riêng lúc deploy |
 
 Hai Compose project có DB/volume riêng, không tự chia sẻ dữ liệu. Không chạy hai

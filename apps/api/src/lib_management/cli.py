@@ -11,9 +11,12 @@ from lib_management import migrate
 from lib_management.config import Settings
 from lib_management.db import create_engine_from_settings, create_session_factory
 from lib_management.identity import service
+from lib_management.models import load_all_models
 
 
 def _session_factory(settings: Settings):  # type: ignore[no-untyped-def]
+    # Account references reader; the mapper needs every table registered.
+    load_all_models()
     return create_session_factory(create_engine_from_settings(settings))
 
 

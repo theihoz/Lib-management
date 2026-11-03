@@ -1,0 +1,118 @@
+# Full local stack on one machine: compose.yaml (db, migrate, api, worker) plus
+# Keycloak, demo-free seed of roles/users, and the production web build.
+# LOCAL ONLY: Keycloak runs start-dev with the dev realm. Use scripts/local.sh, or:
+#   docker compose -f compose.yaml -f compose.local.yaml up --build -d --wait
+x-db-env: &db-env
+  DB_HOST: db
+  DB_PORT: 5432
+  DB_USER: ${POSTGRES_USER:-lib_dev}
+  DB_NAME: ${POSTGRES_DB:-lib_management}
+  DB_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+
+x-oidc-env: &oidc-env
+  # The browser gets tokens from localhost; containers fetch keys over the network.
+  OIDC_ISSUER: http://localhost:${KEYCLOAK_PORT:-8080}/realms/lib-management
+  OIDC_JWKS_URL: http://keycloak:8080/realms/lib-management/protocol/openid-connect/certs
+
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.8.0@sha256:27b3230fbabb8c9ff3c66c864cf09dcd8a41aca82e5100679d109ef0eeb05741
+    command:
+      - start-dev
+      - --import-realm
+      - --health-enabled=true
+      - --hostname=http://localhost:${KEYCLOAK_PORT:-8080}
+      - --hostname-backchannel-dynamic=true
+    environment:
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?Run scripts/local.sh up once to create it}
+    volumes:
+      - ./.devcontainer/keycloak/lib-management-realm.json:/opt/keycloak/data/import/lib-management-realm.json:ro
+      - keycloak-data:/opt/keycloak/data
+    ports:
+      - "127.0.0.1:${KEYCLOAK_PORT:-8080}:8080"
+    healthcheck:
+      # The image has no curl/wget; probe the management port with bash.
+      test:
+        - CMD-SHELL
+        - >-
+          exec 3<>/dev/tcp/127.0.0.1/9000 &&
+          printf 'GET /health/ready HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n' >&3 &&
+          grep -q '"UP"' <&3
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 20s
+    security_opt: [no-new-privileges:true]
+    networks: [backend]
+
+  seed:
+    # One-shot, idempotent: permissions/roles, then Keycloak users linked to Accounts.
+    build:
+      context: .
+      dockerfile: docker/api.Dockerfile
+      target: dev
+    init: true
+    command:
+      - sh
+      - -c
+      - python -m lib_management.cli seed-rbac && python /seed/create_dev_users.py --link
+    environment:
+      <<: [*db-env, *oidc-env]
+      KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?Run scripts/local.sh up once to create it}
+      KEYCLOAK_DEV_USER_PASSWORD: ${KEYCLOAK_DEV_USER_PASSWORD:?Run scripts/local.sh up once to create it}
+    volumes:
+      - ./apps/api/src:/app/src
+      - ./.devcontainer/keycloak:/seed:ro
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      keycloak:
+        condition: service_healthy
+    restart: "no"
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    networks: [backend]
+
+  api:
+    environment: *oidc-env
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+
+  web:
+    # Production bundle (no mock code) behind nginx, which proxies /api to the API.
+    build:
+      context: .
+      dockerfile: docker/web.performance.Dockerfile
+      args:
+        NGINX_CONF: docker/nginx.local.conf
+    configs:
+      - source: web-runtime-config
+        target: /usr/share/nginx/html/config.json
+    ports:
+      # Fixed: the dev realm only allows redirects to http://localhost:5173/*.
+      - "127.0.0.1:5173:8080"
+    depends_on:
+      api:
+        condition: service_healthy
+    # Not read_only: Compose writes the inline config.json into the container.
+    tmpfs: [/tmp]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    networks: [backend]
+
+configs:
+  web-runtime-config:
+    content: |
+      {
+        "oidcUrl": "http://localhost:${KEYCLOAK_PORT:-8080}",
+        "oidcRealm": "lib-management",
+        "oidcClientId": "lib-management-web",
+        "apiBaseUrl": "",
+        "mock": false
+      }
+
+volumes:
+  keycloak-data:

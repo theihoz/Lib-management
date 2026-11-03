@@ -7,14 +7,24 @@ import { createApiClient } from "../api/client";
 import { createServices } from "../api/services";
 import type { ApiServices } from "../api/services";
 import { createIdentity } from "./keycloak";
+import type { Identity } from "./keycloak";
 import { classifySessionError } from "./session-state";
 import type { SessionStatus } from "./session-state";
+
+/** Demo build only: fake API and persona sign-in in place of the API and Keycloak. */
+export type DemoMode = {
+  createIdentity: () => Identity;
+  fetch: (request: Request) => Promise<Response>;
+  personas: { code: string; label: string }[];
+};
 
 type Session = {
   status: SessionStatus;
   account?: components["schemas"]["AccountView"];
   permissions: string[];
-  login: () => Promise<void>;
+  /** Present in the demo build; login() then takes one of these codes. */
+  personas?: DemoMode["personas"];
+  login: (persona?: string) => Promise<void>;
   logout: () => Promise<void>;
   retry: () => void;
   services: ApiServices;
@@ -23,13 +33,18 @@ type Session = {
 const SessionContext = createContext<Session | null>(null);
 export function SessionProvider({
   config,
+  demo,
   children,
 }: {
   config: RuntimeConfig;
+  demo?: DemoMode;
   children: ReactNode;
 }) {
   const cache = useQueryClient();
-  const identity = useMemo(() => createIdentity(config), [config]);
+  const identity = useMemo(
+    () => (demo ? demo.createIdentity() : createIdentity(config)),
+    [config, demo],
+  );
   const isCallback = useMemo(() => {
     const params = new URLSearchParams(window.location.search);
     return params.has("state") && (params.has("code") || params.has("error"));
@@ -42,6 +57,7 @@ export function SessionProvider({
       createServices(
         createApiClient({
           baseUrl: config.apiBaseUrl,
+          fetch: demo?.fetch,
           getToken: () => identity.getToken(),
           refresh: () => identity.refresh(),
           onExpired: () => {
@@ -55,7 +71,7 @@ export function SessionProvider({
           },
         }),
       ),
-    [config.apiBaseUrl, identity, cache],
+    [config.apiBaseUrl, demo, identity, cache],
   );
   const auth = useQuery({
     queryKey: ["auth", "me"],
@@ -97,13 +113,14 @@ export function SessionProvider({
     status,
     account: status === "authenticated" ? auth.data?.account : undefined,
     permissions: status === "authenticated" ? (auth.data?.permissions ?? []) : [],
+    personas: demo?.personas,
     services,
     error: auth.error ?? loginError,
-    async login() {
+    async login(persona) {
       setLoginError(undefined);
       setPhase("checking");
       try {
-        await identity.login();
+        if (await identity.login(persona)) setHasToken(true);
       } catch (error) {
         setLoginError(error);
         setPhase("offline");

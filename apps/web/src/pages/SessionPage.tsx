@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router";
 import { useSession } from "../auth/session";
 import type { SessionStatus } from "../auth/session-state";
 import { Badge, Button, Dialog, Notice, Panel } from "../ui/components";
@@ -22,6 +23,7 @@ const messages: Record<SessionStatus, [string, string]> = {
 };
 export function SessionPage({ forbidden = false }: { forbidden?: boolean }) {
   const session = useSession();
+  const navigate = useNavigate();
   const [logout, setLogout] = useState(false);
   const [title, description] = forbidden
     ? ["Bạn chưa có quyền truy cập", "Tài khoản hiện tại không có quyền thực hiện thao tác này."]
@@ -72,6 +74,22 @@ export function SessionPage({ forbidden = false }: { forbidden?: boolean }) {
               <Button variant="secondary" icon="refresh" onClick={session.retry}>
                 Thử lại
               </Button>
+            ) : session.personas && !forbidden ? (
+              <fieldset className="persona-picker" disabled={session.status === "checking"}>
+                <legend>Bản demo: chọn vai trò để đăng nhập</legend>
+                {session.personas.map((persona) => (
+                  <Button
+                    key={persona.code}
+                    variant="secondary"
+                    icon="key"
+                    onClick={() => {
+                      void session.login(persona.code).then(() => navigate("/staff"));
+                    }}
+                  >
+                    {persona.label}
+                  </Button>
+                ))}
+              </fieldset>
             ) : (
               <Button
                 disabled={

@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-quer
 import type { RuntimeConfig } from "../config/config";
 import { ApiError } from "../api/errors";
 import { SessionProvider, useSession } from "../auth/session";
+import type { DemoMode } from "../auth/session";
 import { canAccess } from "../auth/session-state";
 import { Shell } from "../shell/Shell";
 import { SessionPage } from "../pages/SessionPage";
@@ -97,7 +98,7 @@ function ApplicationRoutes() {
     </Routes>
   );
 }
-export function App({ config }: { config: RuntimeConfig }) {
+export function App({ config, demo }: { config: RuntimeConfig; demo?: DemoMode }) {
   const [client] = useState(
     () =>
       new QueryClient({
@@ -117,7 +118,12 @@ export function App({ config }: { config: RuntimeConfig }) {
   );
   return (
     <QueryClientProvider client={client}>
-      <SessionProvider config={config}>
+      <SessionProvider config={config} demo={demo}>
+        {demo && (
+          <p className="demo-banner" role="note">
+            Bản demo: dữ liệu giả lập ngay trong trình duyệt, không kết nối máy chủ thư viện.
+          </p>
+        )}
         <BrowserRouter basename={import.meta.env.BASE_URL.replace(/\/$/, "") || "/"}>
           <ApplicationRoutes />
         </BrowserRouter>

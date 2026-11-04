@@ -257,6 +257,12 @@ function Checkout() {
   );
 }
 
+type DamageLevel = "MINOR_DAMAGE" | "MAJOR_DAMAGE";
+const DAMAGE_LABELS: Record<DamageLevel, string> = {
+  MINOR_DAMAGE: "Hỏng nhẹ",
+  MAJOR_DAMAGE: "Hỏng nặng",
+};
+
 function Returns() {
   const services = useServices();
   const session = useSession();
@@ -265,8 +271,18 @@ function Returns() {
   const canAssess = session.permissions.includes("assessment.propose");
   const [barcode, setBarcode] = useState("");
   const [condition, setCondition] = useState<"GOOD" | "DAMAGE" | "LOST">("GOOD");
+  const [level, setLevel] = useState<DamageLevel>("MINOR_DAMAGE");
   const [amount, setAmount] = useState("");
   const [reason, setReason] = useState("");
+  // BM09 fee frame from the rules this loan was issued under (QĐ07 range for LOST).
+  const suggest = (next: "GOOD" | "DAMAGE" | "LOST", nextLevel: DamageLevel) => {
+    if (next === "GOOD") return;
+    const fees = target?.loanItem.applied_rules.damageLostFees as
+      Record<string, unknown> | undefined;
+    const fee = fees?.[next === "LOST" ? "LOST" : nextLevel];
+    if (typeof fee === "string") setAmount(fee);
+    setReason(next === "LOST" ? "Mất sách" : DAMAGE_LABELS[nextLevel]);
+  };
   const find = useMutation({
     mutationFn: async (code: string) =>
       (
@@ -302,6 +318,7 @@ function Returns() {
     find.reset();
     setBarcode("");
     setCondition("GOOD");
+    setLevel("MINOR_DAMAGE");
     setAmount("");
     setReason("");
   };
@@ -369,13 +386,35 @@ function Returns() {
                     name="return-condition"
                     checked={condition === value}
                     disabled={value !== "GOOD" && !canAssess}
-                    onChange={() => setCondition(value)}
+                    onChange={() => {
+                      setCondition(value);
+                      suggest(value, level);
+                    }}
                   />
                   {label}
                 </label>
               ))}
             </fieldset>
             {!canAssess && <p className="muted">Ghi nhận sách hỏng / mất cần quyền đề xuất phí.</p>}
+            {condition === "DAMAGE" && (
+              <fieldset className="condition-selector">
+                <legend>Mức hỏng (khung phí BM09)</legend>
+                {(Object.keys(DAMAGE_LABELS) as DamageLevel[]).map((value) => (
+                  <label key={value}>
+                    <input
+                      type="radio"
+                      name="damage-level"
+                      checked={level === value}
+                      onChange={() => {
+                        setLevel(value);
+                        suggest("DAMAGE", value);
+                      }}
+                    />
+                    {DAMAGE_LABELS[value]}
+                  </label>
+                ))}
+              </fieldset>
+            )}
             {condition !== "GOOD" && (
               <div className="form-grid">
                 <Field
@@ -384,6 +423,11 @@ function Returns() {
                   pattern="[0-9]+"
                   required
                   value={amount}
+                  hint={
+                    condition === "LOST"
+                      ? "Theo QĐ07: từ 100.000 đến 600.000 ₫ tùy loại sách."
+                      : "Gợi ý theo khung phí; Quản lý xác nhận số tiền cuối cùng."
+                  }
                   onChange={(event) => setAmount(event.target.value)}
                 />
                 <Field

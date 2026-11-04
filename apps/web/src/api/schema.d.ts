@@ -2520,6 +2520,7 @@ export interface components {
         CheckoutRequest: {
             /** Format: uuid */
             readerId: string;
+            /** @description Tối đa theo PolicyRules.maxBooksPerLoan (QĐ05) */
             copyIds: string[];
         };
         CheckoutReceipt: {
@@ -2671,10 +2672,9 @@ export interface components {
         PolicyRequest: {
             /** Format: date-time */
             effectiveFrom: string;
-            rulesSchemaVersion: number;
-            rules: {
-                [key: string]: unknown;
-            };
+            /** @enum {integer} */
+            rulesSchemaVersion: 2;
+            rules: components["schemas"]["PolicyRules"];
         };
         ReceiptRequest: {
             supplier: string;
@@ -2998,6 +2998,43 @@ export interface components {
             };
             /** @description Số ngày quá hạn theo lịch Asia/Ho_Chi_Minh */
             lateDays: number;
+        };
+        /** @description Khung phí BM09; mức đề xuất mặc định, Quản lý xác nhận. */
+        DamageLostFees: {
+            MINOR_DAMAGE: string;
+            MAJOR_DAMAGE: string;
+            /** @description QĐ07: 100000–600000 */
+            LOST: string;
+        };
+        /** @description rulesSchemaVersion 2 (QĐ01–QĐ08, QĐ12, BM09/QĐ17). */
+        PolicyRules: {
+            /** @description BM09 */
+            libraryName: string;
+            /** @description QĐ01 */
+            minReaderAge: number;
+            /** @description QĐ01; >= minReaderAge */
+            maxReaderAge: number;
+            /** @description QĐ02 */
+            cardValidityMonths: number;
+            /** @description QĐ05 */
+            maxBooksPerLoan: number;
+            /** @description QĐ06 */
+            initialLoanDays: number;
+            /** @description QĐ06 */
+            maxRenewals: number;
+            /** @description QĐ06 */
+            renewalDays: number;
+            /** @description QĐ07, >= 0 */
+            overdueFinePerDay: string;
+            /** @description QĐ12: chặn khi dư nợ > giá trị này; > 0 */
+            allowedOutstandingBalance: string;
+            /** @description QĐ03 */
+            publicationYearWindow: number;
+            /** @description BM09 */
+            readyHoldDays: number;
+            /** @enum {string} */
+            damageLostAssessment: "MANUAL_APPROVAL";
+            damageLostFees: components["schemas"]["DamageLostFees"];
         };
     };
     responses: never;

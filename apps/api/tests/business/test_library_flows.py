@@ -16,10 +16,15 @@ from sqlalchemy import select
 
 from lib_management import migrate
 from lib_management.circulation.models import (
+    FineCharge,
     LoanItem,
     PolicyVersion,
 )
-from lib_management.circulation.service import RULES, outstanding
+from lib_management.circulation.service import (
+    RULES,
+    RULES_SCHEMA_VERSION,
+    outstanding,
+)
 from lib_management.config import Settings
 from lib_management.db import create_engine_from_settings, create_session_factory
 from lib_management.identity.auth import Principal, authenticated
@@ -85,7 +90,7 @@ def client(settings: Settings) -> Iterator[TestClient]:
                     effective_from=datetime.now(UTC) - timedelta(days=1),
                     status="ACTIVE",
                     rules=RULES,
-                    rules_schema_version=1,
+                    rules_schema_version=RULES_SCHEMA_VERSION,
                     approved_by=account.id,
                     approved_at=datetime.now(UTC) - timedelta(days=2),
                 )
@@ -286,7 +291,7 @@ def test_stale_reader_patch_and_invalid_policy(client: TestClient):
         {
             "effectiveFrom": (datetime.now(UTC) + timedelta(days=1)).isoformat(),
             "rulesSchemaVersion": 1,
-            "rules": {**RULES, "maxBooksPerLoan": 20},
+            "rules": RULES,
         },
     )
     assert policy.status_code == 422
@@ -354,3 +359,153 @@ def test_overdue_items_include_reader_title_and_late_days(
         ).status_code
         == 201
     )
+
+
+def add_charge(
+    client: TestClient, settings: Settings, reader: dict, checkout: dict, amount: int
+) -> None:
+    from uuid import UUID
+
+    engine = create_engine_from_settings(settings)
+    with create_session_factory(engine)() as session, session.begin():
+        item = session.get(LoanItem, UUID(checkout["items"][0]["loanItemId"]))
+        assert item is not None
+        session.add(
+            FineCharge(
+                reader_id=UUID(reader["id"]),
+                loan_item_id=item.id,
+                policy_version_id=item.policy_version_id,
+                reason="MANUAL",
+                assessed_amount=amount,
+                calculation={"test": True},
+                manual_reason="test",
+                assessed_by=client.test_principal.account_id,
+            )
+        )
+    engine.dispose()
+
+
+def reasons(client: TestClient, reader: dict) -> list[str]:
+    response = client.get(f"/api/v1/readers/{reader['id']}/eligibility")
+    assert response.status_code == 200, response.text
+    return response.json()["reasons"]
+
+
+def test_outstanding_balance_blocks_only_above_threshold(
+    client: TestClient, settings: Settings
+):
+    # QĐ12: default threshold 50.000 VND; borrowing is blocked only above it.
+    reader, _, checkout, _ = setup_loan(client)
+    add_charge(client, settings, reader, checkout, 49_999)
+    assert "OUTSTANDING_BALANCE" not in reasons(client, reader)
+    add_charge(client, settings, reader, checkout, 1)
+    assert "OUTSTANDING_BALANCE" not in reasons(client, reader)
+    add_charge(client, settings, reader, checkout, 1)
+    assert "OUTSTANDING_BALANCE" in reasons(client, reader)
+
+
+def policy_body(**rules: object) -> dict:
+    return {
+        "effectiveFrom": (datetime.now(UTC) + timedelta(days=30)).isoformat(),
+        "rulesSchemaVersion": RULES_SCHEMA_VERSION,
+        "rules": {**RULES, **rules},
+    }
+
+
+@pytest.mark.parametrize(
+    "rules",
+    [
+        {"allowedOutstandingBalance": "0"},
+        {"overdueFinePerDay": "-1"},
+        {"initialLoanDays": 0},
+        {"readyHoldDays": 0},
+        {"minReaderAge": 60, "maxReaderAge": 55},
+        {"damageLostFees": {**RULES["damageLostFees"], "LOST": "700000"}},
+        {"libraryName": ""},
+        {"unknownRule": 1},
+    ],
+)
+def test_policy_rejects_invalid_values(client: TestClient, rules: dict):
+    # QĐ17: fine >= 0, threshold > 0, day counts positive; QĐ07 lost-fee range.
+    assert post(client, "/policy-versions", policy_body(**rules)).status_code == 422
+
+
+def test_policy_accepts_manager_values(client: TestClient):
+    # QĐ16/QĐ17: the Manager may change configured values in a new draft.
+    body = policy_body(
+        libraryName="Thư viện Nhóm 3",
+        overdueFinePerDay="2000",
+        allowedOutstandingBalance="80000",
+        readyHoldDays=2,
+        initialLoanDays=5,
+    )
+    created = post(client, "/policy-versions", body)
+    assert created.status_code == 201, created.text
+    assert created.json()["status"] == "DRAFT"
+    assert created.json()["rules_schema_version"] == RULES_SCHEMA_VERSION
+    assert created.json()["rules"]["allowedOutstandingBalance"] == "80000"
+    assert created.json()["rules"]["libraryName"] == "Thư viện Nhóm 3"
+
+
+def test_checkout_respects_policy_book_limit(client: TestClient):
+    # QĐ05: at most maxBooksPerLoan (4) copies in one loan.
+    reader, first, _, _ = setup_loan(client)
+    code = uuid4().hex[:8]
+    edition = post(
+        client,
+        "/book-editions",
+        {"title": "Limit " + code, "publicationYear": datetime.now(UTC).year},
+    )
+    copies = post(
+        client,
+        f"/book-editions/{edition.json()['id']}/copies",
+        {
+            "barcodes": [f"{code}-{n}" for n in range(5)],
+            "locationId": first["location_id"],
+        },
+    )
+    assert copies.status_code == 201, copies.text
+    listed = client.get(
+        f"/api/v1/book-editions/{edition.json()['id']}/copies", params={"limit": 10}
+    )
+    ids = [row["id"] for row in listed.json()["data"]]
+    assert len(ids) == 5
+    too_many = post(client, "/loans", {"readerId": reader["id"], "copyIds": ids})
+    assert too_many.status_code == 422, too_many.text
+    assert "QĐ05" in too_many.json()["message"]
+    allowed = post(client, "/loans", {"readerId": reader["id"], "copyIds": ids[:4]})
+    assert allowed.status_code == 201, allowed.text
+
+
+def test_lost_fee_must_follow_qd07_range(client: TestClient):
+    reader, copy, checkout, _ = setup_loan(client)
+    item = checkout["items"][0]["loanItemId"]
+
+    def lost(amount: str):
+        return post(
+            client,
+            "/returns",
+            {
+                "loanItemId": item,
+                "condition": "LOST",
+                "assessment": {"proposedAmount": amount, "reason": "Mất sách"},
+            },
+        )
+
+    assert lost("50000").status_code == 422
+    assert lost("700000").status_code == 422
+    accepted = lost("100000")
+    assert accepted.status_code == 201, accepted.text
+    aid = accepted.json()["assessmentId"]
+    too_high = post(
+        client,
+        f"/charge-assessments/{aid}/decisions",
+        {"expectedVersion": 1, "amount": "650000", "reason": "Giá sách"},
+    )
+    assert too_high.status_code == 422
+    approved = post(
+        client,
+        f"/charge-assessments/{aid}/decisions",
+        {"expectedVersion": 1, "amount": "600000", "reason": "Giá sách"},
+    )
+    assert approved.status_code == 201, approved.text

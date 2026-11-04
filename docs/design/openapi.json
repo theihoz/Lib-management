@@ -13934,8 +13934,9 @@
               "format": "uuid"
             },
             "minItems": 1,
-            "maxItems": 4,
-            "uniqueItems": true
+            "maxItems": 20,
+            "uniqueItems": true,
+            "description": "Tối đa theo PolicyRules.maxBooksPerLoan (QĐ05)"
           }
         },
         "required": [
@@ -14533,11 +14534,12 @@
           },
           "rulesSchemaVersion": {
             "type": "integer",
-            "minimum": 1
+            "enum": [
+              2
+            ]
           },
           "rules": {
-            "type": "object",
-            "additionalProperties": true
+            "$ref": "#/components/schemas/PolicyRules"
           }
         },
         "required": [
@@ -15719,6 +15721,138 @@
           "reader",
           "lateDays"
         ]
+      },
+      "DamageLostFees": {
+        "type": "object",
+        "description": "Khung phí BM09; mức đề xuất mặc định, Quản lý xác nhận.",
+        "properties": {
+          "MINOR_DAMAGE": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "maxLength": 12
+          },
+          "MAJOR_DAMAGE": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "maxLength": 12
+          },
+          "LOST": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "maxLength": 12,
+            "description": "QĐ07: 100000–600000"
+          }
+        },
+        "required": [
+          "MINOR_DAMAGE",
+          "MAJOR_DAMAGE",
+          "LOST"
+        ],
+        "additionalProperties": false
+      },
+      "PolicyRules": {
+        "type": "object",
+        "description": "rulesSchemaVersion 2 (QĐ01–QĐ08, QĐ12, BM09/QĐ17).",
+        "properties": {
+          "libraryName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "BM09"
+          },
+          "minReaderAge": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 120,
+            "description": "QĐ01"
+          },
+          "maxReaderAge": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 120,
+            "description": "QĐ01; >= minReaderAge"
+          },
+          "cardValidityMonths": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 120,
+            "description": "QĐ02"
+          },
+          "maxBooksPerLoan": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20,
+            "description": "QĐ05"
+          },
+          "initialLoanDays": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 365,
+            "description": "QĐ06"
+          },
+          "maxRenewals": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10,
+            "description": "QĐ06"
+          },
+          "renewalDays": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 365,
+            "description": "QĐ06"
+          },
+          "overdueFinePerDay": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "maxLength": 12,
+            "description": "QĐ07, >= 0"
+          },
+          "allowedOutstandingBalance": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "maxLength": 12,
+            "description": "QĐ12: chặn khi dư nợ > giá trị này; > 0"
+          },
+          "publicationYearWindow": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 200,
+            "description": "QĐ03"
+          },
+          "readyHoldDays": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 60,
+            "description": "BM09"
+          },
+          "damageLostAssessment": {
+            "type": "string",
+            "enum": [
+              "MANUAL_APPROVAL"
+            ]
+          },
+          "damageLostFees": {
+            "$ref": "#/components/schemas/DamageLostFees"
+          }
+        },
+        "required": [
+          "libraryName",
+          "minReaderAge",
+          "maxReaderAge",
+          "cardValidityMonths",
+          "maxBooksPerLoan",
+          "initialLoanDays",
+          "maxRenewals",
+          "renewalDays",
+          "overdueFinePerDay",
+          "allowedOutstandingBalance",
+          "publicationYearWindow",
+          "readyHoldDays",
+          "damageLostAssessment",
+          "damageLostFees"
+        ],
+        "additionalProperties": false
       }
     }
   }

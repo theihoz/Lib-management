@@ -23,10 +23,11 @@ from lib_management.catalog.models import (
     Publisher,
 )
 from lib_management.circulation.models import PolicyVersion
-from lib_management.circulation.service import RULES
+from lib_management.circulation.service import RULES, RULES_SCHEMA_VERSION
 from lib_management.identity import service
 from lib_management.identity.models import Account
 from lib_management.readers.models import Reader, ReaderCard
+from lib_management.readers.service import add_calendar_months
 
 SEED_ISSUER = "urn:lib-management:demo-seed"
 SEED_SUBJECT = "demo-seed"
@@ -108,7 +109,7 @@ def seed_demo(
                 effective_from=now - timedelta(days=1),
                 status="ACTIVE",
                 rules=RULES,
-                rules_schema_version=1,
+                rules_schema_version=RULES_SCHEMA_VERSION,
                 approved_by=actor.id,
                 approved_at=now - timedelta(days=1),
             )
@@ -218,7 +219,7 @@ def seed_demo(
                     reader_id=reader.id,
                     card_no=f"THE-{code}",
                     issued_at=now - timedelta(days=1),
-                    expires_at=now + timedelta(days=30 * RULES["cardValidityMonths"]),
+                    expires_at=add_calendar_months(now, RULES["cardValidityMonths"]),
                     status="ACTIVE",
                     issued_by=actor.id,
                     policy_version_id=policy_id,

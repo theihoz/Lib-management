@@ -1,19 +1,65 @@
 """Validated write DTOs mirroring the approved REST contract."""
 
 from datetime import datetime
-from typing import Any, Literal
+from decimal import Decimal
+from typing import Annotated, Any, Literal, Self
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+# QĐ07: a lost book costs 100.000–600.000 VND depending on the book.
+LOST_FEE_MIN = Decimal(100_000)
+LOST_FEE_MAX = Decimal(600_000)
+# Hard upper bound for one loan; the active policy (QĐ05) sets the real limit.
+MAX_COPIES_PER_REQUEST = 20
+
+Money = Annotated[str, Field(pattern="^[0-9]+$", max_length=12)]
 
 
 class Input(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
 
+class DamageLostFees(Input):
+    """BM09 fee frame; the amount a Librarian proposes by default."""
+
+    MINOR_DAMAGE: Money
+    MAJOR_DAMAGE: Money
+    LOST: Money
+
+
+class PolicyRules(Input):
+    """rulesSchemaVersion 2: QĐ01–QĐ08 values plus the BM09 configuration (QĐ17)."""
+
+    libraryName: str = Field(min_length=1, max_length=200)
+    minReaderAge: int = Field(ge=1, le=120)
+    maxReaderAge: int = Field(ge=1, le=120)
+    cardValidityMonths: int = Field(ge=1, le=120)
+    maxBooksPerLoan: int = Field(ge=1, le=MAX_COPIES_PER_REQUEST)
+    initialLoanDays: int = Field(ge=1, le=365)
+    maxRenewals: int = Field(ge=0, le=10)
+    renewalDays: int = Field(ge=1, le=365)
+    overdueFinePerDay: Money
+    allowedOutstandingBalance: Money
+    publicationYearWindow: int = Field(ge=0, le=200)
+    readyHoldDays: int = Field(ge=1, le=60)
+    damageLostAssessment: Literal["MANUAL_APPROVAL"]
+    damageLostFees: DamageLostFees
+
+    @model_validator(mode="after")
+    def check(self) -> Self:
+        if self.minReaderAge > self.maxReaderAge:
+            raise ValueError("minReaderAge must not exceed maxReaderAge")
+        if Decimal(self.allowedOutstandingBalance) <= 0:
+            raise ValueError("allowedOutstandingBalance must be greater than 0")
+        if not LOST_FEE_MIN <= Decimal(self.damageLostFees.LOST) <= LOST_FEE_MAX:
+            raise ValueError("damageLostFees.LOST must be within 100000-600000")
+        return self
+
+
 class CheckoutRequest(Input):
     readerId: UUID
-    copyIds: list[UUID] = Field(min_length=1, max_length=4)
+    copyIds: list[UUID] = Field(min_length=1, max_length=MAX_COPIES_PER_REQUEST)
 
 
 class AssessmentProposal(Input):
@@ -67,8 +113,8 @@ class VersionRequest(Input):
 
 class PolicyRequest(Input):
     effectiveFrom: datetime
-    rulesSchemaVersion: int = Field(ge=1)
-    rules: dict[str, Any]
+    rulesSchemaVersion: Literal[2]
+    rules: PolicyRules
 
 
 class PaymentRequestAllocationsItem(Input):

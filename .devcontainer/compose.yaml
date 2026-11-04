@@ -6,6 +6,12 @@ services:
       dockerfile: .devcontainer/Dockerfile
     init: true
     working_dir: /workspaces/lib-management
+    # localhost:8080 -> keycloak:8080 so in-container browsers (Playwright) reach the
+    # same issuer as the host browser. Falls back to sleeping if the forwarder exits.
+    command:
+      - sh
+      - -c
+      - python3 .devcontainer/keycloak/forward.py; exec sleep infinity
     volumes:
       - type: bind
         source: ..

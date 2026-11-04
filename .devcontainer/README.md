@@ -80,6 +80,12 @@ uv run --locked python ../../.devcontainer/keycloak/create_dev_users.py --link -
 ```
 
 Keycloak dev chạy tại <http://localhost:8080> (realm `lib-management`, admin `admin`).
+Trong workspace, `localhost:8080` được chuyển tiếp tới service `keycloak` bởi
+`.devcontainer/keycloak/forward.py` (tiến trình chính của container), nên trình duyệt
+trên máy host lẫn Playwright/trình duyệt chạy trong container đều dùng chung issuer
+`http://localhost:8080`. Mở web bằng `http://localhost:5173` (không dùng `127.0.0.1`):
+client đăng nhập chỉ cho phép origin này. Chạy lại `create_dev_users.py --link` để
+đồng bộ client trong realm đã tồn tại.
 `prepare.py` sinh `KEYCLOAK_ADMIN_PASSWORD` và `KEYCLOAK_DEV_USER_PASSWORD` vào
 `.devcontainer/.env` (không commit); máy đã có `.env` cũ chỉ được bổ sung hai dòng này,
 nên chạy lại bootstrap/Rebuild sau khi pull. Realm và client `lib-management-dev-cli`

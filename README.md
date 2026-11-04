@@ -97,11 +97,11 @@ in Container**. Container đã có Python, uv, Node 24 và chạy sẵn `uv sync
 Trong terminal container:
 
 ```bash
-# Backend: migration, quyền, user Keycloak dev
+# Backend: migration, quyền, user Keycloak dev + dữ liệu mẫu
 cd apps/api
 uv run --locked alembic upgrade head
 uv run --locked python -m lib_management.cli seed-rbac
-uv run --locked python ../../.devcontainer/keycloak/create_dev_users.py --link
+uv run --locked python ../../.devcontainer/keycloak/create_dev_users.py --link --demo-data
 uv run --locked uvicorn lib_management.main:create_app --factory --host 0.0.0.0 --port 8000 --reload
 
 # Frontend (terminal khác)

@@ -74,6 +74,13 @@ def main() -> int:
         "grant_type": "password", "client_id": "admin-cli",
         "username": "admin", "password": admin_password,
     })["access_token"]
+    # Realm import skips existing realms; reconcile the local web client explicitly.
+    clients_url = f"{args.url}/admin/realms/{REALM}/clients"
+    web = request("GET", f"{clients_url}?clientId=lib-management-web", token)[0]
+    web["redirectUris"] = ["http://localhost:5173/*"]
+    web["webOrigins"] = ["http://localhost:5173"]
+    web.setdefault("attributes", {})["post.logout.redirect.uris"] = "http://localhost:5173/*"
+    request("PUT", f"{clients_url}/{web['id']}", token, web)
     base = f"{args.url}/admin/realms/{REALM}/users"
     reader_subject = None
     for username, (label, role) in USERS.items():

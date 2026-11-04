@@ -1043,3 +1043,63 @@ def test_reader_profile_data_for_yc17(client: TestClient, settings: Settings):
         params={"readerId": other.json()["id"], "status": "EXPIRED"},
     )
     assert none.json()["data"] == []
+
+
+def test_book_search_by_author_and_category_tree(client: TestClient):
+    tag = uuid4().hex[:6]
+    author = post(client, "/authors", {"name": f"Tác giả {tag}"})
+    assert author.status_code == 201, author.text
+    root = main_category(client, "B")
+    branch = post(
+        client,
+        "/categories",
+        {"code": "B-" + tag, "name": "Nhánh B " + tag, "parentId": root["id"]},
+    )
+    leaf = post(
+        client,
+        "/categories",
+        {"code": "BB-" + tag, "name": "Lá B " + tag, "parentId": branch.json()["id"]},
+    )
+    edition = post(
+        client,
+        "/book-editions",
+        {
+            "title": "Sách tìm kiếm " + tag,
+            "publicationYear": datetime.now(UTC).year,
+            "authorIds": [author.json()["id"]],
+            "categoryIds": [leaf.json()["id"]],
+        },
+    )
+    assert edition.status_code == 201, edition.text
+
+    def ids(**params: str) -> set[str]:
+        page = client.get("/api/v1/book-editions", params={"limit": 100, **params})
+        assert page.status_code == 200, page.text
+        return {row["id"] for row in page.json()["data"]}
+
+    assert edition.json()["id"] in ids(query=f"tác giả {tag}")
+    assert edition.json()["id"] in ids(categoryId=branch.json()["id"])
+    assert edition.json()["id"] in ids(categoryId=root["id"], query=tag)
+    other = main_category(client, "C")
+    assert edition.json()["id"] not in ids(categoryId=other["id"])
+
+
+def test_edition_deactivation_follows_d4(client: TestClient):
+    reader, copy, checkout, _ = setup_loan(client)
+    edition_id = copy["edition_id"]
+    busy = client.patch(
+        f"/api/v1/book-editions/{edition_id}",
+        json={"expectedVersion": 1, "status": "INACTIVE"},
+    )
+    assert busy.status_code == 409 and busy.json()["code"] == "EDITION_IN_USE"
+    post(
+        client,
+        "/returns",
+        {"loanItemId": checkout["items"][0]["loanItemId"], "condition": "GOOD"},
+    )
+    done = client.patch(
+        f"/api/v1/book-editions/{edition_id}",
+        json={"expectedVersion": 1, "status": "INACTIVE"},
+    )
+    assert done.status_code == 200, done.text
+    assert client.get(f"/api/v1/book-editions/{edition_id}").status_code == 404

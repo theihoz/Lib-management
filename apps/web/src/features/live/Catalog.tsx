@@ -33,13 +33,29 @@ function EditionList({ staff = false }: { staff?: boolean }) {
     title: "Không tìm thấy",
     hint: "Không có sách phù hợp với từ khóa. Thử tên sách, tác giả hoặc ISBN khác.",
   };
+  const [categoryId, setCategoryId] = useState("");
+  const filtered = !!query || !!categoryId;
+  const categories = useQuery({
+    queryKey: ["catalog", "categories", "filter"],
+    queryFn: async ({ signal }) =>
+      (await services.catalog.get_categories({ params: { query: { limit: 100 } }, signal })).data!
+        .data,
+    staleTime: 5 * 60_000,
+  });
   const result = useInfiniteQuery({
-    queryKey: ["catalog", "editions", query],
+    queryKey: ["catalog", "editions", query, categoryId],
     initialPageParam: undefined as string | undefined,
     queryFn: async ({ pageParam, signal }) =>
       (
         await services.catalog.get_book_editions({
-          params: { query: { query, cursor: pageParam, limit: 20 } },
+          params: {
+            query: {
+              query,
+              categoryId: categoryId || undefined,
+              cursor: pageParam,
+              limit: 20,
+            },
+          },
           signal,
         })
       ).data!,
@@ -57,6 +73,21 @@ function EditionList({ staff = false }: { staff?: boolean }) {
           value={search}
           onChange={(event) => setSearch(event.target.value)}
         />
+        <div className="field">
+          <label htmlFor="edition-category-filter">Thể loại</label>
+          <select
+            id="edition-category-filter"
+            value={categoryId}
+            onChange={(event) => setCategoryId(event.target.value)}
+          >
+            <option value="">Tất cả thể loại</option>
+            {categories.data?.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.code} · {category.name}
+              </option>
+            ))}
+          </select>
+        </div>
         {session.permissions.includes("catalog.write") && (
           <Link className="button button-primary" to="/staff/catalog/editions/new">
             Thêm ấn bản
@@ -76,7 +107,7 @@ function EditionList({ staff = false }: { staff?: boolean }) {
         <Panel>
           <Table
             headers={["Mã ấn bản", "Nhan đề", "Tác giả", "Năm", "Khả dụng"]}
-            empty={query ? notFound : undefined}
+            empty={filtered ? notFound : undefined}
             rows={items.map((item) => [
               item.id,
               item.title,
@@ -114,8 +145,8 @@ function EditionList({ staff = false }: { staff?: boolean }) {
       ) : (
         <Panel>
           <div className="empty-state">
-            <h2>{query ? notFound.title : "Chưa có ấn bản"}</h2>
-            <p>{query ? notFound.hint : "Các ấn bản sẽ xuất hiện tại đây khi có dữ liệu."}</p>
+            <h2>{filtered ? notFound.title : "Chưa có ấn bản"}</h2>
+            <p>{filtered ? notFound.hint : "Các ấn bản sẽ xuất hiện tại đây khi có dữ liệu."}</p>
           </div>
         </Panel>
       )}
@@ -137,6 +168,25 @@ function EditionDetail() {
   const { editionId = "" } = useParams();
   const services = useServices();
   const session = useSession();
+  const navigate = useNavigate();
+  const cache = useQueryClient();
+  const [confirm, setConfirm] = useState(false);
+  // D4: "xóa" means stop using; history is kept (Lab 3 RESTRICT).
+  const deactivate = useMutation({
+    mutationFn: async (version: number) =>
+      (
+        await services.catalog.patch_book_editions_id({
+          params: { path: { id: editionId } },
+          body: { expectedVersion: version, status: "INACTIVE" },
+        })
+      ).data!,
+    onSuccess: () => {
+      setConfirm(false);
+      void cache.invalidateQueries({ queryKey: ["catalog"] });
+      void navigate("/staff/catalog");
+    },
+    onError: () => setConfirm(false),
+  });
   const result = useQuery({
     queryKey: ["catalog", "edition", editionId],
     queryFn: async ({ signal }) =>
@@ -179,15 +229,43 @@ function EditionDetail() {
             </div>
           </dl>
           {session.permissions.includes("catalog.write") && (
-            <Link
-              className="button button-secondary"
-              to={`/staff/catalog/copies?edition=${book.id}`}
-            >
-              Quản lý bản sách
-            </Link>
+            <div className="actions">
+              <Link
+                className="button button-secondary"
+                to={`/staff/catalog/copies?edition=${book.id}`}
+              >
+                Quản lý bản sách
+              </Link>
+              <Button variant="secondary" onClick={() => setConfirm(true)}>
+                Ngừng dùng ấn bản
+              </Button>
+            </div>
           )}
+          <MutationFeedback error={deactivate.error} />
         </div>
       </div>
+      <Dialog
+        open={confirm}
+        title="Ngừng dùng ấn bản"
+        pending={deactivate.isPending}
+        onClose={() => setConfirm(false)}
+      >
+        <p>
+          Ấn bản <strong>{book.title}</strong> sẽ không còn hiện trong tra cứu. Lịch sử mượn trả
+          được giữ nguyên; không thể ngừng dùng khi còn bản sách đang mượn hoặc giữ chỗ.
+        </p>
+        <div className="actions">
+          <Button
+            disabled={deactivate.isPending}
+            onClick={() => deactivate.mutate(book.version ?? 1)}
+          >
+            Xác nhận ngừng dùng
+          </Button>
+          <Button variant="secondary" onClick={() => setConfirm(false)}>
+            Quay lại
+          </Button>
+        </div>
+      </Dialog>
     </div>
   );
 }

@@ -49,7 +49,18 @@
             "in": "query",
             "schema": {
               "type": "string"
-            }
+            },
+            "description": "Tiêu đề, ISBN hoặc tên tác giả (YC#1); khoảng trắng bị bỏ qua (QĐ23)"
+          },
+          {
+            "name": "categoryId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Lọc theo thể loại, gồm thể loại con"
           }
         ],
         "responses": {
@@ -14173,6 +14184,11 @@
               "asOf"
             ],
             "additionalProperties": false
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "expectedVersion khi sửa/ngừng dùng"
           }
         },
         "required": [

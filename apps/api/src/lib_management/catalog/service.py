@@ -33,18 +33,23 @@ def page(
     model: Any,
     params: PageParams,
     query: str | None = None,
+    *,
+    where: tuple[Any, ...] = (),
+    also_match: Any = None,
     **filters: Any,
 ) -> dict[str, Any]:
-    statement = select(model).filter_by(**filters)
+    statement = select(model).filter_by(**filters).where(*where)
     if query:
+        pattern = f"%{query}%"
         columns = [
             getattr(model, key)
             for key in ("name", "title", "isbn", "barcode", "full_name", "reader_code")
             if hasattr(model, key)
         ]
-        statement = statement.where(
-            or_(*(column.ilike(f"%{query}%", escape="\\") for column in columns))
-        )
+        matches = [column.ilike(pattern, escape="\\") for column in columns]
+        if also_match is not None:
+            matches.append(also_match(pattern))
+        statement = statement.where(or_(*matches))
     if params.cursor is not None:
         if params.cursor.k:
             raise ValidationFailed("Cursor không hợp lệ cho danh sách này")
@@ -157,6 +162,36 @@ def edition_create(
     return row
 
 
+def edition_author_match(pattern: str) -> Any:
+    """YC#1: a keyword also finds books by their authors' names."""
+    return (
+        select(models.BookAuthor.edition_id)
+        .join(models.Author, models.Author.id == models.BookAuthor.author_id)
+        .where(
+            models.BookAuthor.edition_id == models.BookEdition.id,
+            models.Author.name.ilike(pattern, escape="\\"),
+        )
+        .exists()
+    )
+
+
+def edition_in_category(category_id: uuid.UUID) -> Any:
+    """YC#1: filter by a category including its sub-categories (A → A.1 → …)."""
+    tree = (
+        select(models.Category.id)
+        .where(models.Category.id == category_id)
+        .cte("category_tree", recursive=True)
+    )
+    tree = tree.union_all(
+        select(models.Category.id).where(models.Category.parent_id == tree.c.id)
+    )
+    return models.BookEdition.id.in_(
+        select(models.BookCategory.edition_id).where(
+            models.BookCategory.category_id.in_(select(tree.c.id))
+        )
+    )
+
+
 def edition_patch(
     session: Session,
     identity: uuid.UUID,
@@ -173,6 +208,20 @@ def edition_patch(
         data["isbn"] = normalize_isbn(data["isbn"])
     if "publisher_id" in data:
         reference(session, models.Publisher, data["publisher_id"])
+    if data.get("status") == "INACTIVE" and row.status == "ACTIVE":
+        # D4: stop using instead of deleting; not while copies are out or held.
+        busy = session.scalar(
+            select(func.count())
+            .select_from(models.BookCopy)
+            .where(
+                models.BookCopy.edition_id == identity,
+                models.BookCopy.status.in_(["ON_LOAN", "HELD"]),
+            )
+        )
+        if busy:
+            raise Conflict(
+                "Ấn bản còn bản sách đang mượn hoặc giữ chỗ", code="EDITION_IN_USE"
+            )
     set_links(session, row, data)
     for key, value in data.items():
         setattr(row, key, value)
@@ -370,6 +419,7 @@ def public_editions(
                     "publication_year",
                     "language",
                     "description",
+                    "version",
                 )
             },
             "authors": authors[row.id],

@@ -2448,6 +2448,8 @@ export interface components {
                 /** Format: date-time */
                 asOf: string;
             };
+            /** @description expectedVersion khi sửa/ngừng dùng */
+            version?: number;
         };
         AccountView: {
             /**
@@ -3158,7 +3160,10 @@ export interface operations {
             query?: {
                 cursor?: string;
                 limit?: number;
+                /** @description Tiêu đề, ISBN hoặc tên tác giả (YC#1); khoảng trắng bị bỏ qua (QĐ23) */
                 query?: string;
+                /** @description Lọc theo thể loại, gồm thể loại con */
+                categoryId?: string;
             };
             header?: never;
             path?: never;

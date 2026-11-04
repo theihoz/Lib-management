@@ -12,3 +12,5 @@ Trạng thái: **Draft** (đang review) → **Approved** (team đồng ý, bắt
 Phạm vi sản phẩm: lõi 10 tuần theo [quyết định 03/11/2026](../plan/decisions.md#quyết-định-03112026--phạm-vi-lõi-10-tuần).
 
 [Spec hoàn thiện toàn bộ lõi 10 tuần](../superpowers/specs/2026-11-03-core-library-design.md) đã được người dùng duyệt03/11/2026; [kế hoạch thực thi](../superpowers/plans/2026-11-03-core-library.md). F14 thuộc lõi, D01 đã chốt; trạng thái triển khai được cập nhật theo từng mốc với bằng chứng.
+
+[Quy định nguồn QĐ01–QĐ26](source-rules.md): bảng đối chiếu spec nhóm (Lab 2–4) với code và test, cập nhật 04/11/2026.

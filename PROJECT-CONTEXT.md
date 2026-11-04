@@ -45,7 +45,7 @@ Dùng [quy trình team](docs/operations/team-development.md) và Dev Container m
 
 Từ 03/11/2026 ưu tiên lõi 10 tuần F01–F09, F11–F14, F16, F18–F20 (còn lại phase 2), xem [quyết định](docs/plan/decisions.md#quyết-định-03112026--phạm-vi-lõi-10-tuần). Spec triển khai: [spec lõi](docs/superpowers/specs/2026-11-03-core-library-design.md).
 
-[docs/plan](docs/plan/README.md) chia theo backend, frontend và tích hợp, mỗi module có task nhỏ theo PR. M0 có 9 bảng identity/platform, JWT Keycloak, CLI vận hành; lõi bổ sung catalog, độc giả, lưu thông, phí và báo cáo (66/85 operation được phục vụ; 19 còn lại thuộc phase 2: F15, F21–F24, replay job). Frontend có auth Keycloak PKCE, client sinh từ OpenAPI và 36 màn thuộc lõi. Chưa có Playwright E2E với Keycloak/API/PostgreSQL thật. C01–C09 đã duyệt; phí hỏng/mất do Quản lý xác nhận, khoản chờ duyệt chặn mượn/gia hạn/đặt trước nhưng không chặn trả; thông báo portal và email.
+[docs/plan](docs/plan/README.md) chia theo backend, frontend và tích hợp, mỗi module có task nhỏ theo PR. M0 có 9 bảng identity/platform, JWT Keycloak, CLI vận hành; lõi bổ sung catalog, độc giả, lưu thông, phí và báo cáo (66/85 operation được phục vụ; 19 còn lại thuộc phase 2: F15, F21–F24, replay job). Frontend có auth Keycloak PKCE, client sinh từ OpenAPI và 36 màn thuộc lõi. Chưa có Playwright E2E với Keycloak/API/PostgreSQL thật. C01–C09 đã duyệt (C01/C03 cập nhật 04/11/2026 theo spec nhóm: ngưỡng nợ 50.000 VND cấu hình được, khung phí BM09; đối chiếu [QĐ01–QĐ26](docs/specs/source-rules.md)); phí hỏng/mất do Quản lý xác nhận, khoản chờ duyệt chặn mượn/gia hạn/đặt trước nhưng không chặn trả; thông báo portal và email.
 
 ## Nguồn hiện hành sau đồng bộ 08/10/2026
 

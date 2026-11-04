@@ -158,7 +158,7 @@ Not NULL Có = bắt buộc tại DB; Không = cho phép NULL nhưng có thể b
 | 2 | reader_code | varchar | 32 | Có | UQ | Mã độc giả |
 | 3 | full_name | varchar | 200 | Có | — | Họ tên |
 | 4 | birth_date | date | — | Có | — | Ngày sinh, tuổi tính khi cấp thẻ |
-| 5 | reader_type | varchar | 8 | Có | X/Y/Z dự thảo | Loại độc giả |
+| 5 | reader_type | varchar | 8 | Có | X/Y/Z (BM02) | Loại độc giả |
 | 6 | email | varchar | 254 | Không | — | Email liên hệ |
 | 7 | phone | varchar | 32 | Không | — | Điện thoại |
 | 8 | address | text | — | Không | — | Địa chỉ |
@@ -465,7 +465,7 @@ Not NULL Có = bắt buộc tại DB; Không = cho phép NULL nhưng có thể b
 | 1 | id | uuid | — | Có | PK | Định danh bất biến |
 | 2 | job_id | uuid | — | Có | FK Job.id; UQ | Tác vụ thực thi |
 | 3 | requested_by | uuid | — | Có | FK Account.id | Người yêu cầu |
-| 4 | report_type | varchar | 64 | Có | — | Loại báo cáo |
+| 4 | report_type | varchar | 64 | Có | BM08/Lab 3 (xem database-design) | Loại báo cáo |
 | 5 | filter_snapshot | jsonb | — | Có | — | Bộ lọc và scope đã kiểm quyền |
 | 6 | as_of | timestamptz | — | Có | — | Mốc snapshot báo cáo |
 | 7 | artifact_id | uuid | — | Không | FK MediaAsset.id | Tệp riêng tư |

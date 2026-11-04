@@ -23,13 +23,13 @@ Ngày chốt: 2026-10-07. Đây là quyết định đã thống nhất trong ph
 
 | Mã | Quy tắc áp dụng |
 | --- | --- |
-| C01 | Dư nợ bằng 0; chưa dùng ngưỡng 50.000 VND |
-| C02 | Tối đa 4 cuốn mỗi phiếu; chưa bật activeLoanLimit/activeHoldLimit |
-| C03 | Phí hỏng/mất thủ công có lý do, Thủ thư đề xuất và Quản lý xác nhận; không tự tạo bảng giá 100.000–600.000 |
+| C01 | Chặn mượn khi dư nợ **vượt** ngưỡng cấu hình `allowedOutstandingBalance` (mặc định 50.000 VND) hoặc có sách quá hạn (QĐ12; sửa 04/11/2026, trước đây dư nợ bằng 0) |
+| C02 | Tối đa `maxBooksPerLoan` (mặc định 4) cuốn mỗi phiếu (QĐ05); chưa bật activeLoanLimit/activeHoldLimit (phase 2 đặt trước: đang mượn + đang đặt ≤ 4) |
+| C03 | Khung phí BM09 `damageLostFees` (hỏng nhẹ/hỏng nặng/mất) là mức Thủ thư đề xuất mặc định; Quản lý vẫn xác nhận từng khoản. Phí mất trong 100.000–600.000 VND (QĐ07) (sửa 04/11/2026) |
 | C04 | Hạn ban đầu 4 ngày; tối đa 1 lần gia hạn thêm 4 ngày từ hạn cũ; thẻ còn hiệu lực |
 | C05 | Xuất CSV do Quản lý; Excel/PDF ngoài phạm vi đã chốt |
 | C06 | Portal có Account gắn Reader; chỉ xem/đặt/hủy trong scope của mình |
-| C07 | READY hết hạn 3 ngày từ readyAt, không từ thời điểm giao email |
+| C07 | READY hết hạn `readyHoldDays` (mặc định 3) ngày từ readyAt, không từ thời điểm giao email |
 | C08 | lateDays=max(0,returnLocalDate-dueLocalDate); 1.000 VND/ngày/cuốn; cùng ngày có thể quá hạn nhưng phí 0 |
 | C09 | Năm xuất bản từ currentYear−8 đến currentYear, bao gồm hai biên |
 
@@ -88,3 +88,13 @@ Chủ dự án yêu cầu phân quyền "đúng với tên vai trò", thay mô h
 
 Chi tiết: [ma trận quyền](../design/permission-matrix.md).
 
+## Quyết định 04/11/2026 — đối chiếu lại spec nhóm (Lab 2 v2, Lab 3, Lab 4)
+
+Chủ dự án yêu cầu đọc lại toàn bộ spec của nhóm và sửa các quy định còn sai/thiếu. Nguồn và bảng đối chiếu QĐ01–QĐ26 ↔ code/test: [source-rules.md](../specs/source-rules.md).
+
+- C01 đổi theo QĐ12 (Lab 2 v2) và yêu cầu #12/BM09: ngưỡng 50.000 VND cấu hình được; chặn khi dư nợ **lớn hơn** ngưỡng. Policy v1 cũ giữ ngưỡng 0 vì policy đã duyệt là bất biến.
+- C03 đổi theo QĐ07/BM09: có khung phí hỏng nhẹ/hỏng nặng/mất làm mức đề xuất, giữ bước Quản lý xác nhận.
+- QĐ16/QĐ17 và Lab 4 FE09.06: Quản lý chỉnh được mọi giá trị trong bản nháp (rules schema v2), server kiểm tra phí ≥ 0, ngưỡng > 0, số ngày là số nguyên dương. Trước đây server chỉ nhận đúng bộ giá trị mặc định.
+- Báo cáo theo BM08/Lab 3: OVERVIEW, LOAN_TREND, INVENTORY, TOP_BOOKS, ACTIVE_READERS, LOAN_CSV, FINE_CSV; QĐ13 kỳ không vượt hôm nay; QĐ26 không có dữ liệu thì không tạo tệp.
+- Độc giả: loại X/Y/Z (BM02), email duy nhất (Lab 2 YC6), tuổi 12–55 kiểm tra cả khi lập hồ sơ (QĐ01). Thể loại: 3 thể loại chính A/B/C (QĐ04), tên duy nhất (QĐ09).
+- Mâu thuẫn giữa các nguồn, giữ nguyên: giữ chỗ 3 ngày (yêu cầu #10, BM09, Lab 3) thay vì 24 giờ (Lab 2 YC9); loại X/Y/Z theo BM02/Lab 2/Lab 3 dù Lab 4 ghi "không tự chốt"; xác thực Keycloak thay cho tài khoản nội bộ và auto-provision (yêu cầu #16, đã hoãn từ 03/11).

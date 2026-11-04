@@ -22,7 +22,7 @@ Monorepo gồm backend FastAPI và frontend React, phát triển trong một Dev
   `ErrorResponse`, request ID, cursor pagination, Unit of Work, idempotency, audit log,
   outbox và worker job có lease/retry.
 - Database PostgreSQL 17 đủ schema theo [thiết kế DB](docs/design/database-design.md): 38 bảng
-  danh mục + 4 bảng bổ sung (`charge_assessment`, `notification*`), 6 migration Alembic; bảng của
+  danh mục + 4 bảng bổ sung (`charge_assessment`, `notification*`), 8 migration Alembic; bảng của
   phase 2 đã có schema, chưa có API. Lệnh `seed-demo` nạp dữ liệu mẫu cho máy local.
 - Xác thực: kiểm tra JWT Keycloak, Account ACTIVE và 39 permission/5 role từ DB;
   endpoint `GET /api/v1/auth/me`; CLI `seed-rbac`, `bootstrap-admin`.
@@ -47,7 +47,8 @@ Monorepo gồm backend FastAPI và frontend React, phát triển trong một Dev
 
 Phạm vi 10 tuần: F01–F09, F11–F14, F16, F18–F20; phần còn lại thuộc phase 2
 ([quyết định 03/11/2026](docs/plan/decisions.md#quyết-định-03112026--phạm-vi-lõi-10-tuần)).
-Quy tắc C01–C09 đã được chủ dự án đồng ý áp dụng.
+Quy tắc C01–C09 đã được chủ dự án đồng ý áp dụng; C01/C03 cập nhật 04/11/2026 theo spec nhóm.
+Đối chiếu QĐ01–QĐ26 với code và test: [quy định nguồn](docs/specs/source-rules.md).
 
 ## Bắt đầu
 
@@ -155,7 +156,8 @@ Workflow `Publish API image` xuất bản GHCR thủ công từ default branch s
 
 ## Tài liệu
 
-- [Spec triển khai](docs/specs/README.md) — bản đủ chi tiết để code từng mốc
+- [Spec triển khai](docs/specs/README.md) — bản đủ chi tiết để code từng mốc;
+  [QĐ01–QĐ26 ↔ code/test](docs/specs/source-rules.md)
 - [Kế hoạch backend/frontend/tích hợp](docs/plan/README.md), [quyết định](docs/plan/decisions.md)
 - [Thiết kế: DB, OpenAPI, quyền, identity, kiến trúc](docs/design/README.md)
 - [Onboarding, chia việc, Git và review](docs/operations/team-development.md)

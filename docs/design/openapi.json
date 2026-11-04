@@ -11648,7 +11648,7 @@
             "format": "date"
           },
           "reader_type": {
-            "description": "Loại độc giả",
+            "description": "Loại độc giả X/Y/Z (BM02)",
             "x-db-constraint": "X/Y/Z dự thảo",
             "type": "string",
             "maxLength": 8
@@ -15068,19 +15068,23 @@
             "maxLength": 200
           },
           "birthDate": {
-            "description": "Ngày sinh, tuổi tính khi cấp thẻ",
+            "description": "Ngày sinh; tuổi 12–55 theo quy định đang hiệu lực (QĐ01)",
             "x-db-constraint": "—",
             "type": "string",
             "format": "date"
           },
           "readerType": {
-            "description": "Loại độc giả",
+            "description": "Loại độc giả X/Y/Z (BM02)",
             "x-db-constraint": "X/Y/Z dự thảo",
             "type": "string",
-            "maxLength": 8
+            "enum": [
+              "X",
+              "Y",
+              "Z"
+            ]
           },
           "email": {
-            "description": "Email liên hệ",
+            "description": "Email liên hệ; duy nhất, không phân biệt hoa thường (409 EMAIL_TAKEN)",
             "x-db-constraint": "—",
             "type": [
               "string",
@@ -15130,19 +15134,23 @@
             "maxLength": 200
           },
           "birthDate": {
-            "description": "Ngày sinh, tuổi tính khi cấp thẻ",
+            "description": "Ngày sinh; tuổi 12–55 theo quy định đang hiệu lực (QĐ01)",
             "x-db-constraint": "—",
             "type": "string",
             "format": "date"
           },
           "readerType": {
-            "description": "Loại độc giả",
+            "description": "Loại độc giả X/Y/Z (BM02)",
             "x-db-constraint": "X/Y/Z dự thảo",
             "type": "string",
-            "maxLength": 8
+            "enum": [
+              "X",
+              "Y",
+              "Z"
+            ]
           },
           "email": {
-            "description": "Email liên hệ",
+            "description": "Email liên hệ; duy nhất, không phân biệt hoa thường (409 EMAIL_TAKEN)",
             "x-db-constraint": "—",
             "type": [
               "string",

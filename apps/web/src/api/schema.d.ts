@@ -1434,7 +1434,7 @@ export interface components {
              * @description Ngày sinh, tuổi tính khi cấp thẻ
              */
             birth_date: string;
-            /** @description Loại độc giả */
+            /** @description Loại độc giả X/Y/Z (BM02) */
             reader_type: string;
             /** @description Email liên hệ */
             email?: string | null;
@@ -2824,12 +2824,15 @@ export interface components {
             fullName: string;
             /**
              * Format: date
-             * @description Ngày sinh, tuổi tính khi cấp thẻ
+             * @description Ngày sinh; tuổi 12–55 theo quy định đang hiệu lực (QĐ01)
              */
             birthDate: string;
-            /** @description Loại độc giả */
-            readerType: string;
-            /** @description Email liên hệ */
+            /**
+             * @description Loại độc giả X/Y/Z (BM02)
+             * @enum {string}
+             */
+            readerType: "X" | "Y" | "Z";
+            /** @description Email liên hệ; duy nhất, không phân biệt hoa thường (409 EMAIL_TAKEN) */
             email?: string | null;
             /** @description Điện thoại */
             phone?: string | null;
@@ -2843,12 +2846,15 @@ export interface components {
             fullName?: string;
             /**
              * Format: date
-             * @description Ngày sinh, tuổi tính khi cấp thẻ
+             * @description Ngày sinh; tuổi 12–55 theo quy định đang hiệu lực (QĐ01)
              */
             birthDate?: string;
-            /** @description Loại độc giả */
-            readerType?: string;
-            /** @description Email liên hệ */
+            /**
+             * @description Loại độc giả X/Y/Z (BM02)
+             * @enum {string}
+             */
+            readerType?: "X" | "Y" | "Z";
+            /** @description Email liên hệ; duy nhất, không phân biệt hoa thường (409 EMAIL_TAKEN) */
             email?: string | null;
             /** @description Điện thoại */
             phone?: string | null;

@@ -509,3 +509,62 @@ def test_lost_fee_must_follow_qd07_range(client: TestClient):
         {"expectedVersion": 1, "amount": "600000", "reason": "Giá sách"},
     )
     assert approved.status_code == 201, approved.text
+
+
+def birth_for_age(age: int) -> str:
+    from zoneinfo import ZoneInfo
+
+    today = datetime.now(ZoneInfo("Asia/Ho_Chi_Minh")).date()
+    try:
+        born = today.replace(year=today.year - age)
+    except ValueError:  # 29 February in a non-leap year
+        born = today.replace(year=today.year - age, day=28)
+    return born.isoformat()
+
+
+def new_reader(client: TestClient, **fields: object):
+    return post(
+        client,
+        "/readers",
+        {
+            "readerCode": uuid4().hex[:12],
+            "fullName": "Độc giả kiểm thử",
+            "birthDate": birth_for_age(30),
+            "readerType": "Y",
+            **fields,
+        },
+    )
+
+
+def test_reader_type_must_be_x_y_or_z(client: TestClient):
+    # BM02: loại độc giả X, Y, Z.
+    assert new_reader(client, readerType="A").status_code == 422
+    assert new_reader(client, readerType="Z").status_code == 201
+
+
+@pytest.mark.parametrize(
+    ("age", "status"), [(11, 422), (12, 201), (55, 201), (56, 422)]
+)
+def test_reader_age_follows_qd01(client: TestClient, age: int, status: int):
+    response = new_reader(client, birthDate=birth_for_age(age))
+    assert response.status_code == status, response.text
+
+
+def test_reader_email_is_unique_ignoring_case(client: TestClient):
+    email = f"dg.{uuid4().hex[:8]}@example.test"
+    first = new_reader(client, email=email)
+    assert first.status_code == 201, first.text
+    duplicate = new_reader(client, email=email.upper())
+    assert duplicate.status_code == 409
+    assert duplicate.json()["code"] == "EMAIL_TAKEN"
+    other = new_reader(client)
+    taken = client.patch(
+        "/api/v1/readers/" + other.json()["id"],
+        json={"expectedVersion": 1, "email": email},
+    )
+    assert taken.status_code == 409
+    same = client.patch(
+        "/api/v1/readers/" + first.json()["id"],
+        json={"expectedVersion": 1, "email": email},
+    )
+    assert same.status_code == 200, same.text

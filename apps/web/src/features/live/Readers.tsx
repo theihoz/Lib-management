@@ -145,6 +145,7 @@ function ReaderForm() {
             type="date"
             value={body.birthDate}
             max={new Date().toISOString().slice(0, 10)}
+            hint="Độc giả từ 12 đến 55 tuổi (QĐ01)."
             onChange={(event) => setBody({ ...body, birthDate: event.target.value })}
           />
           <div className="field">
@@ -152,7 +153,13 @@ function ReaderForm() {
             <select
               id="reader-type"
               value={body.readerType}
-              onChange={(event) => setBody({ ...body, readerType: event.target.value })}
+              onChange={(event) =>
+                setBody({
+                  ...body,
+                  readerType: event.target
+                    .value as components["schemas"]["ReaderCreate"]["readerType"],
+                })
+              }
             >
               <option value="X">X</option>
               <option value="Y">Y</option>

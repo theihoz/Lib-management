@@ -166,14 +166,21 @@ export function readRule(rules: Record<string, unknown>, key: string): unknown {
     );
 }
 
-/** Form values (strings) from stored rules; missing v1 keys fall back to defaults. */
+/**
+ * Form values (strings) from stored rules. Keys missing from a v1 policy, and v1
+ * values that schema v2 rejects (e.g. a 0 debt threshold, QĐ12), start at the
+ * v2 default; the form still shows the current value next to each field.
+ */
 export function toDraft(rules: Record<string, unknown> | undefined): RuleDraft {
-  return Object.fromEntries(
+  const fallback = (key: string) => ruleText(readRule(DEFAULT_RULES, key));
+  const draft: RuleDraft = Object.fromEntries(
     RULE_FIELDS.map(({ key }) => {
-      const value = rules ? readRule(rules, key) : undefined;
-      return [key, String(value ?? readRule(DEFAULT_RULES, key))];
+      const value = ruleText(rules ? readRule(rules, key) : undefined);
+      return [key, value || fallback(key)];
     }),
   );
+  for (const key of Object.keys(validateDraft(draft))) draft[key] = fallback(key);
+  return draft;
 }
 
 /** QĐ17: returns field errors; empty object means the draft is valid. */

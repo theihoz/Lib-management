@@ -239,11 +239,7 @@ function PolicyDraftForm({
                   ? `Hiện tại: ${showRule(field.kind, readRule(current, field.key))}`
                   : undefined
               }
-              error={
-                submitted || draft[field.key] !== toDraft(current)[field.key]
-                  ? errors[field.key]
-                  : undefined
-              }
+              error={errors[field.key]}
               onChange={(event) => setDraft({ ...draft, [field.key]: event.target.value })}
             />
           ))}

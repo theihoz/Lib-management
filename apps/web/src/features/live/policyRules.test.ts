@@ -9,7 +9,9 @@ describe("policy rules v2 (QĐ17)", () => {
 
   it("fills keys missing from a v1 policy with defaults", () => {
     const draft = toDraft({ allowedOutstandingBalance: "0", maxBooksPerLoan: 4 });
-    expect(draft.allowedOutstandingBalance).toBe("0");
+    // A v1 threshold of 0 is invalid in v2 (QĐ12/QĐ17), so the default is offered.
+    expect(draft.allowedOutstandingBalance).toBe("50000");
+    expect(draft.maxBooksPerLoan).toBe("4");
     expect(draft["damageLostFees.LOST"]).toBe("100000");
     expect(draft.libraryName).toBe(DEFAULT_RULES.libraryName);
   });

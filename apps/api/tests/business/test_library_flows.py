@@ -568,3 +568,65 @@ def test_reader_email_is_unique_ignoring_case(client: TestClient):
         json={"expectedVersion": 1, "email": email},
     )
     assert same.status_code == 200, same.text
+
+
+def main_category(client: TestClient, code: str) -> dict:
+    page = client.get("/api/v1/categories", params={"query": f"Thể loại {code}"})
+    assert page.status_code == 200, page.text
+    return next(row for row in page.json()["data"] if row["code"] == code)
+
+
+def test_categories_hang_below_main_a_b_c(client: TestClient):
+    # QĐ04: three main categories A, B, C; no other root may be created.
+    roots = {code: main_category(client, code) for code in ("A", "B", "C")}
+    assert all(row["is_root"] for row in roots.values())
+    code = uuid4().hex[:6]
+    orphan = post(client, "/categories", {"code": "R" + code, "name": "Gốc " + code})
+    assert orphan.status_code == 422
+    child = post(
+        client,
+        "/categories",
+        {
+            "code": "A1" + code,
+            "name": "Nhánh A.1 " + code,
+            "parentId": roots["A"]["id"],
+        },
+    )
+    assert child.status_code == 201, child.text
+    grandchild = post(
+        client,
+        "/categories",
+        {
+            "code": "A11" + code,
+            "name": "Nhánh A.1.1 " + code,
+            "parentId": child.json()["id"],
+        },
+    )
+    assert grandchild.status_code == 201, grandchild.text
+    detached = client.patch(
+        "/api/v1/categories/" + child.json()["id"], json={"parentId": None}
+    )
+    assert detached.status_code == 422
+    protected = client.patch(
+        "/api/v1/categories/" + roots["B"]["id"], json={"name": "Đổi tên"}
+    )
+    assert protected.status_code == 409
+
+
+def test_category_name_is_unique(client: TestClient):
+    # QĐ09: mã và tên thể loại là duy nhất.
+    parent = main_category(client, "C")["id"]
+    name = "Kinh tế học " + uuid4().hex[:6]
+    first = post(
+        client,
+        "/categories",
+        {"code": uuid4().hex[:8], "name": name, "parentId": parent},
+    )
+    assert first.status_code == 201, first.text
+    same = post(
+        client,
+        "/categories",
+        {"code": uuid4().hex[:8], "name": name.upper(), "parentId": parent},
+    )
+    assert same.status_code == 409
+    assert same.json()["code"] == "CATEGORY_NAME_TAKEN"

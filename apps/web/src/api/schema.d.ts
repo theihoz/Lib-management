@@ -2795,11 +2795,11 @@ export interface components {
         CategoryCreate: {
             /** @description Mã thể loại */
             code: string;
-            /** @description Tên thể loại */
+            /** @description Tên thể loại; duy nhất, không phân biệt hoa thường (QĐ09, 409 CATEGORY_NAME_TAKEN) */
             name: string;
             /**
              * Format: uuid
-             * @description Thể loại cha
+             * @description Thể loại cha, bắt buộc: thuộc cây A/B/C (QĐ04)
              */
             parentId?: string | null;
         };
@@ -2807,11 +2807,11 @@ export interface components {
         CategoryPatch: {
             /** @description Mã thể loại */
             code?: string;
-            /** @description Tên thể loại */
+            /** @description Tên thể loại; duy nhất, không phân biệt hoa thường (QĐ09, 409 CATEGORY_NAME_TAKEN) */
             name?: string;
             /**
              * Format: uuid
-             * @description Thể loại cha
+             * @description Thể loại cha; không được bỏ trống (QĐ04)
              */
             parentId?: string | null;
             /** @enum {string} */

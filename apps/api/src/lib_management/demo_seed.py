@@ -38,11 +38,12 @@ PUBLISHERS = (
     "NXB Giáo dục Việt Nam",
     "NXB Khoa học và Kỹ thuật",
 )
+# QĐ04: demo categories hang below the main categories A, B, C (migration 0008).
 CATEGORIES = (
-    ("VH", "Văn học"),
-    ("TN", "Thiếu nhi"),
-    ("CNTT", "Công nghệ thông tin"),
-    ("KT", "Kinh tế"),
+    ("VH", "Văn học", "A"),
+    ("TN", "Thiếu nhi", "A"),
+    ("CNTT", "Công nghệ thông tin", "B"),
+    ("KT", "Kinh tế", "C"),
 )
 LOCATIONS = (("KHO-A", "Kho A — tầng 1"), ("KHO-B", "Kho B — tầng 2"))
 # (title, year, publisher, author, category, language, copies)
@@ -129,10 +130,13 @@ def seed_demo(
             report.add("publisher")
         publishers.append(publisher)
     categories = {}
-    for code, name in CATEGORIES:
+    for code, name, parent_code in CATEGORIES:
         category = _by(session, Category, code=code)
         if category is None:
-            category = Category(code=code, name=name, is_root=True)
+            parent = _by(session, Category, code=parent_code)
+            category = Category(
+                code=code, name=name, parent_id=parent.id if parent else None
+            )
             session.add(category)
             report.add("category")
         categories[code] = category

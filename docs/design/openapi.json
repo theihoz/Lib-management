@@ -14994,13 +14994,13 @@
             "maxLength": 32
           },
           "name": {
-            "description": "Tên thể loại",
+            "description": "Tên thể loại; duy nhất, không phân biệt hoa thường (QĐ09, 409 CATEGORY_NAME_TAKEN)",
             "x-db-constraint": "—",
             "type": "string",
             "maxLength": 120
           },
           "parentId": {
-            "description": "Thể loại cha",
+            "description": "Thể loại cha, bắt buộc: thuộc cây A/B/C (QĐ04)",
             "x-db-constraint": "FK Category.id",
             "type": [
               "string",
@@ -15025,13 +15025,13 @@
             "maxLength": 32
           },
           "name": {
-            "description": "Tên thể loại",
+            "description": "Tên thể loại; duy nhất, không phân biệt hoa thường (QĐ09, 409 CATEGORY_NAME_TAKEN)",
             "x-db-constraint": "—",
             "type": "string",
             "maxLength": 120
           },
           "parentId": {
-            "description": "Thể loại cha",
+            "description": "Thể loại cha; không được bỏ trống (QĐ04)",
             "x-db-constraint": "FK Category.id",
             "type": [
               "string",

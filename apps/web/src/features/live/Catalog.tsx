@@ -351,6 +351,15 @@ function ReferenceList({ type }: { type: "authors" | "publishers" | "categories"
   const query = useDebounced(search);
   const [name, setName] = useState("");
   const [detail, setDetail] = useState("");
+  const [parentId, setParentId] = useState("");
+  // QĐ04: a new category hangs below main category A, B or C (or one of their branches).
+  const parents = useQuery({
+    queryKey: ["catalog", "categories", "parents"],
+    enabled: type === "categories",
+    queryFn: async ({ signal }) =>
+      (await services.catalog.get_categories({ params: { query: { limit: 100 } }, signal })).data!
+        .data,
+  });
   const result = useInfiniteQuery({
     queryKey: ["catalog", type, query],
     initialPageParam: undefined as string | undefined,
@@ -374,7 +383,7 @@ function ReferenceList({ type }: { type: "authors" | "publishers" | "categories"
   });
   const save = useMutation({
     mutationFn: async () => {
-      const header = { "Idempotency-Key": key.forPayload({ name, detail }) };
+      const header = { "Idempotency-Key": key.forPayload({ name, detail, parentId }) };
       return type === "authors"
         ? services.catalog.post_authors({
             body: { name, biography: detail || null },
@@ -385,12 +394,16 @@ function ReferenceList({ type }: { type: "authors" | "publishers" | "categories"
               body: { name, address: detail || null },
               params: { header },
             })
-          : services.catalog.post_categories({ body: { name, code: detail }, params: { header } });
+          : services.catalog.post_categories({
+              body: { name, code: detail, parentId },
+              params: { header },
+            });
     },
     onSuccess: () => {
       key.reset();
       setName("");
       setDetail("");
+      setParentId("");
       void cache.invalidateQueries({ queryKey: ["catalog"] });
     },
   });
@@ -455,8 +468,27 @@ function ReferenceList({ type }: { type: "authors" | "publishers" | "categories"
                     : "Giới thiệu"
               }
               value={detail}
+              required={type === "categories"}
               onChange={(event) => setDetail(event.target.value)}
             />
+            {type === "categories" && (
+              <div className="field">
+                <label htmlFor="category-parent">Thuộc thể loại (A, B, C hoặc nhánh con)</label>
+                <select
+                  id="category-parent"
+                  required
+                  value={parentId}
+                  onChange={(event) => setParentId(event.target.value)}
+                >
+                  <option value="">— Chọn thể loại cha —</option>
+                  {parents.data?.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.code} · {category.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
           <MutationFeedback error={save.error} success={save.isSuccess} />
           <Button type="submit" disabled={save.isPending}>

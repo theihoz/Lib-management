@@ -24,7 +24,7 @@
           "F18"
         ],
         "x-permission": "catalog.read",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [],
         "parameters": [
           {
@@ -165,7 +165,7 @@
           "F18"
         ],
         "x-permission": "catalog.write",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -297,7 +297,7 @@
           "F18"
         ],
         "x-permission": "catalog.read",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [],
         "parameters": [
           {
@@ -404,7 +404,7 @@
           "F18"
         ],
         "x-permission": "catalog.write",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -526,7 +526,7 @@
           "F04"
         ],
         "x-permission": "catalog.read",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [],
         "parameters": [
           {
@@ -666,7 +666,7 @@
           "F04"
         ],
         "x-permission": "catalog.write",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -797,7 +797,7 @@
           "F04"
         ],
         "x-permission": "catalog.read",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [],
         "parameters": [
           {
@@ -903,7 +903,7 @@
           "F04"
         ],
         "x-permission": "catalog.write",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -1025,7 +1025,7 @@
           "F05"
         ],
         "x-permission": "catalog.read",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [],
         "parameters": [
           {
@@ -1165,7 +1165,7 @@
           "F05"
         ],
         "x-permission": "catalog.write",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -1296,7 +1296,7 @@
           "F05"
         ],
         "x-permission": "catalog.read",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [],
         "parameters": [
           {
@@ -1402,7 +1402,7 @@
           "F05"
         ],
         "x-permission": "catalog.write",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -1524,7 +1524,7 @@
           "F03"
         ],
         "x-permission": "catalog.read",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [],
         "parameters": [
           {
@@ -1664,7 +1664,7 @@
           "F03"
         ],
         "x-permission": "catalog.write",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -1795,7 +1795,7 @@
           "F03"
         ],
         "x-permission": "catalog.read",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [],
         "parameters": [
           {
@@ -1901,7 +1901,7 @@
           "F03"
         ],
         "x-permission": "catalog.write",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -2023,7 +2023,7 @@
           "F02"
         ],
         "x-permission": "catalog.write",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -2161,7 +2161,7 @@
           "F02"
         ],
         "x-permission": "catalog.read",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -2317,7 +2317,7 @@
           "F18"
         ],
         "x-permission": "reader.read",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -2461,7 +2461,7 @@
           "F06"
         ],
         "x-permission": "reader.write",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -2592,7 +2592,7 @@
           "F06"
         ],
         "x-permission": "reader.read",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -2702,7 +2702,7 @@
           "F06"
         ],
         "x-permission": "reader.write",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -2824,7 +2824,7 @@
           "F06"
         ],
         "x-permission": "card.issue",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -2954,7 +2954,7 @@
           "F12"
         ],
         "x-permission": "eligibility.read",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -3066,7 +3066,7 @@
           "F07"
         ],
         "x-permission": "loan.checkout",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -3195,7 +3195,7 @@
           "F09"
         ],
         "x-permission": "reader.read",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -3362,7 +3362,7 @@
           "F17"
         ],
         "x-permission": "reader.read",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -3474,7 +3474,7 @@
           "F08"
         ],
         "x-permission": "return.create",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -3620,7 +3620,7 @@
           "F09"
         ],
         "x-permission": "loan.renew",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -3760,7 +3760,7 @@
           "F10"
         ],
         "x-permission": "reservation.create",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -3889,7 +3889,7 @@
           "F10"
         ],
         "x-permission": "reservation.read",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -4044,7 +4044,7 @@
           "F10"
         ],
         "x-permission": "reservation.cancel",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -4184,7 +4184,7 @@
           "F10"
         ],
         "x-permission": "reservation.pickup",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -4324,7 +4324,7 @@
           "F11"
         ],
         "x-permission": "finance.read",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -4479,7 +4479,7 @@
           "F11"
         ],
         "x-permission": "assessment.decide",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -4625,7 +4625,7 @@
           "F11"
         ],
         "x-permission": "assessment.decide",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -4765,7 +4765,7 @@
           "F11"
         ],
         "x-permission": "payment.collect",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -4896,7 +4896,7 @@
           "F11"
         ],
         "x-permission": "charge.waive",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -5036,7 +5036,7 @@
           "F11"
         ],
         "x-permission": "ledger.reverse",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -5167,7 +5167,7 @@
           "F17"
         ],
         "x-permission": "reader.read",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -5322,7 +5322,7 @@
           "F19"
         ],
         "x-permission": "overdue.read",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -5478,7 +5478,7 @@
           "F13"
         ],
         "x-permission": "report.read",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -5610,7 +5610,7 @@
           "F20"
         ],
         "x-permission": "export.create",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -5743,7 +5743,7 @@
           "F20"
         ],
         "x-permission": "report.read",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -5855,7 +5855,7 @@
           "F20"
         ],
         "x-permission": "export.download",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -5978,7 +5978,7 @@
           "F14"
         ],
         "x-permission": "policy.write",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -6107,7 +6107,7 @@
           "F14"
         ],
         "x-permission": "policy.write",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -6253,7 +6253,7 @@
           "F14"
         ],
         "x-permission": "policy.approve",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -8370,7 +8370,7 @@
           "F22"
         ],
         "x-permission": "copy.dispose",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -9083,7 +9083,7 @@
           "F24"
         ],
         "x-permission": "job.read",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -9378,7 +9378,7 @@
           "F17"
         ],
         "x-permission": "reader.read",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -9524,7 +9524,7 @@
           "F10"
         ],
         "x-permission": "reservation.read",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -9674,7 +9674,7 @@
           "F11"
         ],
         "x-permission": "finance.read",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -10289,7 +10289,7 @@
           "F02"
         ],
         "x-permission": "catalog.read",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -10424,7 +10424,7 @@
           "F02"
         ],
         "x-permission": "catalog.write",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -10555,7 +10555,7 @@
           "F02"
         ],
         "x-permission": "catalog.read",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -10658,7 +10658,7 @@
           "F06"
         ],
         "x-permission": "reader.read",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -10788,7 +10788,7 @@
           "F13"
         ],
         "x-permission": "report.read",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -10917,7 +10917,7 @@
           "F20"
         ],
         "x-permission": "export.download",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -11029,7 +11029,7 @@
           "F14"
         ],
         "x-permission": "policy.write",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []

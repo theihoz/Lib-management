@@ -48,3 +48,16 @@ def test_runtime_has_no_unplanned_business_routes():
     planned = {(p, m) for p, m, _ in operations(design)}
     extra = {(p, m) for p, m, _ in operations(runtime)} - planned
     assert extra == set()
+
+
+def test_design_status_matches_runtime_both_ways():
+    # x-status must say exactly what is served; run scripts/openapi_status.py to fix.
+    design = json.loads(OPENAPI.read_text())
+    with TestClient(create_app(Settings(db_password="unit-test-fixture"))) as client:
+        runtime = {(p, m) for p, m, _ in operations(client.get("/openapi.json").json())}
+    stale = sorted(
+        f"{method.upper()} {path} is {operation.get('x-status')}"
+        for path, method, operation in operations(design)
+        if (operation.get("x-status") == "implemented") != ((path, method) in runtime)
+    )
+    assert stale == []

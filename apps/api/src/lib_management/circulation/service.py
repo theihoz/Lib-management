@@ -22,7 +22,11 @@ from lib_management.circulation.models import (
 )
 from lib_management.core.errors import AppError, NotFound
 
+RULES_SCHEMA_VERSION = 2
+# Defaults of a new policy (QĐ01–QĐ08, BM09/QĐ17); the Manager changes them by
+# approving a new PolicyVersion. Damage fees are proposals the Manager confirms.
 RULES: dict[str, Any] = {
+    "libraryName": "Thư viện Lib-management",
     "minReaderAge": 12,
     "maxReaderAge": 55,
     "cardValidityMonths": 6,
@@ -31,11 +35,21 @@ RULES: dict[str, Any] = {
     "maxRenewals": 1,
     "renewalDays": 4,
     "overdueFinePerDay": "1000",
-    "allowedOutstandingBalance": "0",
+    "allowedOutstandingBalance": "50000",
     "publicationYearWindow": 8,
     "readyHoldDays": 3,
     "damageLostAssessment": "MANUAL_APPROVAL",
+    "damageLostFees": {
+        "MINOR_DAMAGE": "20000",
+        "MAJOR_DAMAGE": "50000",
+        "LOST": "100000",
+    },
 }
+
+
+def outstanding_limit(policy: PolicyVersion) -> Decimal:
+    """QĐ12: borrowing is blocked once the balance exceeds this (v1 policies: 0)."""
+    return Decimal(policy.rules.get("allowedOutstandingBalance", "0"))
 
 
 def active_policy(session: Session, now: datetime | None = None) -> PolicyVersion:
@@ -119,7 +133,7 @@ def eligibility(session: Session, reader_id: UUID) -> dict[str, Any]:
     )
     if card is None:
         reasons.append("CARD_NOT_VALID")
-    if outstanding(session, reader_id) > 0:
+    if outstanding(session, reader_id) > outstanding_limit(policy):
         reasons.append("OUTSTANDING_BALANCE")
     if session.scalar(
         select(LoanItem.id)

@@ -15,7 +15,7 @@ from lib_management.circulation import models as m
 from lib_management.circulation import schemas as s
 from lib_management.circulation import views as v
 from lib_management.circulation.service import (
-    RULES,
+    RULES_SCHEMA_VERSION,
     active_policy,
     charge_balance,
     eligibility,
@@ -135,6 +135,11 @@ def reader_lock(session: Session, identifier: UUID) -> Any:
     return get(session, Reader, identifier, lock=True)
 
 
+def check_lost_fee(amount: Decimal) -> None:
+    if not s.LOST_FEE_MIN <= amount <= s.LOST_FEE_MAX:
+        raise ValidationFailed("Phí mất sách phải từ 100.000 đến 600.000 VND (QĐ07)")
+
+
 def require_eligible(session: Session, reader_id: UUID) -> m.PolicyVersion:
     result = eligibility(session, reader_id)
     if not result["allowed"]:
@@ -244,8 +249,7 @@ def create_policy(
     key: Key,
     principal: Annotated[Principal, Depends(require_permission("policy.write"))],
 ) -> JSONResponse:
-    if body.rulesSchemaVersion != 1 or body.rules != RULES:
-        raise ValidationFailed("Quy định phải tuân thủ C01–C09 và schema v1")
+    # PolicyRules (schema v2) already enforces QĐ17; values are the Manager's.
     if body.effectiveFrom.tzinfo is None:
         raise ValidationFailed("effectiveFrom cần múi giờ")
     begun = start(uow, principal, "policy.write", key, body.model_dump(mode="json"))
@@ -254,8 +258,8 @@ def create_policy(
     policy = m.PolicyVersion(
         effective_from=body.effectiveFrom,
         status="DRAFT",
-        rules=body.rules,
-        rules_schema_version=1,
+        rules=body.rules.model_dump(mode="json"),
+        rules_schema_version=RULES_SCHEMA_VERSION,
     )
     uow.session.add(policy)
     uow.session.flush()
@@ -336,6 +340,10 @@ def checkout(
     lock_editions(uow.session, edition_ids)
     reader_lock(uow.session, body.readerId)
     policy = require_eligible(uow.session, body.readerId)
+    if len(body.copyIds) > policy.rules["maxBooksPerLoan"]:
+        raise ValidationFailed(
+            f"Mỗi phiếu tối đa {policy.rules['maxBooksPerLoan']} cuốn (QĐ05)"
+        )
     copies = list(
         uow.session.scalars(
             select(BookCopy)
@@ -390,6 +398,8 @@ def return_copy(
         raise Forbidden("PERMISSION_DENIED", "Thiếu quyền assessment.propose")
     if (body.condition == "GOOD") == (body.assessment is not None):
         raise ValidationFailed("Đề xuất phí chỉ bắt buộc với hỏng/mất")
+    if body.condition == "LOST" and body.assessment is not None:
+        check_lost_fee(Decimal(body.assessment.proposedAmount))
     begun = start(uow, principal, "return.create", key, body.model_dump(mode="json"))
     if begun.replay:
         return replay(begun)
@@ -645,6 +655,8 @@ def decide(
     event = get(uow.session, m.ReturnEvent, assessment.return_event_id)
     item = get(uow.session, m.LoanItem, event.loan_item_id)
     approved_amount = Decimal(body.amount)
+    if assessment.kind == "LOST" and approved_amount > 0:
+        check_lost_fee(approved_amount)
     if approved_amount > 0:
         charge = m.FineCharge(
             reader_id=assessment.reader_id,

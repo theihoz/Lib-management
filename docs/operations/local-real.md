@@ -36,9 +36,11 @@ db (PostgreSQL) ──► migrate ──► seed ──► api ──► web (ng
 keycloak (:8080) ─────────────────┘       └─► worker
 ```
 
-- `migrate`: áp dụng migration Alembic.
-- `seed`: tạo 39 permission/5 role, tạo 5 user Keycloak và liên kết với Account trong DB.
-  Chạy lại nhiều lần không sao (idempotent).
+- `db`: PostgreSQL 17, múi giờ UTC (nghiệp vụ dùng Asia/Ho_Chi_Minh trong code), dữ liệu ở volume
+  `lib-management_pgdata`.
+- `migrate`: áp dụng 6 migration Alembic → 42 bảng theo [thiết kế DB](../design/database-design.md).
+- `seed`: tạo 39 permission/5 role, tạo 5 user Keycloak và liên kết với Account, rồi chạy
+  `seed-demo`. Chạy lại nhiều lần không sao (idempotent: chỉ thêm dòng còn thiếu).
 - `web`: bản build production phục vụ bằng nginx, proxy `/api` sang API nên không cần CORS.
 
 Khi xong, mở <http://localhost:5173> → **Đăng nhập** → **Tiếp tục với SSO**.
@@ -50,6 +52,22 @@ Khi xong, mở <http://localhost:5173> → **Đăng nhập** → **Tiếp tục 
 | `admin.dev` | Admin hệ thống |
 | `ops.dev` | Admin vận hành |
 | `reader.dev` | Độc giả |
+
+### Dữ liệu mẫu (`seed-demo`)
+
+Chỉ dành cho máy local, không chạy trên production:
+
+| Dữ liệu | Nội dung |
+| --- | --- |
+| Quy định | Một bản ACTIVE với luật mặc định (mượn tối đa 4 cuốn, 4 ngày, thẻ 6 tháng…) |
+| Danh mục | 4 nhà xuất bản, 4 thể loại, 2 kho, 8 đầu sách xuất bản 2020–2025 |
+| Bản sao | 18 cuốn, mã vạch `DEMO-0001` … `DEMO-0018`, đều AVAILABLE |
+| Độc giả | `DG0001`–`DG0005`, thẻ `THE-DG0001`… còn hạn 6 tháng |
+| Liên kết | `reader.dev` là độc giả `DG0001` (Nguyễn Minh An) |
+
+Thử nhanh: đăng nhập `librarian.dev` → **Quầy mượn sách** → thẻ `THE-DG0001`, mã vạch `DEMO-0001`;
+rồi đăng nhập `reader.dev` để thấy phiếu mượn của mình. Xóa sạch để bắt đầu lại:
+`scripts/local.sh reset` rồi `scripts/local.sh up`.
 
 Mật khẩu chung là giá trị `KEYCLOAK_DEV_USER_PASSWORD` trong `.env`. Trang quản trị Keycloak
 <http://localhost:8080> dùng user `admin` và `KEYCLOAK_ADMIN_PASSWORD`.

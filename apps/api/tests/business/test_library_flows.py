@@ -16,10 +16,15 @@ from sqlalchemy import select
 
 from lib_management import migrate
 from lib_management.circulation.models import (
+    FineCharge,
     LoanItem,
     PolicyVersion,
 )
-from lib_management.circulation.service import RULES, outstanding
+from lib_management.circulation.service import (
+    RULES,
+    RULES_SCHEMA_VERSION,
+    outstanding,
+)
 from lib_management.config import Settings
 from lib_management.db import create_engine_from_settings, create_session_factory
 from lib_management.identity.auth import Principal, authenticated
@@ -85,7 +90,7 @@ def client(settings: Settings) -> Iterator[TestClient]:
                     effective_from=datetime.now(UTC) - timedelta(days=1),
                     status="ACTIVE",
                     rules=RULES,
-                    rules_schema_version=1,
+                    rules_schema_version=RULES_SCHEMA_VERSION,
                     approved_by=account.id,
                     approved_at=datetime.now(UTC) - timedelta(days=2),
                 )
@@ -286,7 +291,7 @@ def test_stale_reader_patch_and_invalid_policy(client: TestClient):
         {
             "effectiveFrom": (datetime.now(UTC) + timedelta(days=1)).isoformat(),
             "rulesSchemaVersion": 1,
-            "rules": {**RULES, "maxBooksPerLoan": 20},
+            "rules": RULES,
         },
     )
     assert policy.status_code == 422
@@ -354,3 +359,412 @@ def test_overdue_items_include_reader_title_and_late_days(
         ).status_code
         == 201
     )
+
+
+def add_charge(
+    client: TestClient, settings: Settings, reader: dict, checkout: dict, amount: int
+) -> None:
+    from uuid import UUID
+
+    engine = create_engine_from_settings(settings)
+    with create_session_factory(engine)() as session, session.begin():
+        item = session.get(LoanItem, UUID(checkout["items"][0]["loanItemId"]))
+        assert item is not None
+        session.add(
+            FineCharge(
+                reader_id=UUID(reader["id"]),
+                loan_item_id=item.id,
+                policy_version_id=item.policy_version_id,
+                reason="MANUAL",
+                assessed_amount=amount,
+                calculation={"test": True},
+                manual_reason="test",
+                assessed_by=client.test_principal.account_id,
+            )
+        )
+    engine.dispose()
+
+
+def reasons(client: TestClient, reader: dict) -> list[str]:
+    response = client.get(f"/api/v1/readers/{reader['id']}/eligibility")
+    assert response.status_code == 200, response.text
+    return response.json()["reasons"]
+
+
+def test_outstanding_balance_blocks_only_above_threshold(
+    client: TestClient, settings: Settings
+):
+    # QĐ12: default threshold 50.000 VND; borrowing is blocked only above it.
+    reader, _, checkout, _ = setup_loan(client)
+    add_charge(client, settings, reader, checkout, 49_999)
+    assert "OUTSTANDING_BALANCE" not in reasons(client, reader)
+    add_charge(client, settings, reader, checkout, 1)
+    assert "OUTSTANDING_BALANCE" not in reasons(client, reader)
+    add_charge(client, settings, reader, checkout, 1)
+    assert "OUTSTANDING_BALANCE" in reasons(client, reader)
+
+
+def policy_body(**rules: object) -> dict:
+    return {
+        "effectiveFrom": (datetime.now(UTC) + timedelta(days=30)).isoformat(),
+        "rulesSchemaVersion": RULES_SCHEMA_VERSION,
+        "rules": {**RULES, **rules},
+    }
+
+
+@pytest.mark.parametrize(
+    "rules",
+    [
+        {"allowedOutstandingBalance": "0"},
+        {"overdueFinePerDay": "-1"},
+        {"initialLoanDays": 0},
+        {"readyHoldDays": 0},
+        {"minReaderAge": 60, "maxReaderAge": 55},
+        {"damageLostFees": {**RULES["damageLostFees"], "LOST": "700000"}},
+        {"libraryName": ""},
+        {"unknownRule": 1},
+    ],
+)
+def test_policy_rejects_invalid_values(client: TestClient, rules: dict):
+    # QĐ17: fine >= 0, threshold > 0, day counts positive; QĐ07 lost-fee range.
+    assert post(client, "/policy-versions", policy_body(**rules)).status_code == 422
+
+
+def test_policy_accepts_manager_values(client: TestClient):
+    # QĐ16/QĐ17: the Manager may change configured values in a new draft.
+    body = policy_body(
+        libraryName="Thư viện Nhóm 3",
+        overdueFinePerDay="2000",
+        allowedOutstandingBalance="80000",
+        readyHoldDays=2,
+        initialLoanDays=5,
+    )
+    created = post(client, "/policy-versions", body)
+    assert created.status_code == 201, created.text
+    assert created.json()["status"] == "DRAFT"
+    assert created.json()["rules_schema_version"] == RULES_SCHEMA_VERSION
+    assert created.json()["rules"]["allowedOutstandingBalance"] == "80000"
+    assert created.json()["rules"]["libraryName"] == "Thư viện Nhóm 3"
+
+
+def test_checkout_respects_policy_book_limit(client: TestClient):
+    # QĐ05: at most maxBooksPerLoan (4) copies in one loan.
+    reader, first, _, _ = setup_loan(client)
+    code = uuid4().hex[:8]
+    edition = post(
+        client,
+        "/book-editions",
+        {"title": "Limit " + code, "publicationYear": datetime.now(UTC).year},
+    )
+    copies = post(
+        client,
+        f"/book-editions/{edition.json()['id']}/copies",
+        {
+            "barcodes": [f"{code}-{n}" for n in range(5)],
+            "locationId": first["location_id"],
+        },
+    )
+    assert copies.status_code == 201, copies.text
+    listed = client.get(
+        f"/api/v1/book-editions/{edition.json()['id']}/copies", params={"limit": 10}
+    )
+    ids = [row["id"] for row in listed.json()["data"]]
+    assert len(ids) == 5
+    too_many = post(client, "/loans", {"readerId": reader["id"], "copyIds": ids})
+    assert too_many.status_code == 422, too_many.text
+    assert "QĐ05" in too_many.json()["message"]
+    allowed = post(client, "/loans", {"readerId": reader["id"], "copyIds": ids[:4]})
+    assert allowed.status_code == 201, allowed.text
+
+
+def test_lost_fee_must_follow_qd07_range(client: TestClient):
+    reader, copy, checkout, _ = setup_loan(client)
+    item = checkout["items"][0]["loanItemId"]
+
+    def lost(amount: str):
+        return post(
+            client,
+            "/returns",
+            {
+                "loanItemId": item,
+                "condition": "LOST",
+                "assessment": {"proposedAmount": amount, "reason": "Mất sách"},
+            },
+        )
+
+    assert lost("50000").status_code == 422
+    assert lost("700000").status_code == 422
+    accepted = lost("100000")
+    assert accepted.status_code == 201, accepted.text
+    aid = accepted.json()["assessmentId"]
+    too_high = post(
+        client,
+        f"/charge-assessments/{aid}/decisions",
+        {"expectedVersion": 1, "amount": "650000", "reason": "Giá sách"},
+    )
+    assert too_high.status_code == 422
+    approved = post(
+        client,
+        f"/charge-assessments/{aid}/decisions",
+        {"expectedVersion": 1, "amount": "600000", "reason": "Giá sách"},
+    )
+    assert approved.status_code == 201, approved.text
+
+
+def birth_for_age(age: int) -> str:
+    from zoneinfo import ZoneInfo
+
+    today = datetime.now(ZoneInfo("Asia/Ho_Chi_Minh")).date()
+    try:
+        born = today.replace(year=today.year - age)
+    except ValueError:  # 29 February in a non-leap year
+        born = today.replace(year=today.year - age, day=28)
+    return born.isoformat()
+
+
+def new_reader(client: TestClient, **fields: object):
+    return post(
+        client,
+        "/readers",
+        {
+            "readerCode": uuid4().hex[:12],
+            "fullName": "Độc giả kiểm thử",
+            "birthDate": birth_for_age(30),
+            "readerType": "Y",
+            **fields,
+        },
+    )
+
+
+def test_reader_type_must_be_x_y_or_z(client: TestClient):
+    # BM02: loại độc giả X, Y, Z.
+    assert new_reader(client, readerType="A").status_code == 422
+    assert new_reader(client, readerType="Z").status_code == 201
+
+
+@pytest.mark.parametrize(
+    ("age", "status"), [(11, 422), (12, 201), (55, 201), (56, 422)]
+)
+def test_reader_age_follows_qd01(client: TestClient, age: int, status: int):
+    response = new_reader(client, birthDate=birth_for_age(age))
+    assert response.status_code == status, response.text
+
+
+def test_reader_email_is_unique_ignoring_case(client: TestClient):
+    email = f"dg.{uuid4().hex[:8]}@example.test"
+    first = new_reader(client, email=email)
+    assert first.status_code == 201, first.text
+    duplicate = new_reader(client, email=email.upper())
+    assert duplicate.status_code == 409
+    assert duplicate.json()["code"] == "EMAIL_TAKEN"
+    other = new_reader(client)
+    taken = client.patch(
+        "/api/v1/readers/" + other.json()["id"],
+        json={"expectedVersion": 1, "email": email},
+    )
+    assert taken.status_code == 409
+    same = client.patch(
+        "/api/v1/readers/" + first.json()["id"],
+        json={"expectedVersion": 1, "email": email},
+    )
+    assert same.status_code == 200, same.text
+
+
+def main_category(client: TestClient, code: str) -> dict:
+    page = client.get("/api/v1/categories", params={"query": f"Thể loại {code}"})
+    assert page.status_code == 200, page.text
+    return next(row for row in page.json()["data"] if row["code"] == code)
+
+
+def test_categories_hang_below_main_a_b_c(client: TestClient):
+    # QĐ04: three main categories A, B, C; no other root may be created.
+    roots = {code: main_category(client, code) for code in ("A", "B", "C")}
+    assert all(row["is_root"] for row in roots.values())
+    code = uuid4().hex[:6]
+    orphan = post(client, "/categories", {"code": "R" + code, "name": "Gốc " + code})
+    assert orphan.status_code == 422
+    child = post(
+        client,
+        "/categories",
+        {
+            "code": "A1" + code,
+            "name": "Nhánh A.1 " + code,
+            "parentId": roots["A"]["id"],
+        },
+    )
+    assert child.status_code == 201, child.text
+    grandchild = post(
+        client,
+        "/categories",
+        {
+            "code": "A11" + code,
+            "name": "Nhánh A.1.1 " + code,
+            "parentId": child.json()["id"],
+        },
+    )
+    assert grandchild.status_code == 201, grandchild.text
+    detached = client.patch(
+        "/api/v1/categories/" + child.json()["id"], json={"parentId": None}
+    )
+    assert detached.status_code == 422
+    protected = client.patch(
+        "/api/v1/categories/" + roots["B"]["id"], json={"name": "Đổi tên"}
+    )
+    assert protected.status_code == 409
+
+
+def test_category_name_is_unique(client: TestClient):
+    # QĐ09: mã và tên thể loại là duy nhất.
+    parent = main_category(client, "C")["id"]
+    name = "Kinh tế học " + uuid4().hex[:6]
+    first = post(
+        client,
+        "/categories",
+        {"code": uuid4().hex[:8], "name": name, "parentId": parent},
+    )
+    assert first.status_code == 201, first.text
+    same = post(
+        client,
+        "/categories",
+        {"code": uuid4().hex[:8], "name": name.upper(), "parentId": parent},
+    )
+    assert same.status_code == 409
+    assert same.json()["code"] == "CATEGORY_NAME_TAKEN"
+
+
+def report_period(days: int = 1) -> dict[str, str]:
+    from zoneinfo import ZoneInfo
+
+    zone = ZoneInfo("Asia/Ho_Chi_Minh")
+    tomorrow = datetime.now(zone).replace(hour=0, minute=0, second=0, microsecond=0)
+    tomorrow += timedelta(days=1)
+    return {
+        "from": (tomorrow - timedelta(days=days)).isoformat(),
+        "to": tomorrow.isoformat(),
+    }
+
+
+def request_report(client: TestClient, report_type: str, export: bool = False, **f):
+    response = post(
+        client,
+        "/export-jobs" if export else "/report-jobs",
+        {"reportType": report_type, "filters": {**report_period(), **f}},
+    )
+    assert response.status_code == 202, response.text
+    return response.json()["jobId"]
+
+
+def run_report(settings: Settings, job_id: str, tmp_path, export: bool = False):
+    from uuid import UUID
+
+    from lib_management.platform.models import Job
+    from lib_management.reporting.handlers import report_handler
+    from lib_management.reporting.models import ReportJob
+    from lib_management.reporting.service import snapshot
+    from lib_management.reporting.storage import FileArtifactStorage
+    from lib_management.worker.registry import JobContext
+
+    engine = create_engine_from_settings(settings)
+    factory = create_session_factory(engine)
+    with factory() as session:
+        report = session.scalar(
+            select(ReportJob).where(ReportJob.job_id == UUID(job_id))
+        )
+        assert report is not None
+        result = snapshot(session, report, datetime.now(UTC))
+    handler = report_handler(factory, FileArtifactStorage(tmp_path), timedelta(hours=1))
+    handler(
+        JobContext(
+            job_id=job_id,
+            job_type="export" if export else "report",
+            attempt=1,
+            payload={"report_id": str(report.id)},
+            heartbeat=lambda: True,
+        )
+    )
+    with factory() as session, session.begin():
+        job = session.get(Job, UUID(job_id))
+        assert job is not None
+        job.status = "SUCCEEDED"  # what the runner does after the handler returns
+    engine.dispose()
+    return result
+
+
+def test_bm08_reports_rank_and_count_loans(client, settings, tmp_path):
+    reader, copy, checkout, _ = setup_loan(client)
+    add_charge(client, settings, reader, checkout, 3000)
+    overview = run_report(settings, request_report(client, "OVERVIEW"), tmp_path)
+    metrics = overview["metrics"]
+    assert metrics["loan_items_issued"] >= 1
+    assert metrics["copies_on_loan"] >= 1
+    assert int(metrics["fines_assessed"]) >= 3000
+    assert overview["rows"] == []
+    trend = run_report(
+        settings, request_report(client, "LOAN_TREND", granularity="day"), tmp_path
+    )["rows"]
+    assert trend and trend[-1]["loans_issued"] >= 1
+    top = run_report(settings, request_report(client, "TOP_BOOKS", limit=100), tmp_path)
+    counts = [row["loan_count"] for row in top["rows"]]
+    assert counts == sorted(counts, reverse=True)
+    assert copy["edition_id"] in {row["edition_id"] for row in top["rows"]}
+    readers = run_report(
+        settings, request_report(client, "ACTIVE_READERS", limit=100), tmp_path
+    )["rows"]
+    mine = next(row for row in readers if row["reader_id"] == reader["id"])
+    assert mine["loan_count"] == 1 and mine["fines_amount"] == "3000"
+    inventory = run_report(settings, request_report(client, "INVENTORY"), tmp_path)
+    line = next(r for r in inventory["rows"] if r["edition_id"] == copy["edition_id"])
+    assert line["total_copies"] == 1 and line["on_loan"] == 1
+    loans = run_report(
+        settings, request_report(client, "LOAN_CSV", export=True), tmp_path, export=True
+    )
+    assert any(row["reader_code"] == reader["reader_code"] for row in loans["rows"])
+    fines = run_report(
+        settings, request_report(client, "FINE_CSV", export=True), tmp_path, export=True
+    )
+    fine = next(
+        row for row in fines["rows"] if row["reader_code"] == reader["reader_code"]
+    )
+    assert fine["balance"] == "3000"
+
+
+def test_report_period_follows_qd13(client: TestClient):
+    period = report_period()
+    later = datetime.fromisoformat(period["to"]) + timedelta(days=1)
+    future = post(
+        client,
+        "/report-jobs",
+        {"reportType": "OVERVIEW", "filters": {**period, "to": later.isoformat()}},
+    )
+    assert future.status_code == 422
+    reversed_period = post(
+        client,
+        "/report-jobs",
+        {
+            "reportType": "OVERVIEW",
+            "filters": {"from": period["to"], "to": period["from"]},
+        },
+    )
+    assert reversed_period.status_code == 422
+
+
+def test_export_without_data_creates_no_file(client, settings, tmp_path):
+    # QĐ26: nothing matches, so no file is created and the download says so.
+    response = post(
+        client,
+        "/export-jobs",
+        {
+            "reportType": "FINE_CSV",
+            "filters": {
+                "from": "2001-01-01T00:00:00+07:00",
+                "to": "2001-01-02T00:00:00+07:00",
+            },
+        },
+    )
+    assert response.status_code == 202, response.text
+    job_id = response.json()["jobId"]
+    run_report(settings, job_id, tmp_path, export=True)
+    assert list(tmp_path.iterdir()) == []
+    link = client.get(f"/api/v1/export-jobs/{job_id}/download")
+    assert link.status_code == 409, link.text
+    assert link.json()["code"] == "NO_DATA"

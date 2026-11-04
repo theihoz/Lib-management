@@ -20,7 +20,10 @@ Monorepo gồm backend FastAPI và frontend React, phát triển trong một Dev
 
 - Backend nền tảng ([spec M0 backend](docs/specs/M0-backend-foundation.md)): hợp đồng lỗi
   `ErrorResponse`, request ID, cursor pagination, Unit of Work, idempotency, audit log,
-  outbox và worker job có lease/retry; migration 9 bảng identity/platform.
+  outbox và worker job có lease/retry.
+- Database PostgreSQL 17 đủ schema theo [thiết kế DB](docs/design/database-design.md): 38 bảng
+  danh mục + 4 bảng bổ sung (`charge_assessment`, `notification*`), 8 migration Alembic; bảng của
+  phase 2 đã có schema, chưa có API. Lệnh `seed-demo` nạp dữ liệu mẫu cho máy local.
 - Xác thực: kiểm tra JWT Keycloak, Account ACTIVE và 39 permission/5 role từ DB;
   endpoint `GET /api/v1/auth/me`; CLI `seed-rbac`, `bootstrap-admin`.
 - Lõi thư viện (code, CI xanh; chưa nghiệm thu E2E): danh mục/bản sao/vị trí, độc giả và thẻ,
@@ -35,8 +38,8 @@ Monorepo gồm backend FastAPI và frontend React, phát triển trong một Dev
 
 **Chưa có**
 
-- Phase 2: giữ chỗ F10, bìa F15, lịch sử portal F17, quản trị tài khoản F21, nhập/thanh lý F22,
-  backup/restore F23, thông báo F24.
+- Phase 2 (API và màn hình; schema DB đã có): giữ chỗ F10, bìa F15, lịch sử portal F17, quản trị
+  tài khoản F21, nhập/thanh lý F22, backup/restore F23, thông báo F24.
 - Playwright E2E với Keycloak + API + PostgreSQL thật, Lighthouse và benchmark NFR
   ([audit](docs/quality/2026-11-03-spec-conformance-audit.md)).
 - React Hook Form (quyết định công nghệ); form hiện dùng Zod trực tiếp.
@@ -44,7 +47,8 @@ Monorepo gồm backend FastAPI và frontend React, phát triển trong một Dev
 
 Phạm vi 10 tuần: F01–F09, F11–F14, F16, F18–F20; phần còn lại thuộc phase 2
 ([quyết định 03/11/2026](docs/plan/decisions.md#quyết-định-03112026--phạm-vi-lõi-10-tuần)).
-Quy tắc C01–C09 đã được chủ dự án đồng ý áp dụng.
+Quy tắc C01–C09 đã được chủ dự án đồng ý áp dụng; C01/C03 cập nhật 04/11/2026 theo spec nhóm.
+Đối chiếu QĐ01–QĐ26 với code và test: [quy định nguồn](docs/specs/source-rules.md).
 
 ## Bắt đầu
 
@@ -69,7 +73,8 @@ scripts/local.sh up
 ```
 
 Lệnh tự tạo `.env` với mật khẩu ngẫu nhiên, rồi khởi động PostgreSQL, Keycloak, migration,
-seed quyền + 5 tài khoản, API, worker và bản build production của web. Khi báo xong:
+seed quyền + 5 tài khoản + dữ liệu mẫu (8 đầu sách, 18 bản sao, 5 độc giả có thẻ, quy định đang
+hiệu lực), API, worker và bản build production của web. Khi báo xong:
 
 | Dịch vụ | Địa chỉ |
 | --- | --- |
@@ -93,19 +98,25 @@ in Container**. Container đã có Python, uv, Node 24 và chạy sẵn `uv sync
 Trong terminal container:
 
 ```bash
-# Backend: migration, quyền, user Keycloak dev
+# Backend: migration, quyền, user Keycloak dev + dữ liệu mẫu
 cd apps/api
 uv run --locked alembic upgrade head
 uv run --locked python -m lib_management.cli seed-rbac
-uv run --locked python ../../.devcontainer/keycloak/create_dev_users.py --link
+uv run --locked python ../../.devcontainer/keycloak/create_dev_users.py --link --demo-data
 uv run --locked uvicorn lib_management.main:create_app --factory --host 0.0.0.0 --port 8000 --reload
+
+# Worker (terminal khác): báo cáo/CSV cần worker, thiếu thì job đứng ở "Đang chờ"
+cd apps/api
+uv run --locked python -m lib_management.worker
 
 # Frontend (terminal khác)
 cd apps/web
 npm run dev
 ```
 
-Địa chỉ giống Cách 1; frontend là Vite dev server có hot reload.
+Địa chỉ giống Cách 1; frontend là Vite dev server có hot reload. Luôn mở
+<http://localhost:5173> (Docker publish sẵn 5173/8000/8080); không mở cổng khác do VS Code
+tự forward hay `127.0.0.1`, vì Keycloak chỉ chấp nhận redirect về `http://localhost:5173`.
 Chi tiết, cách lấy token thử và xử lý lỗi: [hướng dẫn Dev Container](.devcontainer/README.md).
 
 ### Cách 3 — Chỉ chạy backend bằng Compose
@@ -145,7 +156,8 @@ Workflow `Publish API image` xuất bản GHCR thủ công từ default branch s
 
 ## Tài liệu
 
-- [Spec triển khai](docs/specs/README.md) — bản đủ chi tiết để code từng mốc
+- [Spec triển khai](docs/specs/README.md) — bản đủ chi tiết để code từng mốc;
+  [QĐ01–QĐ26 ↔ code/test](docs/specs/source-rules.md)
 - [Kế hoạch backend/frontend/tích hợp](docs/plan/README.md), [quyết định](docs/plan/decisions.md)
 - [Thiết kế: DB, OpenAPI, quyền, identity, kiến trúc](docs/design/README.md)
 - [Onboarding, chia việc, Git và review](docs/operations/team-development.md)

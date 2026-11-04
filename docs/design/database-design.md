@@ -36,13 +36,13 @@ Truy vết: F04. Quy tắc: Tên không phải định danh duy nhất.
 
 ### 3. Category → `category`
 
-Truy vết: F03. Quy tắc: Cấm chu trình; giữ các thể loại gốc theo QĐ04.
+Truy vết: F03. Quy tắc: Cấm chu trình; ba thể loại gốc A, B, C (migration 0008) được bảo vệ, mọi thể loại khác thuộc cây của chúng (QĐ04); tên duy nhất không phân biệt hoa thường (QĐ09).
 
 | Cột | Kiểu PostgreSQL | NULL | Ràng buộc/default nguồn | Ý nghĩa |
 | --- | --- | --- | --- | --- |
 | id | uuid | Không | PK | Định danh bất biến |
 | code | varchar(32) | Không | UQ | Mã thể loại |
-| name | varchar(120) | Không | — | Tên thể loại |
+| name | varchar(120) | Không | UQ lower(name) | Tên thể loại (QĐ09) |
 | parent_id | uuid | Có | FK Category.id | Thể loại cha |
 | is_root | boolean | Không | DEFAULT false | Cờ gốc được bảo vệ |
 | created_at | timestamptz | Không | DEFAULT now() | Thời điểm ghi nhận |
@@ -139,9 +139,9 @@ Truy vết: F06,F17,F18. Quy tắc: Không xóa cứng khi có lịch sử; khô
 | id | uuid | Không | PK | Định danh bất biến |
 | reader_code | varchar(32) | Không | UQ | Mã độc giả |
 | full_name | varchar(200) | Không | — | Họ tên |
-| birth_date | date | Không | — | Ngày sinh, tuổi tính khi cấp thẻ |
-| reader_type | varchar(8) | Không | X/Y/Z dự thảo | Loại độc giả |
-| email | varchar(254) | Có | — | Email liên hệ |
+| birth_date | date | Không | — | Ngày sinh; tuổi 12–55 kiểm tra khi lập hồ sơ, đổi ngày sinh và cấp thẻ (QĐ01) |
+| reader_type | varchar(8) | Không | CHECK IN ('X','Y','Z') | Loại độc giả (BM02) |
+| email | varchar(254) | Có | UQ lower(email) WHERE NOT NULL | Email liên hệ, duy nhất (Lab 2 YC6) |
 | phone | varchar(32) | Có | — | Điện thoại |
 | address | text | Có | — | Địa chỉ |
 | status | varchar(16) | Không | ACTIVE/SUSPENDED/INACTIVE | Trạng thái |
@@ -225,7 +225,7 @@ Truy vết: F21. Quy tắc: Quan hệ N:N; kiểm quyền trên máy chủ.
 
 ### 17. PolicyVersion → `policy_version`
 
-Truy vết: F14; áp dụng F06–F12. Quy tắc: Không sửa rules đã ACTIVE/SUPERSEDED; hiệu lực không chồng lấn; C01–C09 đã được chủ dự án duyệt.
+Truy vết: F14; áp dụng F06–F12. Quy tắc: Không sửa rules đã ACTIVE/SUPERSEDED; hiệu lực không chồng lấn; C01–C09 đã được chủ dự án duyệt. Rules schema v2 (`PolicyRules`) gồm các tham số BM09 do Quản lý cấu hình, kiểm tra theo QĐ17; danh sách khóa và mặc định: [source-rules](../specs/source-rules.md#biểu-mẫu-và-mặc-định-bm09).
 
 | Cột | Kiểu PostgreSQL | NULL | Ràng buộc/default nguồn | Ý nghĩa |
 | --- | --- | --- | --- | --- |
@@ -235,7 +235,7 @@ Truy vết: F14; áp dụng F06–F12. Quy tắc: Không sửa rules đã ACTIVE
 | effective_to | timestamptz | Có | — | Kết thúc độc quyền |
 | status | varchar(16) | Không | DRAFT/ACTIVE/SUPERSEDED | Trạng thái |
 | rules | jsonb | Không | Schema validation | Hạn mức, tuổi, phí, thời hạn |
-| rules_schema_version | integer | Không | >0 | Phiên bản schema JSON |
+| rules_schema_version | integer | Không | >0 | Phiên bản schema JSON (bản mới: 2) |
 | approved_by | uuid | Có | FK Account.id | Bắt buộc khi ACTIVE |
 | approved_at | timestamptz | Có | — | Thời điểm duyệt |
 | created_at | timestamptz | Không | DEFAULT now() | Thời điểm ghi nhận |
@@ -495,7 +495,7 @@ Truy vết: F13,F20. Quy tắc: Gộp Report/ExportJob theo job_type; không t�
 | id | uuid | Không | PK | Định danh bất biến |
 | job_id | uuid | Không | FK Job.id; UQ | Tác vụ thực thi |
 | requested_by | uuid | Không | FK Account.id | Người yêu cầu |
-| report_type | varchar(64) | Không | — | Loại báo cáo |
+| report_type | varchar(64) | Không | OVERVIEW/LOAN_TREND/INVENTORY/TOP_BOOKS/ACTIVE_READERS/LOAN_CSV/FINE_CSV (+ LENDING_SUMMARY/OVERDUE cũ) | Loại báo cáo (BM08, Lab 3) |
 | filter_snapshot | jsonb | Không | — | Bộ lọc và scope đã kiểm quyền |
 | as_of | timestamptz | Không | — | Mốc snapshot báo cáo |
 | artifact_id | uuid | Có | FK MediaAsset.id | Tệp riêng tư |

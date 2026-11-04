@@ -48,6 +48,8 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     op.drop_constraint("fk_account_reader_id_reader", "account", type_="foreignkey")
+    # The readers are dropped below; a dangling link would block re-upgrading.
+    op.execute("UPDATE account SET reader_id = NULL WHERE reader_id IS NOT NULL")
     op.drop_table("reader_card")
     op.drop_table("reader")
     op.drop_table("book_copy")

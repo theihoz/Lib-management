@@ -1434,7 +1434,7 @@ export interface components {
              * @description Ngày sinh, tuổi tính khi cấp thẻ
              */
             birth_date: string;
-            /** @description Loại độc giả */
+            /** @description Loại độc giả X/Y/Z (BM02) */
             reader_type: string;
             /** @description Email liên hệ */
             email?: string | null;
@@ -2520,6 +2520,7 @@ export interface components {
         CheckoutRequest: {
             /** Format: uuid */
             readerId: string;
+            /** @description Tối đa theo PolicyRules.maxBooksPerLoan (QĐ05) */
             copyIds: string[];
         };
         CheckoutReceipt: {
@@ -2625,9 +2626,30 @@ export interface components {
             status: "QUEUED";
         };
         ReportRequest: {
-            reportType: string;
+            /**
+             * @description BM08 + Lab 3 ReportJob.report_type; LENDING_SUMMARY/OVERDUE giữ để tương thích
+             * @enum {string}
+             */
+            reportType: "OVERVIEW" | "LOAN_TREND" | "INVENTORY" | "TOP_BOOKS" | "ACTIVE_READERS" | "LOAN_CSV" | "FINE_CSV" | "LENDING_SUMMARY" | "OVERDUE";
             filters: {
-                [key: string]: unknown;
+                /** Format: date-time */
+                from: string;
+                /**
+                 * Format: date-time
+                 * @description Mốc cuối (không gồm); QĐ13: from < to ≤ 00:00 ngày mai giờ thư viện
+                 */
+                to: string;
+                /**
+                 * @description LOAN_TREND
+                 * @default day
+                 * @enum {string}
+                 */
+                granularity: "day" | "week" | "month";
+                /**
+                 * @description TOP_BOOKS, ACTIVE_READERS
+                 * @default 10
+                 */
+                limit: number;
             };
             /** Format: date-time */
             asOf?: string;
@@ -2671,10 +2693,9 @@ export interface components {
         PolicyRequest: {
             /** Format: date-time */
             effectiveFrom: string;
-            rulesSchemaVersion: number;
-            rules: {
-                [key: string]: unknown;
-            };
+            /** @enum {integer} */
+            rulesSchemaVersion: 2;
+            rules: components["schemas"]["PolicyRules"];
         };
         ReceiptRequest: {
             supplier: string;
@@ -2795,11 +2816,11 @@ export interface components {
         CategoryCreate: {
             /** @description Mã thể loại */
             code: string;
-            /** @description Tên thể loại */
+            /** @description Tên thể loại; duy nhất, không phân biệt hoa thường (QĐ09, 409 CATEGORY_NAME_TAKEN) */
             name: string;
             /**
              * Format: uuid
-             * @description Thể loại cha
+             * @description Thể loại cha, bắt buộc: thuộc cây A/B/C (QĐ04)
              */
             parentId?: string | null;
         };
@@ -2807,11 +2828,11 @@ export interface components {
         CategoryPatch: {
             /** @description Mã thể loại */
             code?: string;
-            /** @description Tên thể loại */
+            /** @description Tên thể loại; duy nhất, không phân biệt hoa thường (QĐ09, 409 CATEGORY_NAME_TAKEN) */
             name?: string;
             /**
              * Format: uuid
-             * @description Thể loại cha
+             * @description Thể loại cha; không được bỏ trống (QĐ04)
              */
             parentId?: string | null;
             /** @enum {string} */
@@ -2824,12 +2845,15 @@ export interface components {
             fullName: string;
             /**
              * Format: date
-             * @description Ngày sinh, tuổi tính khi cấp thẻ
+             * @description Ngày sinh; tuổi 12–55 theo quy định đang hiệu lực (QĐ01)
              */
             birthDate: string;
-            /** @description Loại độc giả */
-            readerType: string;
-            /** @description Email liên hệ */
+            /**
+             * @description Loại độc giả X/Y/Z (BM02)
+             * @enum {string}
+             */
+            readerType: "X" | "Y" | "Z";
+            /** @description Email liên hệ; duy nhất, không phân biệt hoa thường (409 EMAIL_TAKEN) */
             email?: string | null;
             /** @description Điện thoại */
             phone?: string | null;
@@ -2843,12 +2867,15 @@ export interface components {
             fullName?: string;
             /**
              * Format: date
-             * @description Ngày sinh, tuổi tính khi cấp thẻ
+             * @description Ngày sinh; tuổi 12–55 theo quy định đang hiệu lực (QĐ01)
              */
             birthDate?: string;
-            /** @description Loại độc giả */
-            readerType?: string;
-            /** @description Email liên hệ */
+            /**
+             * @description Loại độc giả X/Y/Z (BM02)
+             * @enum {string}
+             */
+            readerType?: "X" | "Y" | "Z";
+            /** @description Email liên hệ; duy nhất, không phân biệt hoa thường (409 EMAIL_TAKEN) */
             email?: string | null;
             /** @description Điện thoại */
             phone?: string | null;
@@ -2979,6 +3006,11 @@ export interface components {
                 returns_received: number;
                 distinct_borrowers: number;
                 open_overdue_items: number;
+                copies_in_stock?: number;
+                copies_on_loan?: number;
+                overdue_items?: number;
+                /** @description Tổng tiền phạt phát sinh trong kỳ (VND) */
+                fines_assessed?: string;
             };
             rows: {
                 [key: string]: unknown;
@@ -2998,6 +3030,43 @@ export interface components {
             };
             /** @description Số ngày quá hạn theo lịch Asia/Ho_Chi_Minh */
             lateDays: number;
+        };
+        /** @description Khung phí BM09; mức đề xuất mặc định, Quản lý xác nhận. */
+        DamageLostFees: {
+            MINOR_DAMAGE: string;
+            MAJOR_DAMAGE: string;
+            /** @description QĐ07: 100000–600000 */
+            LOST: string;
+        };
+        /** @description rulesSchemaVersion 2 (QĐ01–QĐ08, QĐ12, BM09/QĐ17). */
+        PolicyRules: {
+            /** @description BM09 */
+            libraryName: string;
+            /** @description QĐ01 */
+            minReaderAge: number;
+            /** @description QĐ01; >= minReaderAge */
+            maxReaderAge: number;
+            /** @description QĐ02 */
+            cardValidityMonths: number;
+            /** @description QĐ05 */
+            maxBooksPerLoan: number;
+            /** @description QĐ06 */
+            initialLoanDays: number;
+            /** @description QĐ06 */
+            maxRenewals: number;
+            /** @description QĐ06 */
+            renewalDays: number;
+            /** @description QĐ07, >= 0 */
+            overdueFinePerDay: string;
+            /** @description QĐ12: chặn khi dư nợ > giá trị này; > 0 */
+            allowedOutstandingBalance: string;
+            /** @description QĐ03 */
+            publicationYearWindow: number;
+            /** @description BM09 */
+            readyHoldDays: number;
+            /** @enum {string} */
+            damageLostAssessment: "MANUAL_APPROVAL";
+            damageLostFees: components["schemas"]["DamageLostFees"];
         };
     };
     responses: never;

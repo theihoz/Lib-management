@@ -1,5 +1,5 @@
 import { ApiError } from "../api/errors";
-import { classifySessionError, canAccess } from "./session-state";
+import { classifySessionError, canAccess, canOpen } from "./session-state";
 
 describe("server-derived session permissions", () => {
   it("keeps locked and unlinked accounts out of staff content", () => {
@@ -16,5 +16,12 @@ describe("server-derived session permissions", () => {
     expect(canAccess("authenticated", ["loan.checkout"], "loan.checkout")).toBe(true);
     expect(canAccess("anonymous", [], undefined)).toBe(true);
     expect(canAccess("authenticated", [], "session")).toBe(true);
+  });
+  it("keeps portal readers out of staff screens that share a permission", () => {
+    const reader = ["catalog.read", "reader.read", "finance.read"];
+    const staffLoans = { path: "/staff/loans", permission: "reader.read" };
+    expect(canOpen("authenticated", reader, staffLoans)).toBe(false);
+    expect(canOpen("authenticated", [...reader, "loan.checkout"], staffLoans)).toBe(true);
+    expect(canOpen("authenticated", reader, { path: "/me", permission: "session" })).toBe(true);
   });
 });

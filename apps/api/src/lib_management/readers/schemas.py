@@ -30,6 +30,10 @@ class Schema(BaseModel):
         return self
 
 
+# BM02 / Lab 3 ReaderCard.card_type.
+ReaderType = Literal["X", "Y", "Z"]
+
+
 class Reader(Schema):
     id: uuid.UUID = Field()
     reader_code: str = Field(max_length=32, min_length=1)
@@ -65,7 +69,7 @@ class ReaderCreate(Schema):
     reader_code: str = Field(alias="readerCode", max_length=32, min_length=1)
     full_name: str = Field(alias="fullName", max_length=200, min_length=1)
     birth_date: date = Field(alias="birthDate")
-    reader_type: str = Field(alias="readerType", max_length=8, min_length=1)
+    reader_type: ReaderType = Field(alias="readerType")
     email: str | None = Field(
         default=None, max_length=254, json_schema_extra={"nullable": True}
     )
@@ -83,9 +87,7 @@ class ReaderPatch(Schema):
         default=None, alias="fullName", max_length=200, min_length=1
     )
     birth_date: date | None = Field(default=None, alias="birthDate")
-    reader_type: str | None = Field(
-        default=None, alias="readerType", max_length=8, min_length=1
-    )
+    reader_type: ReaderType | None = Field(default=None, alias="readerType")
     email: str | None = Field(
         default=None, max_length=254, json_schema_extra={"nullable": True}
     )

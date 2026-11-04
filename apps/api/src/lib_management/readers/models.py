@@ -8,9 +8,11 @@ from sqlalchemy import (
     Date,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
     String,
     Text,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -22,6 +24,15 @@ class Reader(Base):
     __table_args__ = (
         CheckConstraint("status IN ('ACTIVE','SUSPENDED','INACTIVE')", name="status"),
         CheckConstraint("version > 0", name="version"),
+        # BM02: reader type X, Y or Z.
+        CheckConstraint("reader_type IN ('X','Y','Z')", name="reader_type"),
+        # Lab 2 YC6: one reader per email, case-insensitive.
+        Index(
+            "uq_reader_email_lower",
+            text("lower(email)"),
+            unique=True,
+            postgresql_where=text("email IS NOT NULL"),
+        ),
     )
     id: Mapped[uuid.UUID] = uuid_pk()
     reader_code: Mapped[str] = mapped_column(String(32), unique=True)

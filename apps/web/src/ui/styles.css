@@ -1927,3 +1927,34 @@ dialog .button {
   border: 1px solid var(--border, #d8dcd8);
   border-radius: 8px;
 }
+
+/* Loan trend chart (BM08 §IV, QĐ15). */
+.trend-chart {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+.trend-chart li {
+  display: grid;
+  grid-template-columns: 7rem 1fr;
+  gap: 0.25rem 0.75rem;
+  align-items: center;
+}
+.trend-label {
+  grid-row: span 3;
+  font-variant-numeric: tabular-nums;
+}
+.trend-bar {
+  display: block;
+  height: 0.5rem;
+  min-width: 2px;
+  border-radius: 999px;
+}
+.trend-loans {
+  background: var(--primary);
+}
+.trend-returns {
+  background: var(--success);
+}

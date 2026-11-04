@@ -181,6 +181,10 @@ def edition_patch(
     return row
 
 
+# QĐ04: the classification has three main categories; every other one hangs below.
+MAIN_CATEGORIES = ("A", "B", "C")
+
+
 def category_parent(
     session: Session, identity: uuid.UUID | None, parent_id: uuid.UUID | None
 ) -> None:
@@ -190,12 +194,35 @@ def category_parent(
             "SELECT pg_advisory_xact_lock(hashtextextended('catalog.category.tree',0))"
         )
     )
+    if parent_id is None:
+        raise ValidationFailed(
+            "Thể loại phải thuộc một trong ba thể loại chính A, B, C (QĐ04)"
+        )
     visited = {identity}
+    root = None
     while parent_id is not None:
         if parent_id in visited:
             raise ValidationFailed("Cây thể loại không được có chu trình")
         visited.add(parent_id)
-        parent_id = get(session, models.Category, parent_id).parent_id
+        root = get(session, models.Category, parent_id)
+        parent_id = root.parent_id
+    if root is None or root.code not in MAIN_CATEGORIES:
+        raise ValidationFailed(
+            "Thể loại phải thuộc một trong ba thể loại chính A, B, C (QĐ04)"
+        )
+
+
+def category_name_free(
+    session: Session, name: str, except_id: uuid.UUID | None = None
+) -> None:
+    """QĐ09: category names are unique, ignoring case."""
+    query = select(models.Category.id).where(
+        func.lower(models.Category.name) == name.strip().lower()
+    )
+    if except_id is not None:
+        query = query.where(models.Category.id != except_id)
+    if session.scalar(query.limit(1)) is not None:
+        raise Conflict("Tên thể loại đã tồn tại (QĐ09)", code="CATEGORY_NAME_TAKEN")
 
 
 def reference_create(
@@ -204,6 +231,7 @@ def reference_create(
     data = payload.model_dump()
     if model is models.Category:
         category_parent(session, None, data.get("parent_id"))
+        category_name_free(session, data["name"])
     else:
         data["status"] = "ACTIVE"
     row = model(**data)
@@ -217,8 +245,8 @@ def reference_patch(
 ) -> Any:
     # Tree lock precedes any category row lock to avoid lock inversion.
     data = payload.model_dump(exclude_unset=True)
-    if model is models.Category:
-        category_parent(session, identity, data.get("parent_id"))
+    if model is models.Category and "parent_id" in data:
+        category_parent(session, identity, data["parent_id"])
     row = get(session, model, identity, lock=True)
     if model is models.Category:
         if row.is_root and data:
@@ -227,6 +255,8 @@ def reference_patch(
             raise ValidationFailed(
                 "Thể loại không có thuộc tính trạng thái; hãy sửa cây thể loại"
             )
+        if data.get("name"):
+            category_name_free(session, data["name"], except_id=identity)
     if data.get("status") == "INACTIVE":
         link_model: Any = (
             models.BookAuthor if model is models.Author else models.BookEdition

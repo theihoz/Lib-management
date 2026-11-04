@@ -11648,7 +11648,7 @@
             "format": "date"
           },
           "reader_type": {
-            "description": "Loại độc giả",
+            "description": "Loại độc giả X/Y/Z (BM02)",
             "x-db-constraint": "X/Y/Z dự thảo",
             "type": "string",
             "maxLength": 8
@@ -13934,8 +13934,9 @@
               "format": "uuid"
             },
             "minItems": 1,
-            "maxItems": 4,
-            "uniqueItems": true
+            "maxItems": 20,
+            "uniqueItems": true,
+            "description": "Tối đa theo PolicyRules.maxBooksPerLoan (QĐ05)"
           }
         },
         "required": [
@@ -14366,11 +14367,54 @@
         "properties": {
           "reportType": {
             "type": "string",
-            "minLength": 1
+            "enum": [
+              "OVERVIEW",
+              "LOAN_TREND",
+              "INVENTORY",
+              "TOP_BOOKS",
+              "ACTIVE_READERS",
+              "LOAN_CSV",
+              "FINE_CSV",
+              "LENDING_SUMMARY",
+              "OVERDUE"
+            ],
+            "description": "BM08 + Lab 3 ReportJob.report_type; LENDING_SUMMARY/OVERDUE giữ để tương thích"
           },
           "filters": {
             "type": "object",
-            "additionalProperties": true
+            "properties": {
+              "from": {
+                "type": "string",
+                "format": "date-time"
+              },
+              "to": {
+                "type": "string",
+                "format": "date-time",
+                "description": "Mốc cuối (không gồm); QĐ13: from < to ≤ 00:00 ngày mai giờ thư viện"
+              },
+              "granularity": {
+                "type": "string",
+                "enum": [
+                  "day",
+                  "week",
+                  "month"
+                ],
+                "default": "day",
+                "description": "LOAN_TREND"
+              },
+              "limit": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 100,
+                "default": 10,
+                "description": "TOP_BOOKS, ACTIVE_READERS"
+              }
+            },
+            "required": [
+              "from",
+              "to"
+            ],
+            "additionalProperties": false
           },
           "asOf": {
             "type": "string",
@@ -14533,11 +14577,12 @@
           },
           "rulesSchemaVersion": {
             "type": "integer",
-            "minimum": 1
+            "enum": [
+              2
+            ]
           },
           "rules": {
-            "type": "object",
-            "additionalProperties": true
+            "$ref": "#/components/schemas/PolicyRules"
           }
         },
         "required": [
@@ -14992,13 +15037,13 @@
             "maxLength": 32
           },
           "name": {
-            "description": "Tên thể loại",
+            "description": "Tên thể loại; duy nhất, không phân biệt hoa thường (QĐ09, 409 CATEGORY_NAME_TAKEN)",
             "x-db-constraint": "—",
             "type": "string",
             "maxLength": 120
           },
           "parentId": {
-            "description": "Thể loại cha",
+            "description": "Thể loại cha, bắt buộc: thuộc cây A/B/C (QĐ04)",
             "x-db-constraint": "FK Category.id",
             "type": [
               "string",
@@ -15023,13 +15068,13 @@
             "maxLength": 32
           },
           "name": {
-            "description": "Tên thể loại",
+            "description": "Tên thể loại; duy nhất, không phân biệt hoa thường (QĐ09, 409 CATEGORY_NAME_TAKEN)",
             "x-db-constraint": "—",
             "type": "string",
             "maxLength": 120
           },
           "parentId": {
-            "description": "Thể loại cha",
+            "description": "Thể loại cha; không được bỏ trống (QĐ04)",
             "x-db-constraint": "FK Category.id",
             "type": [
               "string",
@@ -15066,19 +15111,23 @@
             "maxLength": 200
           },
           "birthDate": {
-            "description": "Ngày sinh, tuổi tính khi cấp thẻ",
+            "description": "Ngày sinh; tuổi 12–55 theo quy định đang hiệu lực (QĐ01)",
             "x-db-constraint": "—",
             "type": "string",
             "format": "date"
           },
           "readerType": {
-            "description": "Loại độc giả",
+            "description": "Loại độc giả X/Y/Z (BM02)",
             "x-db-constraint": "X/Y/Z dự thảo",
             "type": "string",
-            "maxLength": 8
+            "enum": [
+              "X",
+              "Y",
+              "Z"
+            ]
           },
           "email": {
-            "description": "Email liên hệ",
+            "description": "Email liên hệ; duy nhất, không phân biệt hoa thường (409 EMAIL_TAKEN)",
             "x-db-constraint": "—",
             "type": [
               "string",
@@ -15128,19 +15177,23 @@
             "maxLength": 200
           },
           "birthDate": {
-            "description": "Ngày sinh, tuổi tính khi cấp thẻ",
+            "description": "Ngày sinh; tuổi 12–55 theo quy định đang hiệu lực (QĐ01)",
             "x-db-constraint": "—",
             "type": "string",
             "format": "date"
           },
           "readerType": {
-            "description": "Loại độc giả",
+            "description": "Loại độc giả X/Y/Z (BM02)",
             "x-db-constraint": "X/Y/Z dự thảo",
             "type": "string",
-            "maxLength": 8
+            "enum": [
+              "X",
+              "Y",
+              "Z"
+            ]
           },
           "email": {
-            "description": "Email liên hệ",
+            "description": "Email liên hệ; duy nhất, không phân biệt hoa thường (409 EMAIL_TAKEN)",
             "x-db-constraint": "—",
             "type": [
               "string",
@@ -15638,6 +15691,23 @@
               "open_overdue_items": {
                 "type": "integer",
                 "minimum": 0
+              },
+              "copies_in_stock": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "copies_on_loan": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "overdue_items": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "fines_assessed": {
+                "type": "string",
+                "pattern": "^[0-9]+$",
+                "description": "Tổng tiền phạt phát sinh trong kỳ (VND)"
               }
             },
             "required": [
@@ -15719,6 +15789,138 @@
           "reader",
           "lateDays"
         ]
+      },
+      "DamageLostFees": {
+        "type": "object",
+        "description": "Khung phí BM09; mức đề xuất mặc định, Quản lý xác nhận.",
+        "properties": {
+          "MINOR_DAMAGE": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "maxLength": 12
+          },
+          "MAJOR_DAMAGE": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "maxLength": 12
+          },
+          "LOST": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "maxLength": 12,
+            "description": "QĐ07: 100000–600000"
+          }
+        },
+        "required": [
+          "MINOR_DAMAGE",
+          "MAJOR_DAMAGE",
+          "LOST"
+        ],
+        "additionalProperties": false
+      },
+      "PolicyRules": {
+        "type": "object",
+        "description": "rulesSchemaVersion 2 (QĐ01–QĐ08, QĐ12, BM09/QĐ17).",
+        "properties": {
+          "libraryName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "BM09"
+          },
+          "minReaderAge": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 120,
+            "description": "QĐ01"
+          },
+          "maxReaderAge": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 120,
+            "description": "QĐ01; >= minReaderAge"
+          },
+          "cardValidityMonths": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 120,
+            "description": "QĐ02"
+          },
+          "maxBooksPerLoan": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 20,
+            "description": "QĐ05"
+          },
+          "initialLoanDays": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 365,
+            "description": "QĐ06"
+          },
+          "maxRenewals": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 10,
+            "description": "QĐ06"
+          },
+          "renewalDays": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 365,
+            "description": "QĐ06"
+          },
+          "overdueFinePerDay": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "maxLength": 12,
+            "description": "QĐ07, >= 0"
+          },
+          "allowedOutstandingBalance": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "maxLength": 12,
+            "description": "QĐ12: chặn khi dư nợ > giá trị này; > 0"
+          },
+          "publicationYearWindow": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 200,
+            "description": "QĐ03"
+          },
+          "readyHoldDays": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 60,
+            "description": "BM09"
+          },
+          "damageLostAssessment": {
+            "type": "string",
+            "enum": [
+              "MANUAL_APPROVAL"
+            ]
+          },
+          "damageLostFees": {
+            "$ref": "#/components/schemas/DamageLostFees"
+          }
+        },
+        "required": [
+          "libraryName",
+          "minReaderAge",
+          "maxReaderAge",
+          "cardValidityMonths",
+          "maxBooksPerLoan",
+          "initialLoanDays",
+          "maxRenewals",
+          "renewalDays",
+          "overdueFinePerDay",
+          "allowedOutstandingBalance",
+          "publicationYearWindow",
+          "readyHoldDays",
+          "damageLostAssessment",
+          "damageLostFees"
+        ],
+        "additionalProperties": false
       }
     }
   }

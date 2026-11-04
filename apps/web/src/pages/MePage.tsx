@@ -1,6 +1,6 @@
 import { Link } from "react-router";
 import { useSession } from "../auth/session";
-import { canAccess } from "../auth/session-state";
+import { canOpen } from "../auth/session-state";
 import { screens } from "../app/screens";
 import { Badge, Button, Panel } from "../ui/components";
 
@@ -29,7 +29,7 @@ export function MePage({ onLogout }: { onLogout: () => void }) {
       !item.path.includes(":") &&
       item.permission &&
       item.permission !== "session" &&
-      canAccess(session.status, session.permissions, item.permission),
+      canOpen(session.status, session.permissions, item),
   );
   const grouped = PERMISSION_GROUPS.map(([prefix, label]) => ({
     label,

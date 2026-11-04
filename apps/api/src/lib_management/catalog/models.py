@@ -8,11 +8,13 @@ from sqlalchemy import (
     CheckConstraint,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
     SmallInteger,
     String,
     Text,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -47,6 +49,10 @@ class Author(Base):
 
 class Category(Base):
     __tablename__ = "category"
+    # QĐ09: category names are unique ignoring case (codes are UNIQUE already).
+    __table_args__ = (
+        Index("uq_category_name_lower", text("lower(name)"), unique=True),
+    )
     id: Mapped[uuid.UUID] = uuid_pk()
     code: Mapped[str] = mapped_column(String(32), unique=True)
     name: Mapped[str] = mapped_column(String(120))

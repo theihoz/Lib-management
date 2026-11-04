@@ -26,7 +26,12 @@ function EditionList({ staff = false }: { staff?: boolean }) {
   const session = useSession();
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
-  const query = useDebounced(search);
+  // QĐ23: a blank or whitespace keyword is not a search; the list is browsed instead.
+  const query = useDebounced(search).trim() || undefined;
+  const notFound = {
+    title: "Không tìm thấy",
+    hint: "Không có sách phù hợp với từ khóa. Thử tên sách, tác giả hoặc ISBN khác.",
+  };
   const result = useInfiniteQuery({
     queryKey: ["catalog", "editions", query],
     initialPageParam: undefined as string | undefined,
@@ -70,6 +75,7 @@ function EditionList({ staff = false }: { staff?: boolean }) {
         <Panel>
           <Table
             headers={["Mã ấn bản", "Nhan đề", "Tác giả", "Năm", "Khả dụng"]}
+            empty={query ? notFound : undefined}
             rows={items.map((item) => [
               item.id,
               item.title,
@@ -107,8 +113,8 @@ function EditionList({ staff = false }: { staff?: boolean }) {
       ) : (
         <Panel>
           <div className="empty-state">
-            <h2>Chưa có ấn bản phù hợp</h2>
-            <p>Thử từ khóa khác hoặc thêm ấn bản mới nếu bạn có quyền.</p>
+            <h2>{query ? notFound.title : "Chưa có ấn bản"}</h2>
+            <p>{query ? notFound.hint : "Các ấn bản sẽ xuất hiện tại đây khi có dữ liệu."}</p>
           </div>
         </Panel>
       )}
@@ -351,6 +357,15 @@ function ReferenceList({ type }: { type: "authors" | "publishers" | "categories"
   const query = useDebounced(search);
   const [name, setName] = useState("");
   const [detail, setDetail] = useState("");
+  const [parentId, setParentId] = useState("");
+  // QĐ04: a new category hangs below main category A, B or C (or one of their branches).
+  const parents = useQuery({
+    queryKey: ["catalog", "categories", "parents"],
+    enabled: type === "categories",
+    queryFn: async ({ signal }) =>
+      (await services.catalog.get_categories({ params: { query: { limit: 100 } }, signal })).data!
+        .data,
+  });
   const result = useInfiniteQuery({
     queryKey: ["catalog", type, query],
     initialPageParam: undefined as string | undefined,
@@ -374,7 +389,7 @@ function ReferenceList({ type }: { type: "authors" | "publishers" | "categories"
   });
   const save = useMutation({
     mutationFn: async () => {
-      const header = { "Idempotency-Key": key.forPayload({ name, detail }) };
+      const header = { "Idempotency-Key": key.forPayload({ name, detail, parentId }) };
       return type === "authors"
         ? services.catalog.post_authors({
             body: { name, biography: detail || null },
@@ -385,12 +400,16 @@ function ReferenceList({ type }: { type: "authors" | "publishers" | "categories"
               body: { name, address: detail || null },
               params: { header },
             })
-          : services.catalog.post_categories({ body: { name, code: detail }, params: { header } });
+          : services.catalog.post_categories({
+              body: { name, code: detail, parentId },
+              params: { header },
+            });
     },
     onSuccess: () => {
       key.reset();
       setName("");
       setDetail("");
+      setParentId("");
       void cache.invalidateQueries({ queryKey: ["catalog"] });
     },
   });
@@ -455,8 +474,27 @@ function ReferenceList({ type }: { type: "authors" | "publishers" | "categories"
                     : "Giới thiệu"
               }
               value={detail}
+              required={type === "categories"}
               onChange={(event) => setDetail(event.target.value)}
             />
+            {type === "categories" && (
+              <div className="field">
+                <label htmlFor="category-parent">Thuộc thể loại (A, B, C hoặc nhánh con)</label>
+                <select
+                  id="category-parent"
+                  required
+                  value={parentId}
+                  onChange={(event) => setParentId(event.target.value)}
+                >
+                  <option value="">— Chọn thể loại cha —</option>
+                  {parents.data?.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.code} · {category.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
           <MutationFeedback error={save.error} success={save.isSuccess} />
           <Button type="submit" disabled={save.isPending}>

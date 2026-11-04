@@ -8,34 +8,24 @@ import { formatVnd } from "../../lib/money";
 import { Badge, Button, Dialog, Field, Notice, Panel, Table } from "../../ui/components";
 import type { ScreenDefinition } from "../types";
 import { ApiFailure, LoadingSkeleton, MutationFeedback } from "./common";
+import {
+  RULES_SCHEMA_VERSION,
+  RULE_FIELDS,
+  policyInForce,
+  readRule,
+  ruleText,
+  toDraft,
+  toRules,
+  validateDraft,
+  type RuleDraft,
+} from "./policyRules";
 
-// Rules v1 are fixed by decisions C01–C09 (server rejects anything else).
-const RULES_V1 = {
-  minReaderAge: 12,
-  maxReaderAge: 55,
-  cardValidityMonths: 6,
-  maxBooksPerLoan: 4,
-  initialLoanDays: 4,
-  maxRenewals: 1,
-  renewalDays: 4,
-  overdueFinePerDay: "1000",
-  allowedOutstandingBalance: "0",
-  publicationYearWindow: 8,
-  readyHoldDays: 3,
-  damageLostAssessment: "MANUAL_APPROVAL",
-};
-const RULE_LABELS: [keyof typeof RULES_V1, string][] = [
-  ["minReaderAge", "Tuổi tối thiểu"],
-  ["maxReaderAge", "Tuổi tối đa"],
-  ["cardValidityMonths", "Hạn thẻ (tháng)"],
-  ["maxBooksPerLoan", "Số cuốn tối đa mỗi phiếu"],
-  ["initialLoanDays", "Số ngày mượn"],
-  ["maxRenewals", "Số lần gia hạn"],
-  ["renewalDays", "Số ngày mỗi lần gia hạn"],
-  ["overdueFinePerDay", "Phí trễ mỗi ngày mỗi cuốn"],
-  ["allowedOutstandingBalance", "Dư nợ cho phép"],
-  ["publicationYearWindow", "Cửa sổ năm xuất bản"],
-];
+function showRule(kind: string, value: unknown): string {
+  const text = ruleText(value);
+  if (!text) return "—";
+  return kind === "money" ? formatVnd(text) : text;
+}
+
 const STATUS_TONE = { ACTIVE: "success", DRAFT: "neutral", SUPERSEDED: "warning" } as const;
 
 function PolicyList() {
@@ -74,6 +64,7 @@ function PolicyList() {
   });
   if (list.isPending) return <LoadingSkeleton />;
   if (list.error) return <ApiFailure error={list.error} retry={() => void list.refetch()} />;
+  const current = policyInForce(list.data.data, now);
   return (
     <div className="stack">
       <Notice>
@@ -122,19 +113,21 @@ function PolicyList() {
           Đã duyệt phiên bản quy định.
         </MutationFeedback>
       </Panel>
-      <Panel title="Quy tắc hiện hành (v1)">
-        <dl className="detail-list">
-          {RULE_LABELS.map(([name, label]) => (
-            <div key={name}>
-              <dt>{label}</dt>
-              <dd>
-                {name === "overdueFinePerDay" || name === "allowedOutstandingBalance"
-                  ? formatVnd(String(RULES_V1[name]))
-                  : String(RULES_V1[name])}
-              </dd>
-            </div>
-          ))}
-        </dl>
+      <Panel title="Quy định đang hiệu lực">
+        {current ? (
+          <dl className="detail-list">
+            {RULE_FIELDS.map((field) => (
+              <div key={field.key}>
+                <dt>
+                  {field.label} <span className="muted">({field.source})</span>
+                </dt>
+                <dd>{showRule(field.kind, readRule(current.rules, field.key))}</dd>
+              </div>
+            ))}
+          </dl>
+        ) : (
+          <Notice tone="warning">Chưa có quy định đang hiệu lực.</Notice>
+        )}
       </Panel>
       <Dialog
         open={!!target}
@@ -161,16 +154,43 @@ function PolicyList() {
 
 function PolicyCreate() {
   const services = useServices();
+  const [now] = useState(() => Date.now());
+  const list = useQuery({
+    queryKey: ["policies"],
+    queryFn: async ({ signal }) =>
+      (await services.reports.get_policy_versions({ params: { query: { limit: 100 } }, signal }))
+        .data!,
+    staleTime: 0,
+  });
+  if (list.isPending) return <LoadingSkeleton />;
+  if (list.error) return <ApiFailure error={list.error} retry={() => void list.refetch()} />;
+  // QĐ16: show the values in force before the Manager edits them.
+  const current = policyInForce(list.data.data, now)?.rules;
+  return <PolicyDraftForm current={current} openedAt={now} />;
+}
+
+function PolicyDraftForm({
+  current,
+  openedAt,
+}: {
+  current: Record<string, unknown> | undefined;
+  openedAt: number;
+}) {
+  const services = useServices();
   const navigate = useNavigate();
   const key = useRef(createIdempotencyKey()).current;
   const [from, setFrom] = useState("");
+  const [draft, setDraft] = useState<RuleDraft>(() => toDraft(current));
+  const [submitted, setSubmitted] = useState(false);
+  const errors = validateDraft(draft);
+  const invalid = Object.keys(errors).length > 0;
   const create = useMutation({
     mutationFn: async () => {
       const body = {
         // Datetime-local value interpreted in library time (Asia/Ho_Chi_Minh).
         effectiveFrom: new Date(`${from}:00+07:00`).toISOString(),
-        rulesSchemaVersion: 1,
-        rules: RULES_V1,
+        rulesSchemaVersion: RULES_SCHEMA_VERSION,
+        rules: toRules(draft),
       };
       return (
         await services.reports.post_policy_versions({
@@ -184,14 +204,18 @@ function PolicyCreate() {
       void navigate("/manager/policies");
     },
   });
-  const [openedAt] = useState(() => Date.now());
   const past = from !== "" && new Date(`${from}:00+07:00`).getTime() <= openedAt;
+  const changed = RULE_FIELDS.filter(
+    (field) => current && ruleText(readRule(current, field.key)) !== draft[field.key],
+  );
   return (
     <Panel title="Tạo bản nháp quy định">
       <form
+        noValidate
         onSubmit={(event) => {
           event.preventDefault();
-          if (!past) create.mutate();
+          setSubmitted(true);
+          if (!past && !invalid) create.mutate();
         }}
       >
         <Field
@@ -202,13 +226,46 @@ function PolicyCreate() {
           error={past ? "Thời điểm hiệu lực phải ở tương lai." : undefined}
           onChange={(event) => setFrom(event.target.value)}
         />
+        <div className="form-grid">
+          {RULE_FIELDS.map((field) => (
+            <Field
+              key={field.key}
+              label={`${field.label} (${field.source})`}
+              inputMode={field.kind === "text" ? undefined : "numeric"}
+              required
+              value={draft[field.key] ?? ""}
+              hint={
+                current
+                  ? `Hiện tại: ${showRule(field.kind, readRule(current, field.key))}`
+                  : undefined
+              }
+              error={errors[field.key]}
+              onChange={(event) => setDraft({ ...draft, [field.key]: event.target.value })}
+            />
+          ))}
+        </div>
         <Notice>
-          Bản nháp dùng quy tắc v1 theo các quyết định đã duyệt (C01–C09). Quy tắc không chỉnh sửa
-          tại đây.
+          Bản nháp chỉ có hiệu lực sau khi được duyệt và từ thời điểm đã chọn; phiếu, thẻ và phí đã
+          phát sinh giữ quy định cũ. Phí hỏng/mất là mức đề xuất, Quản lý vẫn xác nhận từng khoản.
         </Notice>
+        {changed.length > 0 && (
+          <Table
+            caption="So sánh với quy định đang hiệu lực"
+            headers={["Quy định", "Hiện tại", "Bản nháp"]}
+            rows={changed.map((field) => [
+              field.label,
+              showRule(field.kind, current && readRule(current, field.key)),
+              showRule(field.kind, draft[field.key]),
+            ])}
+          />
+        )}
         <MutationFeedback error={create.error} />
         <div className="actions">
-          <Button type="submit" disabled={create.isPending || past} aria-busy={create.isPending}>
+          <Button
+            type="submit"
+            disabled={create.isPending || past || (submitted && invalid)}
+            aria-busy={create.isPending}
+          >
             Lưu bản nháp
           </Button>
         </div>

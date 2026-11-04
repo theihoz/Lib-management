@@ -3,6 +3,7 @@
 DEV ONLY. Run inside the Dev Container workspace from apps/api:
 
     uv run --locked python ../../.devcontainer/keycloak/create_dev_users.py --link
+    uv run --locked python ../../.devcontainer/keycloak/create_dev_users.py --link --demo-data
     uv run --locked python ../../.devcontainer/keycloak/create_dev_users.py --token librarian.dev
 
 Passwords come from .devcontainer/.env (KEYCLOAK_ADMIN_PASSWORD,
@@ -52,6 +53,8 @@ def main() -> int:
     parser.add_argument("--url", default=os.environ.get("KEYCLOAK_URL", "http://keycloak:8080"))
     parser.add_argument("--link", action="store_true",
                         help="also run lib_management.cli bootstrap-admin per user")
+    parser.add_argument("--demo-data", action="store_true",
+                        help="with --link: run seed-demo and link reader.dev to DG0001")
     parser.add_argument("--token", metavar="USERNAME",
                         help="only print an access token for USERNAME (dev-cli client)")
     args = parser.parse_args()
@@ -71,7 +74,15 @@ def main() -> int:
         "grant_type": "password", "client_id": "admin-cli",
         "username": "admin", "password": admin_password,
     })["access_token"]
+    # Realm import skips existing realms; reconcile the local web client explicitly.
+    clients_url = f"{args.url}/admin/realms/{REALM}/clients"
+    web = request("GET", f"{clients_url}?clientId=lib-management-web", token)[0]
+    web["redirectUris"] = ["http://localhost:5173/*"]
+    web["webOrigins"] = ["http://localhost:5173"]
+    web.setdefault("attributes", {})["post.logout.redirect.uris"] = "http://localhost:5173/*"
+    request("PUT", f"{clients_url}/{web['id']}", token, web)
     base = f"{args.url}/admin/realms/{REALM}/users"
+    reader_subject = None
     for username, (label, role) in USERS.items():
         found = request("GET", f"{base}?exact=true&username={username}", token)
         if not found:
@@ -85,12 +96,19 @@ def main() -> int:
         request("PUT", f"{base}/{user_id}/reset-password", token,
                 {"type": "password", "value": user_password, "temporary": False})
         print(f"{username}: subject={user_id} role={role}")
+        if role == "READER":
+            reader_subject = user_id
         if args.link:
             subprocess.run([
                 sys.executable, "-m", "lib_management.cli", "bootstrap-admin",
                 "--issuer", issuer, "--subject", user_id,
                 "--display-name", f"{label} (dev)", "--role", role,
             ], check=True)
+    if args.link and args.demo_data and reader_subject:
+        subprocess.run([
+            sys.executable, "-m", "lib_management.cli", "seed-demo",
+            "--link-issuer", issuer, "--link-subject", reader_subject,
+        ], check=True)
     return 0
 
 

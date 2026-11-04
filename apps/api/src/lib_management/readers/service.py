@@ -5,7 +5,7 @@ import uuid
 from datetime import date, datetime
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from lib_management.catalog.service import changed, get
@@ -29,11 +29,47 @@ def add_calendar_months(value: datetime, months: int) -> datetime:
     return value.replace(year=year, month=month_index + 1, day=day)
 
 
+def age_limits(session: Session) -> tuple[int, int]:
+    from lib_management.circulation.service import RULES, active_policy
+    from lib_management.core.errors import AppError
+
+    try:
+        rules = active_policy(session).rules
+    except AppError:
+        rules = RULES
+    return rules["minReaderAge"], rules["maxReaderAge"]
+
+
+def check_age(session: Session, birth_date: date) -> None:
+    """QĐ01: readers are 12–55 years old (policy values) when registered."""
+    today = datetime.now(LOCAL_ZONE).date()
+    if birth_date > today:
+        raise ValidationFailed("Ngày sinh không được trong tương lai")
+    low, high = age_limits(session)
+    if not low <= age_on(birth_date, today) <= high:
+        raise ValidationFailed(f"Tuổi độc giả phải từ {low} đến {high} (QĐ01)")
+
+
+def check_email(
+    session: Session, email: str | None, except_id: uuid.UUID | None = None
+) -> None:
+    """Lab 2 YC6: the email must not belong to another reader."""
+    if not email:
+        return
+    query = select(models.Reader.id).where(
+        func.lower(models.Reader.email) == email.lower()
+    )
+    if except_id is not None:
+        query = query.where(models.Reader.id != except_id)
+    if session.scalar(query.limit(1)) is not None:
+        raise Conflict("Email đã được dùng cho độc giả khác", code="EMAIL_TAKEN")
+
+
 def create(
     session: Session, payload: schemas.ReaderCreate, actor_id: uuid.UUID
 ) -> models.Reader:
-    if payload.birth_date > datetime.now(LOCAL_ZONE).date():
-        raise ValidationFailed("Ngày sinh không được trong tương lai")
+    check_age(session, payload.birth_date)
+    check_email(session, payload.email)
     row = models.Reader(**payload.model_dump(), status="ACTIVE")
     session.add(row)
     changed(session, row, actor_id, "reader.create", "reader.write")
@@ -50,8 +86,10 @@ def patch(
     data = payload.model_dump(exclude_unset=True)
     if data.pop("expected_version") != row.version:
         raise Conflict("Phiên bản đã thay đổi", code="VERSION_CONFLICT")
-    if "birth_date" in data and data["birth_date"] > datetime.now(LOCAL_ZONE).date():
-        raise ValidationFailed("Ngày sinh không được trong tương lai")
+    if "birth_date" in data:
+        check_age(session, data["birth_date"])
+    if data.get("email"):
+        check_email(session, data["email"], except_id=row.id)
     for key, value in data.items():
         setattr(row, key, value)
     row.version += 1

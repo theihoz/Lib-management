@@ -46,7 +46,7 @@ describe("mock server", () => {
 
   it("enforces the operation permission", async () => {
     expect((await call("/api/v1/readers")).status).toBe(401);
-    const denied = await call("/api/v1/readers", "SYSTEM_ADMIN");
+    const denied = await call("/api/v1/readers", "OPS_ADMIN");
     expect(denied.status).toBe(403);
     expect((await read<Failure>(denied)).code).toBe("PERMISSION_DENIED");
     expect((await call("/api/v1/readers", "LIBRARIAN")).status).toBe(200);

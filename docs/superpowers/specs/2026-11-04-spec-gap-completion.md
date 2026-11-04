@@ -50,6 +50,19 @@ Ký hiệu: **G** = khoảng thiếu thuộc lõi 10 tuần (làm trước), **P
 | D5 | Dung lượng ảnh bìa tối đa (QĐ18 "do hệ thống quy định") | 2 MB, PNG/JPG/WebP, cấu hình được | Đủ cho ảnh bìa; R2 free tier |
 | D6 | Thứ tự phase 2 | P1 + P3 → P2/P4/P5 → P6/P7 | P1/P3 hoàn tất YC#10/YC#17; P6/P7 phụ thuộc hạ tầng chưa chốt (SMTP, nơi lưu backup) |
 
+## Tiến độ
+
+| Mã | Trạng thái | Commit |
+| --- | --- | --- |
+| Q1 | Xong | `783cc54` |
+| G1 | Xong (migration 0009) | `f69546b` |
+| G2 | Xong | `0a07d0c` |
+| G3 | Xong (migration 0010) | `801f8a8` |
+| G4 | Xong | `3af0c7d` |
+| G5 | Xong | `a30f53d` |
+| G6 + P3 | Xong (portal `/me`: đang mượn, gia hạn, lịch sử, phạt) | `ce17a35` |
+| Q2, G7, G8, P1, P2, P4–P7 | Chưa làm | — |
+
 ## Quy ước chung
 
 Giữ nguyên quy ước của spec lõi: một UoW mỗi command, `Idempotency-Key` cho mọi POST/PATCH ghi, `expectedVersion` cho sửa đối tượng có `version`, audit cùng transaction, permission kiểm ở server, tiền là chuỗi VND nguyên, ngày nghiệp vụ theo Asia/Ho_Chi_Minh. Mỗi việc cập nhật trong cùng PR: OpenAPI (đánh `implemented`), `npm run gen:api`, [source-rules](../../specs/source-rules.md), [acceptance matrix](../../quality/acceptance-matrix.md), mock demo nếu UI mới cần dữ liệu.

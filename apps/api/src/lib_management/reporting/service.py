@@ -401,3 +401,67 @@ def csv_bytes(result: dict[str, Any]) -> bytes:
     for row in csv_rows(result):
         writer.writerow([csv_cell(row[field]) for field in fields])
     return output.getvalue().encode("utf-8")
+
+
+# Requirement 19 / BM14: staff dashboard, a bounded synchronous read.
+DASHBOARD_COUNTS_SQL = text("""
+SELECT
+ (SELECT count(*) FROM loan_item WHERE closed_at IS NULL AND due_at < :now)
+AS overdue_count,
+ (SELECT count(*) FROM loan_item WHERE issued_at >= :day_start) AS loans_today,
+ (SELECT count(*) FROM return_event WHERE returned_at >= :day_start AND return_kind =
+'RETURNED') AS returns_today,
+ (SELECT count(*) FROM book_copy WHERE status = 'AVAILABLE') AS copies_in_stock,
+ (SELECT count(*) FROM loan_item WHERE closed_at IS NULL) AS copies_on_loan
+""")
+DASHBOARD_OVERDUE_SQL = text("""
+SELECT i.id AS loan_item_id, l.id AS loan_id, l.loan_no, r.id AS reader_id,
+ r.reader_code, r.full_name, e.title, c.barcode, i.due_at,
+ greatest(0, (:now AT TIME ZONE 'Asia/Ho_Chi_Minh')::date - (i.due_at AT TIME ZONE
+'Asia/Ho_Chi_Minh')::date) AS late_days
+FROM loan_item i JOIN loan l ON l.id = i.loan_id JOIN reader r ON r.id = l.reader_id
+JOIN book_copy c ON c.id = i.copy_id JOIN book_edition e ON e.id = c.edition_id
+WHERE i.closed_at IS NULL AND i.due_at < :now ORDER BY i.due_at, i.id LIMIT 10
+""")
+
+
+def dashboard(session: Session) -> dict[str, Any]:
+    from datetime import timedelta
+    from zoneinfo import ZoneInfo
+
+    now = datetime.now(UTC)
+    local = now.astimezone(ZoneInfo(LIBRARY_TIMEZONE))
+    day_start = local.replace(hour=0, minute=0, second=0, microsecond=0)
+    counts = dict(
+        session.execute(DASHBOARD_COUNTS_SQL, {"now": now, "day_start": day_start})
+        .mappings()
+        .one()
+    )
+    params = {
+        "from_at": now - timedelta(days=30),
+        "to_at": now,
+        "limit": 5,
+    }
+    return cast(
+        dict[str, Any],
+        jsonable_encoder(
+            {
+                "asOf": now,
+                "overdueCount": counts["overdue_count"],
+                "loansToday": counts["loans_today"],
+                "returnsToday": counts["returns_today"],
+                "copiesInStock": counts["copies_in_stock"],
+                "copiesOnLoan": counts["copies_on_loan"],
+                "overdueTop": [
+                    dict(row)
+                    for row in session.execute(
+                        DASHBOARD_OVERDUE_SQL, {"now": now}
+                    ).mappings()
+                ],
+                "topBooks30d": [
+                    dict(row)
+                    for row in session.execute(TOP_BOOKS_SQL, params).mappings()
+                ],
+            }
+        ),
+    )

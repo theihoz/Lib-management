@@ -40,7 +40,7 @@ Monorepo gồm backend FastAPI và frontend React, phát triển trong một Dev
 
 - Phase 2 (API và màn hình; schema DB đã có): giữ chỗ F10, bìa F15, lịch sử portal F17, quản trị
   tài khoản F21, nhập/thanh lý F22, backup/restore F23, thông báo F24.
-- Playwright E2E với Keycloak + API + PostgreSQL thật, Lighthouse và benchmark NFR
+- Lighthouse và benchmark NFR (Playwright E2E với Keycloak + API + PostgreSQL thật đã chạy trong CI)
   ([audit](docs/quality/2026-11-03-spec-conformance-audit.md)).
 - React Hook Form (quyết định công nghệ); form hiện dùng Zod trực tiếp.
 - Hosting/deployment production chưa được quyết định; publish image không có nghĩa là đã triển khai.
@@ -148,9 +148,17 @@ uv run --locked pytest
 
 # apps/web
 npm run lint && npm run format:check && npm run typecheck && npm test && npm run build
+
+# E2E trên bản thật (sau scripts/local.sh up hoặc Dev Container đang chạy API + web)
+npx playwright install chromium   # lần đầu
+KEYCLOAK_DEV_USER_PASSWORD=... npm run e2e
 ```
 
-CI (`.github/workflows/ci.yml`) chạy các bước trên, thêm integration test PostgreSQL,
+E2E chạy tuần tự trên cùng database và dùng dữ liệu mẫu `seed-demo`; chạy lại trên database đã
+dùng có thể lỗi do trạng thái cũ, khi đó dùng `scripts/local.sh reset`.
+
+CI (`.github/workflows/ci.yml`) chạy các bước trên, thêm integration test PostgreSQL, Playwright E2E trên
+`scripts/local.sh up` (job `e2e`),
 migration round trip và build production image. Check bắt buộc của `main` là `ci-result`.
 Workflow `Publish API image` xuất bản GHCR thủ công từ default branch sau CI cùng SHA.
 

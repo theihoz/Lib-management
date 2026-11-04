@@ -20,6 +20,8 @@ export type DemoMode = {
 
 type Session = {
   status: SessionStatus;
+  /** False until the identity provider's silent check has settled. */
+  initialized: boolean;
   account?: components["schemas"]["AccountView"];
   permissions: string[];
   /** Present in the demo build; login() then takes one of these codes. */
@@ -51,6 +53,7 @@ export function SessionProvider({
   }, []);
   const [phase, setPhase] = useState<SessionStatus>(isCallback ? "checking" : "anonymous");
   const [hasToken, setHasToken] = useState(false);
+  const [initialized, setInitialized] = useState(false);
   const [loginError, setLoginError] = useState<unknown>();
   const services = useMemo(
     () =>
@@ -89,10 +92,12 @@ export function SessionProvider({
         if (active) {
           setHasToken(authenticated);
           setPhase(authenticated ? "checking" : "anonymous");
+          setInitialized(true);
         }
       })
       .catch((error: unknown) => {
         if (!active) return;
+        setInitialized(true);
         // Public pages keep working when the identity provider is unreachable.
         if (!isCallback) return setPhase("anonymous");
         setLoginError(error);
@@ -111,6 +116,7 @@ export function SessionProvider({
     : phase;
   const value: Session = {
     status,
+    initialized,
     account: status === "authenticated" ? auth.data?.account : undefined,
     permissions: status === "authenticated" ? (auth.data?.permissions ?? []) : [],
     personas: demo?.personas,

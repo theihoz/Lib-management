@@ -56,10 +56,12 @@ services:
       <<: *db-env
       OIDC_ISSUER: ${OIDC_ISSUER:-}
       OIDC_JWKS_URL: ${OIDC_JWKS_URL:-}
+      ARTIFACT_STORAGE_ROOT: /var/lib/lib-management/artifacts
     ports:
       - "127.0.0.1:${API_PORT:-8000}:8000"
     volumes:
       - ./apps/api/src:/app/src
+      - artifacts:/var/lib/lib-management/artifacts
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -81,9 +83,12 @@ services:
       target: dev
     init: true
     command: ["python", "-m", "lib_management.worker"]
-    environment: *db-env
+    environment:
+      <<: *db-env
+      ARTIFACT_STORAGE_ROOT: /var/lib/lib-management/artifacts
     volumes:
       - ./apps/api/src:/app/src
+      - artifacts:/var/lib/lib-management/artifacts
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -94,6 +99,8 @@ services:
 
 volumes:
   pgdata:
+  # Private report/CSV artifacts shared by api (reads) and worker (writes).
+  artifacts:
 
 networks:
   backend:

@@ -13,6 +13,7 @@ import { screens } from "./screens";
 import type { ScreenDefinition } from "../features/types";
 import { LoadingSkeleton } from "../features/live/common";
 import "../ui/styles.css";
+import { CommandPalette } from "../shell/CommandPalette";
 
 const LiveFeature = lazy(() => import("../features/live/LiveFeature"));
 function LivePage({ screen }: { screen: ScreenDefinition }) {
@@ -48,6 +49,13 @@ function LivePage({ screen }: { screen: ScreenDefinition }) {
           : undefined
       }
       allowed={allowed}
+      topbarExtra={
+        session.status === "authenticated" ? (
+          <CommandPalette
+            screens={screens.filter((item) => !item.path.includes(":") && allowed(item))}
+          />
+        ) : undefined
+      }
     >
       {screen.id === "FE08.01" && session.status === "authenticated" ? (
         <MePage
@@ -67,7 +75,11 @@ function LivePage({ screen }: { screen: ScreenDefinition }) {
 }
 function StaffHome() {
   const session = useSession();
-  if (session.status === "checking") return <LoadingSkeleton />;
+  if (!session.initialized || session.status === "checking") return <LoadingSkeleton />;
+  // YC#19: staff who may see it land on the dashboard.
+  const dashboard = screens.find((item) => item.id === "FE09.00");
+  if (dashboard && canOpen(session.status, session.permissions, dashboard))
+    return <Navigate to={dashboard.path} replace />;
   const first = screens.find(
     (item) =>
       !item.path.includes(":") &&

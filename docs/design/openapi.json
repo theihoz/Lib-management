@@ -11670,6 +11670,108 @@
           }
         }
       }
+    },
+    "/api/v1/dashboard": {
+      "get": {
+        "operationId": "get_dashboard",
+        "summary": "dashboard.read",
+        "tags": [
+          "F19"
+        ],
+        "x-functions": [
+          "F19"
+        ],
+        "x-permission": "overdue.read",
+        "x-status": "implemented",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Dashboard"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found in scope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict/version/idempotency",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation or eligibility",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -16588,6 +16690,140 @@
           "readerId",
           "proposedAmount",
           "reason"
+        ],
+        "additionalProperties": false
+      },
+      "DashboardOverdueRow": {
+        "type": "object",
+        "properties": {
+          "loan_item_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "loan_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "loan_no": {
+            "type": "string"
+          },
+          "reader_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "reader_code": {
+            "type": "string"
+          },
+          "full_name": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "barcode": {
+            "type": "string"
+          },
+          "due_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "late_days": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "loan_item_id",
+          "loan_id",
+          "loan_no",
+          "reader_id",
+          "reader_code",
+          "full_name",
+          "title",
+          "barcode",
+          "due_at",
+          "late_days"
+        ],
+        "additionalProperties": false
+      },
+      "DashboardTopBook": {
+        "type": "object",
+        "properties": {
+          "edition_id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "title": {
+            "type": "string"
+          },
+          "categories": {
+            "type": "string"
+          },
+          "loan_count": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "edition_id",
+          "title",
+          "categories",
+          "loan_count"
+        ],
+        "additionalProperties": false
+      },
+      "Dashboard": {
+        "type": "object",
+        "description": "YC#19 / BM14: bảng điều khiển nhân viên",
+        "properties": {
+          "asOf": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "overdueCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "loansToday": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "returnsToday": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "copiesInStock": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "copiesOnLoan": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "overdueTop": {
+            "type": "array",
+            "maxItems": 10,
+            "items": {
+              "$ref": "#/components/schemas/DashboardOverdueRow"
+            }
+          },
+          "topBooks30d": {
+            "type": "array",
+            "maxItems": 5,
+            "items": {
+              "$ref": "#/components/schemas/DashboardTopBook"
+            }
+          }
+        },
+        "required": [
+          "asOf",
+          "overdueCount",
+          "loansToday",
+          "returnsToday",
+          "copiesInStock",
+          "copiesOnLoan",
+          "overdueTop",
+          "topBooks30d"
         ],
         "additionalProperties": false
       }

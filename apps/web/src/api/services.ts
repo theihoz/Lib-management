@@ -133,6 +133,8 @@ export function createServices(client: ApiClient) {
         client.GET("/api/v1/me/fine-charges", options),
     },
     reports: {
+      get_dashboard: (options: FetchOptions<paths["/api/v1/dashboard"]["get"]>) =>
+        client.GET("/api/v1/dashboard", options),
       get_overdue_items: (options: FetchOptions<paths["/api/v1/overdue-items"]["get"]>) =>
         client.GET("/api/v1/overdue-items", options),
       post_report_jobs: (options: FetchOptions<paths["/api/v1/report-jobs"]["post"]>) =>

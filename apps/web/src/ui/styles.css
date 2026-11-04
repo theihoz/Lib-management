@@ -1958,3 +1958,41 @@ dialog .button {
 .trend-returns {
   background: var(--success);
 }
+
+/* Ctrl+K command palette (YC#18). */
+.command-palette {
+  display: grid;
+  gap: 0.75rem;
+  min-width: min(36rem, 80vw);
+}
+.command-palette input {
+  font: inherit;
+  padding: 0.75rem;
+  border: 1px solid var(--control-border);
+  border-radius: 8px;
+}
+.command-palette ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 22rem;
+  overflow-y: auto;
+}
+.command-palette li {
+  display: grid;
+  gap: 0.125rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.command-palette li.active {
+  background: var(--canvas);
+  outline: 2px solid var(--primary);
+}
+kbd {
+  font: inherit;
+  font-size: 0.75em;
+  padding: 0 0.3em;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}

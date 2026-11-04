@@ -43,6 +43,8 @@ class PolicyRules(Input):
     allowedOutstandingBalance: Money
     publicationYearWindow: int = Field(ge=0, le=200)
     readyHoldDays: int = Field(ge=1, le=60)
+    # D3 / Lab 2 YC9: books on loan + active reservations when reserving.
+    maxActiveLoansAndHolds: int = Field(default=4, ge=1, le=40)
     damageLostAssessment: Literal["MANUAL_APPROVAL"]
     damageLostFees: DamageLostFees
 

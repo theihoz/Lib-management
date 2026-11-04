@@ -46,3 +46,15 @@ export const CHARGE_REASON: Record<string, string> = {
 export function chargeReason(code: string): string {
   return CHARGE_REASON[code] ?? code;
 }
+
+export const RESERVATION_STATUS: Record<string, string> = {
+  QUEUED: "Đang chờ sách",
+  READY: "Sẵn sàng nhận",
+  FULFILLED: "Đã nhận",
+  CANCELLED: "Đã hủy",
+  EXPIRED: "Hết hạn giữ chỗ",
+};
+
+export function reservationStatus(code: string): string {
+  return RESERVATION_STATUS[code] ?? code;
+}

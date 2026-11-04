@@ -1109,7 +1109,24 @@ def reservations(
         # ACTIVE = still waiting for the reader (QUEUED or READY).
         wanted = ["QUEUED", "READY"] if status == "ACTIVE" else [status]
         conditions.append(m.Reservation.status.in_(wanted))
-    return paginate(uow.session, m.Reservation, paging, *conditions)
+    return with_titles(
+        uow.session, paginate(uow.session, m.Reservation, paging, *conditions)
+    )
+
+
+def with_titles(session: Session, page: dict[str, Any]) -> dict[str, Any]:
+    """BM04: show which book each reservation is for."""
+    from lib_management.catalog.models import BookEdition
+
+    ids = {UUID(str(row["edition_id"])) for row in page["data"]}
+    titles = dict(
+        session.execute(
+            select(BookEdition.id, BookEdition.title).where(BookEdition.id.in_(ids))
+        ).all()
+    )
+    for row in page["data"]:
+        row["title"] = titles.get(UUID(str(row["edition_id"])))
+    return page
 
 
 @router.get(
@@ -1122,11 +1139,14 @@ def my_reservations(
     paging: Paging,
     principal: Annotated[Principal, Depends(require_permission("reservation.read"))],
 ) -> dict[str, Any]:
-    return paginate(
+    return with_titles(
         uow.session,
-        m.Reservation,
-        paging,
-        m.Reservation.reader_id == own_reader(principal),
+        paginate(
+            uow.session,
+            m.Reservation,
+            paging,
+            m.Reservation.reader_id == own_reader(principal),
+        ),
     )
 
 
@@ -1179,6 +1199,47 @@ def allocate(session: Session, edition_id: UUID) -> None:
     session.flush()
 
 
+def expire_ready_reservations(session: Session, now: datetime | None = None) -> int:
+    """C07: READY reservations not picked up in time expire; the copy goes on."""
+    from lib_management.catalog.models import BookCopy
+
+    now = now or datetime.now(UTC)
+    due = list(
+        session.execute(
+            select(m.Reservation.id, m.Reservation.edition_id)
+            .where(
+                m.Reservation.status == "READY", m.Reservation.ready_expires_at <= now
+            )
+            .order_by(m.Reservation.edition_id, m.Reservation.id)
+        ).all()
+    )
+    expired = 0
+    for reservation_id, edition_id in due:
+        lock_editions(session, [edition_id])
+        reservation = get(session, m.Reservation, reservation_id, lock=True)
+        if reservation.status != "READY" or reservation.ready_expires_at > now:
+            continue  # handled concurrently (pickup/cancel)
+        reservation.status = "EXPIRED"
+        reservation.version += 1
+        if reservation.copy_id is not None:
+            copy = get(session, BookCopy, reservation.copy_id, lock=True)
+            if copy.status == "HELD":
+                copy.status = "AVAILABLE"
+                copy.version += 1
+        audit.record(
+            session,
+            action="reservation.expire",
+            target_type="reservation",
+            target_id=reservation.id,
+            actor_type="SYSTEM",
+            outcome="SUCCESS",
+        )
+        session.flush()
+        allocate(session, edition_id)
+        expired += 1
+    return expired
+
+
 @router.post(
     "/reservations",
     operation_id="post_reservations",
@@ -1219,6 +1280,39 @@ def hold(
         .limit(1)
     ):
         raise Conflict("Độc giả đã đặt trước ấn bản này")
+    from lib_management.catalog.models import BookCopy
+
+    # Lab 2 YC9: only books that are all out may be reserved; otherwise borrow now.
+    if uow.session.scalar(
+        select(BookCopy.id)
+        .where(BookCopy.edition_id == body.editionId, BookCopy.status == "AVAILABLE")
+        .limit(1)
+    ):
+        raise Conflict(
+            "Ấn bản đang có bản sẵn sàng, vui lòng mượn trực tiếp",
+            code="COPY_AVAILABLE",
+        )
+    limit = policy.rules.get("maxActiveLoansAndHolds", 4)
+    on_loan = uow.session.scalar(
+        select(func.count())
+        .select_from(m.LoanItem)
+        .join(m.Loan, m.Loan.id == m.LoanItem.loan_id)
+        .where(m.Loan.reader_id == reader_id, m.LoanItem.closed_at.is_(None))
+    )
+    holding = uow.session.scalar(
+        select(func.count())
+        .select_from(m.Reservation)
+        .where(
+            m.Reservation.reader_id == reader_id,
+            m.Reservation.status.in_(["QUEUED", "READY"]),
+        )
+    )
+    if (on_loan or 0) + (holding or 0) >= limit:
+        raise AppError(
+            422,
+            "HOLD_LIMIT",
+            f"Số sách đang mượn và đang đặt đã đạt {limit} cuốn (Lab 2, QĐ05)",
+        )
     reservation = m.Reservation(
         reader_id=reader_id,
         edition_id=body.editionId,

@@ -230,6 +230,9 @@ function EditionDetail() {
               <dd>{book.language ?? "—"}</dd>
             </div>
           </dl>
+          {session.account?.reader_id &&
+            session.permissions.includes("reservation.create") &&
+            !book.availability?.availableCount && <ReserveButton editionId={book.id} />}
           {session.permissions.includes("catalog.write") && (
             <div className="actions">
               <Link
@@ -268,6 +271,37 @@ function EditionDetail() {
           </Button>
         </div>
       </Dialog>
+    </div>
+  );
+}
+/** YC#10 / Lab 2 YC9: a reader reserves a book whose copies are all out. */
+function ReserveButton({ editionId }: { editionId: string }) {
+  const services = useServices();
+  const cache = useQueryClient();
+  const key = useRef(createIdempotencyKey()).current;
+  const reserve = useMutation({
+    mutationFn: async () => {
+      const body = { editionId };
+      return (
+        await services.circulation.post_reservations({
+          body,
+          params: { header: { "Idempotency-Key": key.forPayload(body) } },
+        })
+      ).data!;
+    },
+    onSuccess: () => {
+      key.reset();
+      void cache.invalidateQueries({ queryKey: ["me", "reservations"] });
+    },
+  });
+  return (
+    <div className="stack">
+      <Button disabled={reserve.isPending || reserve.isSuccess} onClick={() => reserve.mutate()}>
+        Đặt trước sách này
+      </Button>
+      <MutationFeedback error={reserve.error} success={reserve.isSuccess}>
+        Đã đặt trước. Theo dõi ở “Tài khoản của tôi → Đặt trước”.
+      </MutationFeedback>
     </div>
   );
 }

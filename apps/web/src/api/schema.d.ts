@@ -1932,6 +1932,8 @@ export interface components {
              * @description Thời điểm ghi nhận
              */
             created_at: string;
+            /** @description Tên sách (trong danh sách) */
+            title?: string | null;
         };
         FineCharge: {
             /**
@@ -3134,6 +3136,11 @@ export interface components {
             /** @enum {string} */
             damageLostAssessment: "MANUAL_APPROVAL";
             damageLostFees: components["schemas"]["DamageLostFees"];
+            /**
+             * @description D3 / Lab 2 YC9: đang mượn + đang đặt khi tạo đặt trước
+             * @default 4
+             */
+            maxActiveLoansAndHolds: number;
         };
         /** @description YC#2 / D1: đổi trạng thái bản sao bằng tay */
         CopyStatusRequest: {

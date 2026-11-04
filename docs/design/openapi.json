@@ -13140,6 +13140,13 @@
             "x-db-constraint": "DEFAULT now()",
             "type": "string",
             "format": "date-time"
+          },
+          "title": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Tên sách (trong danh sách)"
           }
         },
         "required": [
@@ -16577,6 +16584,13 @@
           },
           "damageLostFees": {
             "$ref": "#/components/schemas/DamageLostFees"
+          },
+          "maxActiveLoansAndHolds": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 40,
+            "default": 4,
+            "description": "D3 / Lab 2 YC9: đang mượn + đang đặt khi tạo đặt trước"
           }
         },
         "required": [

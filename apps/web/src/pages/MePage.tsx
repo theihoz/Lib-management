@@ -10,7 +10,7 @@ import { formatDateTime } from "../lib/datetime";
 import { formatVnd } from "../lib/money";
 import { Badge, Button, Notice, Panel, Table } from "../ui/components";
 import { ApiFailure, LoadingSkeleton } from "../features/live/common";
-import { chargeReason, eligibilityReason } from "../features/live/labels";
+import { chargeReason, eligibilityReason, reservationStatus } from "../features/live/labels";
 
 const DAY = 86_400_000;
 
@@ -32,12 +32,12 @@ function MyLibrary() {
   const services = useServices();
   const cache = useQueryClient();
   const key = useRef(createIdempotencyKey()).current;
-  const [tab, setTab] = useState<"OPEN" | "ALL" | "FINES">("OPEN");
+  const [tab, setTab] = useState<"OPEN" | "ALL" | "HOLDS" | "FINES">("OPEN");
   const [now] = useState(() => Date.now());
   const [message, setMessage] = useState<{ tone: "info" | "danger"; text: string }>();
   const loans = useQuery({
     queryKey: ["me", "loans", tab],
-    enabled: tab !== "FINES",
+    enabled: tab === "OPEN" || tab === "ALL",
     queryFn: async ({ signal }) =>
       (
         await services.circulation.get_me_loans({
@@ -52,6 +52,37 @@ function MyLibrary() {
     queryFn: async ({ signal }) =>
       (await services.finance.get_me_fine_charges({ params: { query: { limit: 100 } }, signal }))
         .data!.data,
+  });
+  const holds = useQuery({
+    queryKey: ["me", "reservations"],
+    enabled: tab === "HOLDS",
+    queryFn: async ({ signal }) =>
+      (
+        await services.circulation.get_me_reservations({
+          params: { query: { limit: 100 } },
+          signal,
+        })
+      ).data!.data.filter((row) => row.status === "QUEUED" || row.status === "READY"),
+  });
+  const cancel = useMutation({
+    mutationFn: async (row: { id: string; version: number }) => {
+      const body = { expectedVersion: row.version, reason: "Độc giả hủy trên portal" };
+      return (
+        await services.circulation.post_reservations_id_cancellations({
+          params: {
+            path: { id: row.id },
+            header: { "Idempotency-Key": key.forPayload({ cancel: row.id, ...body }) },
+          },
+          body,
+        })
+      ).data!;
+    },
+    onSuccess: () => {
+      key.reset();
+      setMessage({ tone: "info", text: "Đã hủy đặt trước." });
+      void cache.invalidateQueries({ queryKey: ["me", "reservations"] });
+    },
+    onError: (error) => setMessage({ tone: "danger", text: renewalError(error) }),
   });
   const renew = useMutation({
     mutationFn: async (loan: { id: string; version: number }) => {
@@ -76,6 +107,7 @@ function MyLibrary() {
   const tabs = [
     ["OPEN", "Đang mượn"],
     ["ALL", "Lịch sử"],
+    ["HOLDS", "Đặt trước"],
     ["FINES", "Phạt của tôi"],
   ] as const;
   return (
@@ -97,7 +129,42 @@ function MyLibrary() {
         ))}
       </div>
       {message && <Notice tone={message.tone}>{message.text}</Notice>}
-      {tab === "FINES" ? (
+      {tab === "HOLDS" ? (
+        holds.isPending ? (
+          <LoadingSkeleton />
+        ) : holds.error ? (
+          <ApiFailure error={holds.error} retry={() => void holds.refetch()} />
+        ) : (
+          <>
+            <Table
+              caption="Đặt trước của tôi"
+              headers={["Sách", "Trạng thái", "Ngày đặt", "Hạn nhận"]}
+              rows={holds.data.map((row) => [
+                row.title ?? row.edition_id,
+                reservationStatus(row.status),
+                formatDateTime(row.created_at),
+                row.ready_expires_at ? formatDateTime(row.ready_expires_at) : "—",
+              ])}
+              empty={{
+                title: "Không có đặt trước",
+                hint: "Đặt trước từ trang sách khi sách đang được mượn hết.",
+              }}
+            />
+            <div className="actions">
+              {holds.data.map((row) => (
+                <Button
+                  key={row.id}
+                  variant="secondary"
+                  disabled={cancel.isPending}
+                  onClick={() => cancel.mutate({ id: row.id, version: row.version })}
+                >
+                  Hủy đặt trước “{row.title ?? row.edition_id}”
+                </Button>
+              ))}
+            </div>
+          </>
+        )
+      ) : tab === "FINES" ? (
         fines.isPending ? (
           <LoadingSkeleton />
         ) : fines.error ? (

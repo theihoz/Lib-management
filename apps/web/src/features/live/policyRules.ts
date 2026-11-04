@@ -15,6 +15,7 @@ export type PolicyRules = {
   allowedOutstandingBalance: string;
   publicationYearWindow: number;
   readyHoldDays: number;
+  maxActiveLoansAndHolds: number;
   damageLostAssessment: "MANUAL_APPROVAL";
   damageLostFees: DamageLostFees;
 };
@@ -32,6 +33,7 @@ export const DEFAULT_RULES: PolicyRules = {
   allowedOutstandingBalance: "50000",
   publicationYearWindow: 8,
   readyHoldDays: 3,
+  maxActiveLoansAndHolds: 4,
   damageLostAssessment: "MANUAL_APPROVAL",
   damageLostFees: { MINOR_DAMAGE: "20000", MAJOR_DAMAGE: "50000", LOST: "100000" },
 };
@@ -124,6 +126,14 @@ export const RULE_FIELDS: RuleField[] = [
     source: "QĐ12",
   },
   { key: "readyHoldDays", label: "Số ngày giữ chỗ", kind: "int", min: 1, max: 60, source: "BM09" },
+  {
+    key: "maxActiveLoansAndHolds",
+    label: "Sách đang mượn + đang đặt tối đa",
+    kind: "int",
+    min: 1,
+    max: 40,
+    source: "Lab 2 YC9",
+  },
   {
     key: "damageLostFees.MINOR_DAMAGE",
     label: "Phí hỏng nhẹ",
@@ -226,6 +236,7 @@ export function toRules(draft: RuleDraft): PolicyRules {
     allowedOutstandingBalance: money("allowedOutstandingBalance"),
     publicationYearWindow: int("publicationYearWindow"),
     readyHoldDays: int("readyHoldDays"),
+    maxActiveLoansAndHolds: int("maxActiveLoansAndHolds"),
     damageLostAssessment: "MANUAL_APPROVAL",
     damageLostFees: {
       MINOR_DAMAGE: money("damageLostFees.MINOR_DAMAGE"),

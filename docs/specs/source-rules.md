@@ -65,4 +65,4 @@ Mức phí hỏng nhẹ/nặng là giá trị khởi đầu do nhóm chọn vì 
 | Thời hạn giữ chỗ | Lab 2 YC9 "24 giờ" ↔ yêu cầu #10, BM09, Lab 3 "3 ngày" | 3 ngày (C07) |
 | Loại độc giả | BM02, Lab 2, Lab 3 "X/Y/Z" ↔ Lab 4 "không tự chốt" | X/Y/Z |
 | Xác thực | Yêu cầu #16 "tài khoản nội bộ, tự provision" ↔ quyết định Keycloak | Keycloak; provisioning qua CLI (03/11) |
-| Đặt trước | Lab 2: đang mượn + đang đặt ≤ 4, chỉ đặt sách đã mượn hết | Ghi nhận cho phase 2 (F10) |
+| Đặt trước | Lab 2: đang mượn + đang đặt ≤ 4, chỉ đặt sách đã mượn hết | Đã áp dụng (D3): `COPY_AVAILABLE`, `HOLD_LIMIT` với `maxActiveLoansAndHolds`; READY hết hạn sau `readyHoldDays` do worker quét mỗi phút |

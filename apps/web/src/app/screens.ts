@@ -231,6 +231,15 @@ export const screens: ScreenDefinition[] = [
   },
   {
     group: "06",
+    kind: "reservations",
+    id: "FE06.02",
+    title: "Giữ chỗ và đặt trước",
+    path: "/staff/reservations",
+    permission: "reservation.read",
+    implemented: true,
+  },
+  {
+    group: "06",
     kind: "renew",
     id: "FE06.04",
     title: "Gia hạn phiếu mượn",

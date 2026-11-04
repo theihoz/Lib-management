@@ -1,5 +1,5 @@
 # Build context: repository root. Pin deployment image digests in release CI.
-FROM node:24-bookworm-slim AS build
+FROM node:26-bookworm-slim AS build
 WORKDIR /app
 COPY apps/web/package.json apps/web/package-lock.json ./
 RUN npm ci

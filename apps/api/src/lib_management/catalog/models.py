@@ -123,7 +123,8 @@ class BookCopy(Base):
     __tablename__ = "book_copy"
     __table_args__ = (
         CheckConstraint(
-            "status IN ('AVAILABLE','ON_LOAN','HELD','REPAIR','LOST','RETIRED')",
+            "status IN ('AVAILABLE','ON_LOAN','HELD','REPAIR','MAINTENANCE','LOST',"
+            "'RETIRED')",
             name="status",
         ),
         CheckConstraint("version > 0", name="version"),

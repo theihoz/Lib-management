@@ -768,3 +768,97 @@ def test_export_without_data_creates_no_file(client, settings, tmp_path):
     link = client.get(f"/api/v1/export-jobs/{job_id}/download")
     assert link.status_code == 409, link.text
     assert link.json()["code"] == "NO_DATA"
+
+
+def patch_copy(client: TestClient, copy_id: str, key: str | None = None, **body):
+    return client.patch(
+        f"/api/v1/copies/{copy_id}",
+        json=body,
+        headers={"Idempotency-Key": key or uuid4().hex},
+    )
+
+
+def test_copy_status_transitions_follow_yc2(client: TestClient):
+    reader, copy, checkout, _ = setup_loan(client)
+    # On loan: locked until returned (D1).
+    locked = patch_copy(
+        client, copy["id"], expectedVersion=2, status="REPAIR", reason="x"
+    )
+    assert locked.status_code == 409 and locked.json()["code"] == "COPY_STATUS_LOCKED"
+    post(
+        client,
+        "/returns",
+        {"loanItemId": checkout["items"][0]["loanItemId"], "condition": "GOOD"},
+    )
+    current = client.get(f"/api/v1/book-editions/{copy['edition_id']}/copies").json()[
+        "data"
+    ][0]
+    assert current["status"] == "AVAILABLE"
+    no_reason = patch_copy(
+        client, copy["id"], expectedVersion=current["version"], status="MAINTENANCE"
+    )
+    assert no_reason.status_code == 422
+    key = uuid4().hex
+    body = {
+        "expectedVersion": current["version"],
+        "status": "MAINTENANCE",
+        "reason": "Bọc lại bìa",
+    }
+    moved = patch_copy(client, copy["id"], key, **body)
+    assert moved.status_code == 200, moved.text
+    assert moved.json()["status"] == "MAINTENANCE"
+    assert patch_copy(client, copy["id"], key, **body).json() == moved.json()
+    stale = patch_copy(client, copy["id"], **body)
+    assert stale.status_code == 409
+    lost = patch_copy(
+        client,
+        copy["id"],
+        expectedVersion=moved.json()["version"],
+        status="LOST",
+        reason="Không tìm thấy khi kiểm kê",
+    )
+    assert lost.status_code == 200, lost.text
+    found = patch_copy(
+        client, copy["id"], expectedVersion=lost.json()["version"], status="AVAILABLE"
+    )
+    assert found.status_code == 200 and found.json()["status"] == "AVAILABLE"
+
+
+def test_repaired_copy_goes_to_waiting_reservation(
+    client: TestClient, settings: Settings
+):
+    from lib_management.circulation.models import Reservation
+
+    reader, copy, checkout, _ = setup_loan(client)
+    other = new_reader(client)
+    assert post(client, f"/readers/{other.json()['id']}/cards").status_code == 201
+    held = post(
+        client,
+        "/reservations",
+        {"readerId": other.json()["id"], "editionId": copy["edition_id"]},
+    )
+    assert held.status_code == 201, held.text
+    assert held.json()["status"] == "QUEUED"
+    returned = post(
+        client,
+        "/returns",
+        {
+            "loanItemId": checkout["items"][0]["loanItemId"],
+            "condition": "DAMAGE",
+            "assessment": {"proposedAmount": "20000", "reason": "Rách bìa"},
+        },
+    )
+    assert returned.status_code == 201, returned.text
+    current = client.get(f"/api/v1/book-editions/{copy['edition_id']}/copies").json()[
+        "data"
+    ][0]
+    assert current["status"] == "REPAIR"
+    repaired = patch_copy(
+        client, copy["id"], expectedVersion=current["version"], status="AVAILABLE"
+    )
+    assert repaired.status_code == 200, repaired.text
+    engine = create_engine_from_settings(settings)
+    with create_session_factory(engine)() as session:
+        reservation = session.get(Reservation, held.json()["id"])
+        assert reservation is not None and reservation.status == "READY"
+    engine.dispose()

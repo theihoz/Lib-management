@@ -83,6 +83,12 @@ class HoldRequest(Input):
     readerId: UUID | None = Field(default=None)
 
 
+class CopyStatusRequest(Input):
+    expectedVersion: int = Field(ge=1)
+    status: Literal["AVAILABLE", "REPAIR", "MAINTENANCE", "LOST"]
+    reason: str | None = Field(default=None, max_length=500)
+
+
 class ReasonRequest(Input):
     reason: str = Field(min_length=1)
     expectedVersion: int | None = Field(default=None, ge=1)

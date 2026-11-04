@@ -11129,6 +11129,138 @@
           }
         }
       }
+    },
+    "/api/v1/copies/{id}": {
+      "patch": {
+        "operationId": "patch_copies_id",
+        "summary": "copy.status",
+        "tags": [
+          "F02"
+        ],
+        "x-functions": [
+          "F02"
+        ],
+        "x-permission": "catalog.write",
+        "x-status": "implemented",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookCopy"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found in scope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict/version/idempotency",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation or eligibility",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CopyStatusRequest"
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -11500,7 +11632,7 @@
             "format": "uuid"
           },
           "status": {
-            "description": "Trạng thái vật lý",
+            "description": "AVAILABLE/ON_LOAN/HELD/REPAIR/MAINTENANCE/LOST/RETIRED (Sẵn sàng/Đã mượn/Giữ chỗ/Hỏng/Bảo trì/Mất/Thanh lý)",
             "x-db-constraint": "AVAILABLE/ON_LOAN/HELD/REPAIR/LOST/RETIRED",
             "type": "string",
             "maxLength": 16
@@ -15919,6 +16051,39 @@
           "readyHoldDays",
           "damageLostAssessment",
           "damageLostFees"
+        ],
+        "additionalProperties": false
+      },
+      "CopyStatusRequest": {
+        "type": "object",
+        "description": "YC#2 / D1: đổi trạng thái bản sao bằng tay",
+        "properties": {
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "AVAILABLE",
+              "REPAIR",
+              "MAINTENANCE",
+              "LOST"
+            ],
+            "description": "Sẵn sàng / Hỏng / Bảo trì / Mất"
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 500,
+            "description": "Bắt buộc khi khác AVAILABLE"
+          }
+        },
+        "required": [
+          "expectedVersion",
+          "status"
         ],
         "additionalProperties": false
       }

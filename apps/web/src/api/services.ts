@@ -8,6 +8,8 @@ export function createServices(client: ApiClient) {
     catalog: {
       get_copies_lookup: (options: FetchOptions<paths["/api/v1/copies/lookup"]["get"]>) =>
         client.GET("/api/v1/copies/lookup", options),
+      patch_copies_id: (options: FetchOptions<paths["/api/v1/copies/{id}"]["patch"]>) =>
+        client.PATCH("/api/v1/copies/{id}", options),
       get_locations: (options: FetchOptions<paths["/api/v1/locations"]["get"]>) =>
         client.GET("/api/v1/locations", options),
       post_locations: (options: FetchOptions<paths["/api/v1/locations"]["post"]>) =>

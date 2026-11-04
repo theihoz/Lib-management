@@ -110,6 +110,7 @@ def finish(
     operation: str,
     result: dict[str, Any],
     target: UUID | None = None,
+    status_code: int = 201,
 ) -> JSONResponse:
     audit.record(
         uow.session,
@@ -120,9 +121,9 @@ def finish(
         target_id=target,
         outcome="SUCCESS",
     )
-    idempotency.complete(uow.session, begun, 201, result)
+    idempotency.complete(uow.session, begun, status_code, result)
     uow.commit()
-    return JSONResponse(result, status_code=201)
+    return JSONResponse(result, status_code=status_code)
 
 
 def replay(begun: idempotency.Begin) -> JSONResponse:
@@ -1309,6 +1310,62 @@ def lookup_loans(
     }
 
 
+# YC#2 / D1: staff may move a copy between these; ON_LOAN/HELD change only through
+# circulation and RETIRED only through disposal (F22).
+MANUAL_COPY_STATUSES = {"AVAILABLE", "REPAIR", "MAINTENANCE", "LOST"}
+
+
+@router.patch(
+    "/copies/{id}",
+    operation_id="patch_copies_id",
+    response_model=v.BookCopy,
+)
+def change_copy_status(
+    id: UUID,
+    body: s.CopyStatusRequest,
+    uow: Uow,
+    key: Key,
+    principal: Annotated[Principal, Depends(require_permission("catalog.write"))],
+) -> JSONResponse:
+    from lib_management.catalog.models import BookCopy
+
+    if body.status != "AVAILABLE" and not body.reason:
+        raise ValidationFailed("Cần lý do khi chuyển bản sách sang Hỏng/Bảo trì/Mất")
+    begun = start(
+        uow, principal, "copy.status", key, {"id": str(id), **body.model_dump()}
+    )
+    if begun.replay:
+        return replay(begun)
+    copy = get(uow.session, BookCopy, id)
+    lock_editions(uow.session, [copy.edition_id])
+    copy = get(uow.session, BookCopy, id, lock=True)
+    version(copy, body.expectedVersion)
+    if copy.status not in MANUAL_COPY_STATUSES:
+        raise Conflict(
+            "Bản sách đang mượn, đang giữ chỗ hoặc đã thanh lý; không đổi tay được",
+            code="COPY_STATUS_LOCKED",
+        )
+    if copy.status == body.status:
+        raise Conflict("Bản sách đã ở trạng thái này", code="COPY_STATUS_UNCHANGED")
+    previous = copy.status
+    copy.status = body.status
+    copy.version += 1
+    audit.record(
+        uow.session,
+        actor_id=principal.account_id,
+        action="catalog.copy.status",
+        target_type="book_copy",
+        target_id=id,
+        outcome="SUCCESS",
+        metadata={"from": previous, "to": body.status, "reason": body.reason},
+    )
+    uow.session.flush()
+    if body.status == "AVAILABLE":
+        # A repaired or found copy goes to the reservation queue first.
+        allocate(uow.session, copy.edition_id)
+    return finish(uow, principal, begun, "copy.status", view(copy), id, 200)
+
+
 @router.post(
     "/copies/{id}/disposal",
     operation_id="post_copies_id_disposal",
@@ -1334,7 +1391,7 @@ def dispose(
     copy = get(uow.session, BookCopy, id, lock=True)
     if body.expectedVersion:
         version(copy, body.expectedVersion)
-    if copy.status not in ["AVAILABLE", "REPAIR", "LOST"]:
+    if copy.status not in ["AVAILABLE", "REPAIR", "MAINTENANCE", "LOST"]:
         raise Conflict("Chỉ thanh lý bản sách không còn cho mượn hoặc giữ chỗ")
     copy.status = "RETIRED"
     copy.version += 1

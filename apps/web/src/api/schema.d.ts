@@ -1199,6 +1199,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/copies/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** copy.status */
+        patch: operations["patch_copies_id"];
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1365,7 +1382,7 @@ export interface components {
              * @description Vị trí hiện tại
              */
             location_id?: string | null;
-            /** @description Trạng thái vật lý */
+            /** @description AVAILABLE/ON_LOAN/HELD/REPAIR/MAINTENANCE/LOST/RETIRED (Sẵn sàng/Đã mượn/Giữ chỗ/Hỏng/Bảo trì/Mất/Thanh lý) */
             status: string;
             /**
              * Format: date-time
@@ -3067,6 +3084,17 @@ export interface components {
             /** @enum {string} */
             damageLostAssessment: "MANUAL_APPROVAL";
             damageLostFees: components["schemas"]["DamageLostFees"];
+        };
+        /** @description YC#2 / D1: đổi trạng thái bản sao bằng tay */
+        CopyStatusRequest: {
+            expectedVersion: number;
+            /**
+             * @description Sẵn sàng / Hỏng / Bảo trì / Mất
+             * @enum {string}
+             */
+            status: "AVAILABLE" | "REPAIR" | "MAINTENANCE" | "LOST";
+            /** @description Bắt buộc khi khác AVAILABLE */
+            reason?: string | null;
         };
     };
     responses: never;
@@ -10493,6 +10521,97 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PolicyVersion"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found in scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict/version/idempotency */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation or eligibility */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Rate limit */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    patch_copies_id: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CopyStatusRequest"];
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookCopy"];
                 };
             };
             /** @description Unauthenticated */

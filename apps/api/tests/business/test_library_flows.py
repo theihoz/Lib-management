@@ -862,3 +862,65 @@ def test_repaired_copy_goes_to_waiting_reservation(
         reservation = session.get(Reservation, held.json()["id"])
         assert reservation is not None and reservation.status == "READY"
     engine.dispose()
+
+
+def card_status(client: TestClient, card: dict, version: int, status: str, reason=None):
+    return client.patch(
+        f"/api/v1/reader-cards/{card['id']}",
+        json={"expectedVersion": version, "status": status, "reason": reason},
+        headers={"Idempotency-Key": uuid4().hex},
+    )
+
+
+def test_card_block_and_unblock_follow_yc6(client: TestClient):
+    reader, copy, checkout, card = setup_loan(client)
+    no_reason = card_status(client, card, card["version"], "BLOCKED")
+    assert no_reason.status_code == 422
+    blocked = card_status(
+        client, card, card["version"], "BLOCKED", "Mất thẻ, chờ cấp lại"
+    )
+    assert blocked.status_code == 200, blocked.text
+    assert blocked.json()["status"] == "BLOCKED"
+    assert "CARD_BLOCKED" in reasons(client, reader)
+    post(
+        client,
+        "/returns",
+        {"loanItemId": checkout["items"][0]["loanItemId"], "condition": "GOOD"},
+    )
+    refused = post(
+        client, "/loans", {"readerId": reader["id"], "copyIds": [copy["id"]]}
+    )
+    assert refused.status_code == 422
+    assert "CARD_BLOCKED" in refused.json()["details"][0]["reasons"]
+    same = card_status(client, card, blocked.json()["version"], "BLOCKED", "again")
+    assert same.status_code == 409
+    unblocked = card_status(client, card, blocked.json()["version"], "ACTIVE")
+    assert unblocked.status_code == 200, unblocked.text
+    assert "CARD_BLOCKED" not in reasons(client, reader)
+    listed = client.get(f"/api/v1/readers/{reader['id']}/cards")
+    assert listed.status_code == 200
+    assert [row["status"] for row in listed.json()] == ["ACTIVE"]
+
+
+def test_revoked_or_expired_card_cannot_be_unblocked(client, settings):
+    from uuid import UUID
+
+    from lib_management.readers.models import ReaderCard
+
+    reader, _, _, card = setup_loan(client)
+    reissued = post(client, f"/readers/{reader['id']}/cards")
+    assert reissued.status_code == 201
+    revoked = client.get(f"/api/v1/readers/{reader['id']}/cards").json()[-1]
+    assert revoked["id"] == card["id"] and revoked["status"] == "REVOKED"
+    assert card_status(client, revoked, revoked["version"], "ACTIVE").status_code == 409
+    current = reissued.json()
+    blocked = card_status(client, current, current["version"], "BLOCKED", "Tạm khóa")
+    engine = create_engine_from_settings(settings)
+    with create_session_factory(engine)() as session, session.begin():
+        row = session.get(ReaderCard, UUID(current["id"]))
+        assert row is not None
+        row.issued_at = datetime.now(UTC) - timedelta(days=200)
+        row.expires_at = datetime.now(UTC) - timedelta(days=1)
+    engine.dispose()
+    expired = card_status(client, current, blocked.json()["version"], "ACTIVE")
+    assert expired.status_code == 409 and expired.json()["code"] == "CARD_EXPIRED"

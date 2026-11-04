@@ -18,6 +18,7 @@ import {
 import { formatDateTime } from "../../lib/datetime";
 import type { ScreenDefinition } from "../types";
 import { ApiFailure, LoadingSkeleton, MutationFeedback } from "./common";
+import { eligibilityReason } from "./labels";
 import { ReaderPicker } from "./ReaderPicker";
 import type { Reader } from "./ReaderPicker";
 
@@ -183,7 +184,7 @@ function Checkout() {
                 </Badge>
                 <ul>
                   {eligibility.data?.reasons.map((reason) => (
-                    <li key={reason}>{reason}</li>
+                    <li key={reason}>{eligibilityReason(reason)}</li>
                   ))}
                 </ul>
               </div>

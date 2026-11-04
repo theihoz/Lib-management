@@ -134,3 +134,53 @@ def issue_card(
     session.add(card)
     changed(session, card, actor_id, "card.issue", "card.issue")
     return card
+
+
+def cards(session: Session, reader_id: uuid.UUID) -> list[models.ReaderCard]:
+    get(session, models.Reader, reader_id)
+    return list(
+        session.scalars(
+            select(models.ReaderCard)
+            .where(models.ReaderCard.reader_id == reader_id)
+            .order_by(models.ReaderCard.issued_at.desc(), models.ReaderCard.id)
+        )
+    )
+
+
+def set_card_status(
+    session: Session,
+    card_id: uuid.UUID,
+    payload: schemas.CardStatusRequest,
+    actor_id: uuid.UUID,
+) -> models.ReaderCard:
+    """YC#6: lock (BLOCKED) or unlock a card; revoked or expired cards stay closed."""
+    card = get(session, models.ReaderCard, card_id)
+    get(session, models.Reader, card.reader_id, lock=True)  # lock order Reader → card
+    card = get(session, models.ReaderCard, card_id, lock=True)
+    if card.version != payload.expected_version:
+        raise Conflict("Phiên bản đã thay đổi", code="VERSION_CONFLICT")
+    if card.status == "REVOKED":
+        raise Conflict("Thẻ đã thu hồi, không đổi trạng thái", code="CARD_REVOKED")
+    if card.status == payload.status:
+        raise Conflict("Thẻ đã ở trạng thái này", code="CARD_STATUS_UNCHANGED")
+    if payload.status == "BLOCKED" and not (payload.reason or "").strip():
+        raise ValidationFailed("Cần lý do khi khóa thẻ")
+    if payload.status == "ACTIVE" and card.expires_at <= datetime.now(LOCAL_ZONE):
+        raise Conflict("Thẻ đã hết hạn; hãy cấp thẻ mới", code="CARD_EXPIRED")
+    card.status = payload.status
+    card.version += 1
+    action = "card.block" if payload.status == "BLOCKED" else "card.unblock"
+    changed(session, card, actor_id, action, "card.issue")
+    if payload.reason:
+        from lib_management.core import audit
+
+        audit.record(
+            session,
+            actor_id=actor_id,
+            action=action + ".reason",
+            target_type="reader_card",
+            target_id=card.id,
+            outcome="SUCCESS",
+            metadata={"reason": payload.reason},
+        )
+    return card

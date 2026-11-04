@@ -5,9 +5,11 @@ import { useServices, useSession } from "../../auth/session";
 import { createIdempotencyKey } from "../../api/idempotency";
 import type { components } from "../../api/schema";
 import { useDebounced } from "../../lib/useDebounced";
-import { Badge, Button, Field, Panel, Table } from "../../ui/components";
+import { formatDateTime } from "../../lib/datetime";
+import { Badge, Button, Dialog, Field, Panel, Table } from "../../ui/components";
 import type { ScreenDefinition } from "../types";
 import { ApiFailure, LoadingSkeleton, MutationFeedback } from "./common";
+import { cardStatus, eligibilityReason } from "./labels";
 
 function ReaderList() {
   const services = useServices();
@@ -267,7 +269,7 @@ function ReaderProfile() {
           </Badge>
           <ul>
             {eligibility.data.reasons.map((reason) => (
-              <li key={reason}>{reason}</li>
+              <li key={reason}>{eligibilityReason(reason)}</li>
             ))}
           </ul>
         </Panel>
@@ -280,7 +282,123 @@ function ReaderProfile() {
           }}
         />
       )}
+      <ReaderCards readerId={readerId} canChange={session.permissions.includes("card.issue")} />
     </div>
+  );
+}
+type ReaderCardRow = components["schemas"]["ReaderCard"];
+function ReaderCards({ readerId, canChange }: { readerId: string; canChange: boolean }) {
+  const services = useServices();
+  const cache = useQueryClient();
+  const key = useRef(createIdempotencyKey()).current;
+  const [target, setTarget] = useState<ReaderCardRow>();
+  const [reason, setReason] = useState("");
+  const [now] = useState(() => Date.now());
+  const cards = useQuery({
+    queryKey: ["reader", readerId, "cards"],
+    queryFn: async ({ signal }) =>
+      (await services.readers.get_readers_id_cards({ params: { path: { id: readerId } }, signal }))
+        .data!,
+  });
+  const blocking = target?.status === "ACTIVE";
+  const change = useMutation({
+    mutationFn: async () => {
+      const body = {
+        expectedVersion: target!.version,
+        status: blocking ? ("BLOCKED" as const) : ("ACTIVE" as const),
+        reason: reason.trim() || null,
+      };
+      return (
+        await services.readers.patch_reader_cards_id({
+          params: {
+            path: { id: target!.id },
+            header: { "Idempotency-Key": key.forPayload({ id: target!.id, ...body }) },
+          },
+          body,
+        })
+      ).data!;
+    },
+    onSuccess: () => {
+      key.reset();
+      setTarget(undefined);
+      void cache.invalidateQueries({ queryKey: ["reader", readerId] });
+    },
+  });
+  const changeable = (card: ReaderCardRow) =>
+    canChange &&
+    (card.status === "ACTIVE" || card.status === "BLOCKED") &&
+    new Date(card.expires_at).getTime() > now;
+  return (
+    <Panel title="Thẻ thư viện">
+      {cards.isPending ? (
+        <LoadingSkeleton />
+      ) : cards.error ? (
+        <ApiFailure error={cards.error} retry={() => void cards.refetch()} />
+      ) : (
+        <>
+          <Table
+            caption="Thẻ thư viện của độc giả"
+            headers={["Số thẻ", "Trạng thái", "Ngày cấp", "Hết hạn"]}
+            rows={cards.data.map((card) => [
+              card.card_no,
+              cardStatus(card, now),
+              formatDateTime(card.issued_at),
+              formatDateTime(card.expires_at),
+            ])}
+            onRow={(index) => {
+              const picked = cards.data[index];
+              if (picked && changeable(picked)) {
+                setTarget(picked);
+                setReason("");
+                change.reset();
+              }
+            }}
+          />
+          {canChange && (
+            <p className="muted">Bấm số thẻ đang hoạt động hoặc tạm khóa để khóa/mở khóa.</p>
+          )}
+          <MutationFeedback success={change.isSuccess}>
+            Đã cập nhật trạng thái thẻ.
+          </MutationFeedback>
+        </>
+      )}
+      <Dialog
+        open={!!target}
+        title={blocking ? "Tạm khóa thẻ" : "Mở khóa thẻ"}
+        pending={change.isPending}
+        onClose={() => setTarget(undefined)}
+      >
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            change.mutate();
+          }}
+        >
+          <p>
+            Thẻ <strong>{target?.card_no}</strong>:{" "}
+            {blocking
+              ? "độc giả sẽ không mượn được cho đến khi mở khóa."
+              : "thẻ hoạt động lại đến hết hạn."}
+          </p>
+          <Field
+            label="Lý do"
+            required={blocking}
+            maxLength={500}
+            value={reason}
+            onChange={(event) => setReason(event.target.value)}
+          />
+          <MutationFeedback error={change.error} />
+          <div className="actions">
+            <Button type="submit" disabled={change.isPending}>
+              {blocking ? "Khóa thẻ" : "Mở khóa"}
+            </Button>
+            <Button variant="secondary" onClick={() => setTarget(undefined)}>
+              Hủy
+            </Button>
+          </div>
+        </form>
+      </Dialog>
+    </Panel>
   );
 }
 function IssueCard() {

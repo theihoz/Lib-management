@@ -76,6 +76,10 @@ export function createServices(client: ApiClient) {
       get_readers_id_eligibility: (
         options: FetchOptions<paths["/api/v1/readers/{id}/eligibility"]["get"]>,
       ) => client.GET("/api/v1/readers/{id}/eligibility", options),
+      get_readers_id_cards: (options: FetchOptions<paths["/api/v1/readers/{id}/cards"]["get"]>) =>
+        client.GET("/api/v1/readers/{id}/cards", options),
+      patch_reader_cards_id: (options: FetchOptions<paths["/api/v1/reader-cards/{id}"]["patch"]>) =>
+        client.PATCH("/api/v1/reader-cards/{id}", options),
     },
     circulation: {
       post_loans: (options: FetchOptions<paths["/api/v1/loans"]["post"]>) =>

@@ -55,6 +55,11 @@ trong `/opt/venv` không bị mount host che mất. Sau khi đổi lockfile, reb
 API chạy UID/GID 10001, drop capabilities, no-new-privileges và tmpfs `/tmp`.
 DB healthcheck thành công trước khi API khởi động.
 
+Báo cáo và CSV: worker ghi artifact, API đọc lại khi trả kết quả/tải tệp, nên hai
+container dùng chung volume `artifacts` tại `/var/lib/lib-management/artifacts`
+(`ARTIFACT_STORAGE_ROOT`). Không đặt artifact trong `/tmp`: mỗi container có tmpfs
+riêng, API sẽ trả 503 "Tệp kết quả chưa sẵn sàng" dù job đã Hoàn tất.
+
 ## Chạy API bằng uv trên host
 
 Cài Python 3.13 và uv 0.12.21, chạy DB với Compose rồi:

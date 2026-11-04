@@ -3,6 +3,10 @@ FROM ghcr.io/astral-sh/uv:0.12.23@sha256:61d393e44e249f2e4b526b6c7ddcecce2459468
 FROM python:3.13-slim-bookworm@sha256:a1165e272e578941b84abc79e4ab38a0305cd12803a5c4247979ac7655f4d641 AS base
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 PATH="/opt/venv/bin:$PATH"
 WORKDIR /app
+# Report/CSV artifacts: the worker writes and the API reads them, so compose mounts one
+# shared volume here; created with the app user's ownership so the volume inherits it.
+RUN mkdir -p /var/lib/lib-management/artifacts \
+    && chown 10001:10001 /var/lib/lib-management/artifacts
 
 FROM base AS deps
 COPY --from=uv /uv /usr/local/bin/uv

@@ -94,6 +94,15 @@ class ReasonRequest(Input):
     expectedVersion: int | None = Field(default=None, ge=1)
 
 
+class ManualAssessmentRequest(Input):
+    """YC#11 / D2: a Librarian proposes a manual fine; a Manager decides it."""
+
+    readerId: UUID
+    loanItemId: UUID | None = Field(default=None)
+    proposedAmount: str = Field(pattern="^[0-9]+$", max_length=12)
+    reason: str = Field(min_length=1, max_length=500)
+
+
 class DecisionRequest(Input):
     expectedVersion: int = Field(ge=1)
     amount: str = Field(pattern="^[0-9]+$")

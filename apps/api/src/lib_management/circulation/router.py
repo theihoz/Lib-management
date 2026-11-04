@@ -605,6 +605,58 @@ def charges(
     )
 
 
+@router.post(
+    "/charge-assessments",
+    operation_id="post_charge_assessments",
+    status_code=201,
+    response_model=v.ChargeAssessment,
+)
+def propose_manual(
+    body: s.ManualAssessmentRequest,
+    uow: Uow,
+    key: Key,
+    principal: Annotated[Principal, Depends(require_permission("assessment.propose"))],
+) -> JSONResponse:
+    amount = Decimal(body.proposedAmount)
+    if amount <= 0:
+        raise ValidationFailed("Số tiền phạt phải lớn hơn 0")
+    begun = start(
+        uow, principal, "assessment.propose", key, body.model_dump(mode="json")
+    )
+    if begun.replay:
+        return replay(begun)
+    reader_lock(uow.session, body.readerId)
+    if body.loanItemId is not None:
+        item = get(uow.session, m.LoanItem, body.loanItemId)
+        loan = get(uow.session, m.Loan, item.loan_id)
+        if loan.reader_id != body.readerId:
+            raise ValidationFailed("Mục mượn không thuộc độc giả này")
+    assessment = m.ChargeAssessment(
+        reader_id=body.readerId,
+        loan_item_id=body.loanItemId,
+        kind="MANUAL",
+        proposed_amount=amount,
+        reason=body.reason,
+        proposed_by=principal.account_id,
+        status="PENDING",
+    )
+    uow.session.add(assessment)
+    uow.session.flush()
+    projection = view(assessment)
+    for field in [
+        "proposed_by",
+        "decided_by",
+        "decided_at",
+        "decision_reason",
+        "fine_charge_id",
+        "created_at",
+    ]:
+        projection.pop(field, None)
+    return finish(
+        uow, principal, begun, "assessment.propose", projection, assessment.id
+    )
+
+
 @router.get(
     "/charge-assessments",
     operation_id="get_charge_assessments",
@@ -653,16 +705,23 @@ def decide(
     version(assessment, body.expectedVersion)
     if assessment.status != "PENDING":
         raise Conflict("Hồ sơ đã được quyết định")
-    event = get(uow.session, m.ReturnEvent, assessment.return_event_id)
-    item = get(uow.session, m.LoanItem, event.loan_item_id)
+    if assessment.return_event_id is not None:
+        event = get(uow.session, m.ReturnEvent, assessment.return_event_id)
+        item = get(uow.session, m.LoanItem, event.loan_item_id)
+    elif assessment.loan_item_id is not None:
+        item = get(uow.session, m.LoanItem, assessment.loan_item_id)
+    else:
+        item = None
     approved_amount = Decimal(body.amount)
     if assessment.kind == "LOST" and approved_amount > 0:
         check_lost_fee(approved_amount)
     if approved_amount > 0:
         charge = m.FineCharge(
             reader_id=assessment.reader_id,
-            loan_item_id=item.id,
-            policy_version_id=item.policy_version_id,
+            loan_item_id=item.id if item else None,
+            policy_version_id=(
+                item.policy_version_id if item else active_policy(uow.session).id
+            ),
             reason=assessment.kind,
             assessed_amount=approved_amount,
             calculation={"assessmentId": str(id)},

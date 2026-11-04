@@ -388,7 +388,8 @@ export interface paths {
         /** assessment.decide */
         get: operations["get_charge_assessments"];
         put?: never;
-        post?: never;
+        /** assessment.propose */
+        post: operations["post_charge_assessments"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2594,16 +2595,24 @@ export interface components {
             id: string;
             /** Format: uuid */
             reader_id: string;
-            /** Format: uuid */
-            return_event_id: string;
+            /**
+             * Format: uuid
+             * @description Sự kiện trả; NULL với kind MANUAL
+             */
+            return_event_id?: string | null;
             /** @enum {string} */
-            kind: "DAMAGE" | "LOST";
+            kind: "DAMAGE" | "LOST" | "MANUAL";
             /** @enum {string} */
             status: "PENDING" | "ASSESSED" | "CLOSED_NO_CHARGE";
             proposed_amount: string;
             approved_amount?: string | null;
             reason: string;
             version: number;
+            /**
+             * Format: uuid
+             * @description Mục mượn liên quan (tùy chọn, MANUAL)
+             */
+            loan_item_id?: string | null;
         };
         DecisionRequest: {
             expectedVersion: number;
@@ -3121,6 +3130,15 @@ export interface components {
             status: "ACTIVE" | "BLOCKED";
             /** @description Bắt buộc khi khóa */
             reason?: string | null;
+        };
+        /** @description YC#11 / D2: Thủ thư đề xuất phạt thủ công, Quản lý duyệt */
+        ManualAssessmentRequest: {
+            /** Format: uuid */
+            readerId: string;
+            /** Format: uuid */
+            loanItemId?: string | null;
+            proposedAmount: string;
+            reason: string;
         };
     };
     responses: never;
@@ -6278,6 +6296,95 @@ export interface operations {
                         data: components["schemas"]["ChargeAssessment"][];
                         nextCursor: string | null;
                     };
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found in scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict/version/idempotency */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation or eligibility */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Rate limit */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    post_charge_assessments: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ManualAssessmentRequest"];
+            };
+        };
+        responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChargeAssessment"];
                 };
             };
             /** @description Unauthenticated */

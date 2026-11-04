@@ -114,6 +114,9 @@ export function createServices(client: ApiClient) {
     finance: {
       get_fine_charges: (options: FetchOptions<paths["/api/v1/fine-charges"]["get"]>) =>
         client.GET("/api/v1/fine-charges", options),
+      post_charge_assessments: (
+        options: FetchOptions<paths["/api/v1/charge-assessments"]["post"]>,
+      ) => client.POST("/api/v1/charge-assessments", options),
       get_charge_assessments: (options: FetchOptions<paths["/api/v1/charge-assessments"]["get"]>) =>
         client.GET("/api/v1/charge-assessments", options),
       post_charge_assessments_id_decisions: (

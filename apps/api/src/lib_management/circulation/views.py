@@ -112,8 +112,9 @@ class CheckoutReceipt(View):
 class ChargeAssessment(View):
     id: UUID
     reader_id: UUID
-    return_event_id: UUID
-    kind: Literal["DAMAGE", "LOST"]
+    return_event_id: UUID | None = None
+    loan_item_id: UUID | None = None
+    kind: Literal["DAMAGE", "LOST", "MANUAL"]
     status: Literal["PENDING", "ASSESSED", "CLOSED_NO_CHARGE"]
     proposed_amount: str = Field(pattern="^[0-9]+$")
     approved_amount: str | None = Field(default=None, pattern="^[0-9]+$")

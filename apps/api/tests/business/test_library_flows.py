@@ -924,3 +924,79 @@ def test_revoked_or_expired_card_cannot_be_unblocked(client, settings):
     engine.dispose()
     expired = card_status(client, current, blocked.json()["version"], "ACTIVE")
     assert expired.status_code == 409 and expired.json()["code"] == "CARD_EXPIRED"
+
+
+def test_manual_fine_is_proposed_then_decided(client: TestClient):
+    # YC#11 / D2: the Librarian proposes, the Manager decides (like C03).
+    reader, copy, checkout, _ = setup_loan(client)
+    other, _, other_checkout, _ = setup_loan(client)
+    foreign = post(
+        client,
+        "/charge-assessments",
+        {
+            "readerId": reader["id"],
+            "loanItemId": other_checkout["items"][0]["loanItemId"],
+            "proposedAmount": "10000",
+            "reason": "Làm bẩn sách",
+        },
+    )
+    assert foreign.status_code == 422
+    assert (
+        post(
+            client,
+            "/charge-assessments",
+            {"readerId": reader["id"], "proposedAmount": "0", "reason": "x"},
+        ).status_code
+        == 422
+    )
+    proposed = post(
+        client,
+        "/charge-assessments",
+        {
+            "readerId": reader["id"],
+            "loanItemId": checkout["items"][0]["loanItemId"],
+            "proposedAmount": "15000",
+            "reason": "Viết vào sách",
+        },
+    )
+    assert proposed.status_code == 201, proposed.text
+    assert (
+        proposed.json()["kind"] == "MANUAL" and proposed.json()["status"] == "PENDING"
+    )
+    assert "PENDING_ASSESSMENT" in reasons(client, reader)
+    decided = post(
+        client,
+        f"/charge-assessments/{proposed.json()['id']}/decisions",
+        {"expectedVersion": 1, "amount": "15000", "reason": "Đúng quy định"},
+    )
+    assert decided.status_code == 201, decided.text
+    charges = client.get("/api/v1/fine-charges", params={"readerId": reader["id"]})
+    manual = [row for row in charges.json()["data"] if row["reason"] == "MANUAL"]
+    assert len(manual) == 1 and manual[0]["assessed_amount"] == "15000"
+    assert "PENDING_ASSESSMENT" not in reasons(client, reader)
+    unlinked = post(
+        client,
+        "/charge-assessments",
+        {"readerId": reader["id"], "proposedAmount": "5000", "reason": "Ồn ào"},
+    )
+    assert unlinked.status_code == 201, unlinked.text
+    closed = post(
+        client,
+        f"/charge-assessments/{unlinked.json()['id']}/decisions",
+        {"expectedVersion": 1, "amount": "0", "reason": "Nhắc nhở, không phạt"},
+    )
+    assert closed.status_code == 201 and closed.json()["status"] == "CLOSED_NO_CHARGE"
+
+
+def test_manual_fine_needs_propose_permission(client: TestClient):
+    reader, _, _, _ = setup_loan(client)
+    principal = client.test_principal
+    client.app.dependency_overrides[authenticated] = lambda: Principal(
+        principal.account, principal.permissions - {"assessment.propose"}
+    )
+    denied = post(
+        client,
+        "/charge-assessments",
+        {"readerId": reader["id"], "proposedAmount": "1000", "reason": "x"},
+    )
+    assert denied.status_code == 403

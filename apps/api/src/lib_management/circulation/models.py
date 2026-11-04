@@ -428,7 +428,11 @@ class ChargeAssessment(Base):
     __tablename__ = "charge_assessment"
     __table_args__ = (
         UniqueConstraint("return_event_id", "kind"),
-        CheckConstraint("kind IN ('DAMAGE','LOST')", name="kind"),
+        CheckConstraint("kind IN ('DAMAGE','LOST','MANUAL')", name="kind"),
+        # YC#11 / D2: a manual fine is not tied to a return.
+        CheckConstraint(
+            "(kind = 'MANUAL') = (return_event_id IS NULL)", name="manual_source"
+        ),
         CheckConstraint(
             "status IN ('PENDING','ASSESSED','CLOSED_NO_CHARGE')", name="status"
         ),
@@ -456,8 +460,11 @@ class ChargeAssessment(Base):
     reader_id: Mapped[uuid.UUID] = mapped_column(
         ForeignKey("reader.id"), nullable=False
     )
-    return_event_id: Mapped[uuid.UUID] = mapped_column(
-        ForeignKey("return_event.id"), nullable=False
+    return_event_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("return_event.id"), nullable=True
+    )
+    loan_item_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("loan_item.id"), nullable=True
     )
     kind: Mapped[str] = mapped_column(String(16), nullable=False)
     proposed_amount: Mapped[Decimal] = mapped_column(Numeric(14, 0), nullable=False)

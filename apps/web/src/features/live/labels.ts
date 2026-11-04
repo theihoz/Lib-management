@@ -35,3 +35,14 @@ export const ELIGIBILITY_REASON: Record<string, string> = {
 export function eligibilityReason(code: string): string {
   return ELIGIBILITY_REASON[code] ?? code;
 }
+
+export const CHARGE_REASON: Record<string, string> = {
+  LATE: "Trễ hạn",
+  DAMAGE: "Hỏng sách",
+  LOST: "Mất sách",
+  MANUAL: "Phạt thủ công",
+};
+
+export function chargeReason(code: string): string {
+  return CHARGE_REASON[code] ?? code;
+}

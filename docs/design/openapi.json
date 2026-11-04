@@ -4725,6 +4725,127 @@
             }
           }
         }
+      },
+      "post": {
+        "operationId": "post_charge_assessments",
+        "summary": "assessment.propose",
+        "tags": [
+          "F11"
+        ],
+        "x-functions": [
+          "F11"
+        ],
+        "x-permission": "assessment.propose",
+        "x-status": "implemented",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChargeAssessment"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found in scope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict/version/idempotency",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation or eligibility",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ManualAssessmentRequest"
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/charge-assessments/{id}/decisions": {
@@ -14479,14 +14600,19 @@
             "format": "uuid"
           },
           "return_event_id": {
-            "type": "string",
-            "format": "uuid"
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Sự kiện trả; NULL với kind MANUAL"
           },
           "kind": {
             "type": "string",
             "enum": [
               "DAMAGE",
-              "LOST"
+              "LOST",
+              "MANUAL"
             ]
           },
           "status": {
@@ -14515,12 +14641,19 @@
           "version": {
             "type": "integer",
             "minimum": 1
+          },
+          "loan_item_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Mục mượn liên quan (tùy chọn, MANUAL)"
           }
         },
         "required": [
           "id",
           "reader_id",
-          "return_event_id",
           "kind",
           "status",
           "proposed_amount",
@@ -16359,6 +16492,39 @@
         "required": [
           "expectedVersion",
           "status"
+        ],
+        "additionalProperties": false
+      },
+      "ManualAssessmentRequest": {
+        "type": "object",
+        "description": "YC#11 / D2: Thủ thư đề xuất phạt thủ công, Quản lý duyệt",
+        "properties": {
+          "readerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "loanItemId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "proposedAmount": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "maxLength": 12
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "readerId",
+          "proposedAmount",
+          "reason"
         ],
         "additionalProperties": false
       }

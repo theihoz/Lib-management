@@ -15,6 +15,8 @@ type Props = {
   onLogin?: () => void;
   onLogout?: () => void;
   allowed?: (screen: ScreenDefinition) => boolean;
+  /** Extra top-bar controls, e.g. the Ctrl+K palette. */
+  topbarExtra?: ReactNode;
 };
 export function Shell({
   screen,
@@ -24,6 +26,7 @@ export function Shell({
   onLogin,
   onLogout,
   allowed = () => true,
+  topbarExtra,
 }: Props) {
   const [drawer, setDrawer] = useState(false);
   const [logout, setLogout] = useState(false);
@@ -94,6 +97,7 @@ export function Shell({
           />
           <span className="topbar-label">Không gian làm việc</span>
           <div className="topbar-actions">
+            {topbarExtra}
             <span className="topbar-date">{formatDateTime(new Date().toISOString(), true)}</span>
             <Badge tone={ready ? "success" : "neutral"}>
               {ready ? "Đã kết nối" : "Đang kết nối"}

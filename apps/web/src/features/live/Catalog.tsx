@@ -37,6 +37,8 @@ function EditionList({ staff = false }: { staff?: boolean }) {
   const filtered = !!query || !!categoryId;
   const categories = useQuery({
     queryKey: ["catalog", "categories", "filter"],
+    // The category list needs a signed-in account; anonymous visitors browse without it.
+    enabled: session.status === "authenticated",
     queryFn: async ({ signal }) =>
       (await services.catalog.get_categories({ params: { query: { limit: 100 } }, signal })).data!
         .data,

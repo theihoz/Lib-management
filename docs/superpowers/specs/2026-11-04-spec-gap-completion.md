@@ -1,6 +1,6 @@
 # Hoàn thiện phần còn thiếu so với spec nhóm — đặc tả triển khai
 
-**Ngày:** 04/11/2026 · **Trạng thái:** Draft, chờ chủ dự án duyệt các quyết định D1–D6 · **Mốc gốc:** `main@395952d` (PR #50)
+**Ngày:** 04/11/2026 · **Trạng thái:** Approved — chủ dự án duyệt D1–D4 theo đề xuất ngày 04/11/2026; D5–D6 dùng đề xuất mặc định đến khi có quyết định khác · **Mốc gốc:** `main@395952d` (PR #50)
 
 ## Yêu cầu và căn cứ
 
@@ -39,7 +39,7 @@ Ký hiệu: **G** = khoảng thiếu thuộc lõi 10 tuần (làm trước), **P
 | P6 | Lab 3 BackupManifest, Job BACKUP | F23 sao lưu/khôi phục | 6 |
 | P7 | Lab 3 OutboxEvent (ReservationReady) | F24 thông báo portal + email | 6 |
 
-## Quyết định cần chủ dự án duyệt
+## Quyết định (D1–D4 đã duyệt 04/11/2026)
 
 | Mã | Câu hỏi | Đề xuất | Lý do |
 | --- | --- | --- | --- |

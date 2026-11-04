@@ -15,4 +15,4 @@ Phạm vi sản phẩm: lõi 10 tuần theo [quyết định 03/11/2026](../plan
 
 [Quy định nguồn QĐ01–QĐ26](source-rules.md): bảng đối chiếu spec nhóm (Lab 2–4) với code và test, cập nhật 04/11/2026.
 
-[Spec hoàn thiện phần còn thiếu 04/11/2026](../superpowers/specs/2026-11-04-spec-gap-completion.md) (Draft, chờ duyệt D1–D6) và [kế hoạch](../superpowers/plans/2026-11-04-spec-gap-completion.md): G1–G8 lõi, Q1–Q2 chất lượng, P1–P7 phase 2.
+[Spec hoàn thiện phần còn thiếu 04/11/2026](../superpowers/specs/2026-11-04-spec-gap-completion.md) (Approved 04/11/2026: D1–D4 theo đề xuất) và [kế hoạch](../superpowers/plans/2026-11-04-spec-gap-completion.md): G1–G8 lõi, Q1–Q2 chất lượng, P1–P7 phase 2.

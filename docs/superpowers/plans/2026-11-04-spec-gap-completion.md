@@ -4,7 +4,7 @@
 
 **Goal:** Close every gap between the group specs (requirements sheet, Lab 2 v2, Lab 3, Lab 4) and the code: core gaps G1–G8 first, contract/E2E quality Q1–Q2 alongside, then phase 2 P1–P7.
 
-**Spec:** `docs/superpowers/specs/2026-11-04-spec-gap-completion.md` (Draft; decisions D1–D6 must be approved before Task 1 starts).
+**Spec:** `docs/superpowers/specs/2026-11-04-spec-gap-completion.md` (Approved 04/11/2026: D1–D4 as proposed; D5–D6 proposed defaults).
 
 **Architecture:** unchanged — FastAPI modular monolith with one UoW per command, PostgreSQL 17 + Alembic linear chain (next revision `0009_*`), React/Vite with generated OpenAPI client, worker for jobs.
 

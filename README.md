@@ -104,12 +104,18 @@ uv run --locked python -m lib_management.cli seed-rbac
 uv run --locked python ../../.devcontainer/keycloak/create_dev_users.py --link --demo-data
 uv run --locked uvicorn lib_management.main:create_app --factory --host 0.0.0.0 --port 8000 --reload
 
+# Worker (terminal khác): báo cáo/CSV cần worker, thiếu thì job đứng ở "Đang chờ"
+cd apps/api
+uv run --locked python -m lib_management.worker
+
 # Frontend (terminal khác)
 cd apps/web
 npm run dev
 ```
 
-Địa chỉ giống Cách 1; frontend là Vite dev server có hot reload.
+Địa chỉ giống Cách 1; frontend là Vite dev server có hot reload. Luôn mở
+<http://localhost:5173> (Docker publish sẵn 5173/8000/8080); không mở cổng khác do VS Code
+tự forward hay `127.0.0.1`, vì Keycloak chỉ chấp nhận redirect về `http://localhost:5173`.
 Chi tiết, cách lấy token thử và xử lý lỗi: [hướng dẫn Dev Container](.devcontainer/README.md).
 
 ### Cách 3 — Chỉ chạy backend bằng Compose

@@ -22,15 +22,10 @@
   "overrideCommand": false,
   "shutdownAction": "stopCompose",
   "postCreateCommand": "bash .devcontainer/setup.sh",
-  "forwardPorts": [
-    8000,
-    5173,
-    8080
-  ],
   "portsAttributes": {
-    "8000": { "label": "API (FastAPI)" },
-    "5173": { "label": "Web (Vite)" },
-    "8080": { "label": "Keycloak (dev only)" }
+    "8000": { "label": "API (FastAPI)", "onAutoForward": "ignore" },
+    "5173": { "label": "Web (Vite)", "onAutoForward": "ignore" },
+    "8080": { "label": "Keycloak (dev only)", "onAutoForward": "ignore" }
   },
   "customizations": {
     "vscode": {

@@ -47,7 +47,12 @@ def noop(context: JobContext) -> None:
 
 
 def default_registry() -> Registry:
+    from lib_management.models import load_all_models
     from lib_management.reporting.handlers import configured_handler
+
+    # Handlers flush rows (audit_log, outbox) with FKs into other modules' tables;
+    # unlike the API, the worker process imports no routers, so load them all here.
+    load_all_models()
 
     return Registry(
         handlers={

@@ -39,7 +39,7 @@ Giá trị cấu hình được nằm trong `PolicyVersion.rules` (schema v2, `P
 | QĐ18–QĐ19 | Ảnh bìa PNG/JPG/WebP lên Cloudflare R2 | Phase 2 (F15) | — |
 | QĐ20–QĐ21 | Chỉ nhân viên có tài khoản; báo lỗi đăng nhập chung | Keycloak OIDC + Account ACTIVE; thông báo lỗi do Keycloak | `tests/test_jwt.py` |
 | QĐ22 | Tra cứu lịch sử độc giả có mã tồn tại | FE03.02 hồ sơ: đang mượn, phạt còn nợ, đặt trước, lịch sử; portal `/me` tab Lịch sử (`/me/loans?status=ALL`) | `test_reader_profile_data_for_yc17`, `test_reader_renews_only_own_loan` |
-| QĐ23 | Từ khóa không trống; báo "Không tìm thấy" | Từ khóa trống/khoảng trắng không gửi đi; bảng/lưới hiện "Không tìm thấy" | — |
+| QĐ23 | Từ khóa không trống; báo "Không tìm thấy" | Từ khóa trống/khoảng trắng không gửi đi; bảng/lưới và Ctrl+K hiện "Không tìm thấy" | `palette.test.ts`, E2E `catalog.e2e.ts` |
 | QĐ24 | Quá hạn khi hôm nay > hạn trả; số ngày trễ = hôm nay − hạn | `/overdue-items`, `late_days` theo ngày thư viện (C08) | `test_overdue_items_include_reader_title_and_late_days` |
 | QĐ25 | Chỉ nhân viên đăng nhập được xuất dữ liệu | Quyền `export.create`/`export.download` | quyền |
 | QĐ26 | Không có dữ liệu thì không tạo tệp và thông báo | Handler bỏ qua artifact; download trả 409 `NO_DATA`; FE09.04 báo người dùng | `test_export_without_data_creates_no_file` |

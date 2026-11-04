@@ -61,7 +61,10 @@ Ký hiệu: **G** = khoảng thiếu thuộc lõi 10 tuần (làm trước), **P
 | G4 | Xong | `3af0c7d` |
 | G5 | Xong | `a30f53d` |
 | G6 + P3 | Xong (portal `/me`: đang mượn, gia hạn, lịch sử, phạt) | `ce17a35` |
-| Q2, G7, G8, P1, P2, P4–P7 | Chưa làm | — |
+| G7 | Xong (`/staff/dashboard`, trang mặc định của nhân viên) | `ccacda3` |
+| G8 | Xong (Ctrl+K / ⌘K) | `9447108` |
+| Q2 | Xong (Playwright `apps/web/e2e`, job CI `e2e`) | `49ef0aa` |
+| P1, P2, P4–P7 | Chưa làm | — |
 
 ## Quy ước chung
 

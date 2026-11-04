@@ -1103,3 +1103,47 @@ def test_edition_deactivation_follows_d4(client: TestClient):
     )
     assert done.status_code == 200, done.text
     assert client.get(f"/api/v1/book-editions/{edition_id}").status_code == 404
+
+
+def as_reader(client: TestClient, settings: Settings, reader: dict) -> None:
+    from uuid import UUID
+
+    from lib_management.identity.rbac_seed import ROLES
+
+    engine = create_engine_from_settings(settings)
+    with create_session_factory(engine)() as session, session.begin():
+        account = Account(
+            issuer="test",
+            subject=uuid4().hex,
+            display_name="Reader",
+            status="ACTIVE",
+            reader_id=UUID(reader["id"]),
+        )
+        session.add(account)
+    with create_session_factory(engine)() as session:
+        account = session.scalar(select(Account).where(Account.id == account.id))
+    engine.dispose()
+    principal = Principal(account, frozenset(ROLES["READER"][1]))
+    client.app.dependency_overrides[authenticated] = lambda: principal
+
+
+def test_reader_renews_only_own_loan(client: TestClient, settings: Settings):
+    # YC#9 (Ai: Độc giả) with C06 scope.
+    reader, _, checkout, _ = setup_loan(client)
+    _, _, other_checkout, _ = setup_loan(client)
+    as_reader(client, settings, reader)
+    mine = client.get("/api/v1/me/loans").json()["data"]
+    assert [row["loan"]["id"] for row in mine] == [checkout["loanId"]]
+    assert mine[0]["title"].startswith("Concurrency in practice")
+    other = post(
+        client, f"/loans/{other_checkout['loanId']}/renewals", {"expectedVersion": 1}
+    )
+    assert other.status_code == 404
+    renewed = post(
+        client,
+        f"/loans/{checkout['loanId']}/renewals",
+        {"expectedVersion": mine[0]["loan"]["version"]},
+    )
+    assert renewed.status_code == 201, renewed.text
+    history = client.get("/api/v1/me/loans", params={"status": "ALL"}).json()["data"]
+    assert len(history) == 1

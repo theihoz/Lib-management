@@ -509,6 +509,8 @@ def renew(
     from lib_management.catalog.models import BookCopy
 
     loan = get(uow.session, m.Loan, id)
+    if not staff_reader_scope(principal) and loan.reader_id != own_reader(principal):
+        raise NotFound()  # C06: a reader renews only their own loans (YC#9)
     copy_ids = list(
         uow.session.scalars(
             select(m.LoanItem.copy_id).where(
@@ -1048,20 +1050,22 @@ def own_reader(principal: Principal) -> UUID:
     return principal.account.reader_id
 
 
-@router.get("/me/loans", operation_id="get_me_loans", response_model=Page[v.LoanItem])
+@router.get("/me/loans", operation_id="get_me_loans")
 def my_loans(
     uow: Uow,
     paging: Paging,
     principal: Annotated[Principal, Depends(require_permission("reader.read"))],
+    status: Annotated[str, Query(pattern="^(OPEN|ALL)$")] = "OPEN",
 ) -> dict[str, Any]:
-    return paginate(
-        uow.session,
-        m.LoanItem,
-        paging,
-        m.LoanItem.loan_id.in_(
-            select(m.Loan.id).where(m.Loan.reader_id == own_reader(principal))
-        ),
+    """FE08 / QĐ22: the reader's own loans (OPEN) or whole history (ALL)."""
+    statement = (
+        select(m.LoanItem)
+        .join(m.Loan, m.Loan.id == m.LoanItem.loan_id)
+        .where(m.Loan.reader_id == own_reader(principal))
     )
+    if status == "OPEN":
+        statement = statement.where(m.LoanItem.closed_at.is_(None))
+    return loan_rows(uow.session, statement, paging)
 
 
 @router.get(
@@ -1354,29 +1358,36 @@ def lookup_loans(
         )
     if status == "OPEN":
         statement = statement.where(m.LoanItem.closed_at.is_(None))
+    return loan_rows(uow.session, statement, paging)
+
+
+def loan_rows(session: Session, statement: Any, paging: PageParams) -> dict[str, Any]:
+    """Loan items with their loan, copy and book title, keyset-paged by item id."""
+    from lib_management.catalog.models import BookCopy
+
     if paging.cursor:
         statement = statement.where(m.LoanItem.id > paging.cursor.id)
     items = list(
-        uow.session.scalars(statement.order_by(m.LoanItem.id).limit(paging.limit + 1))
+        session.scalars(statement.order_by(m.LoanItem.id).limit(paging.limit + 1))
     )
     more = len(items) > paging.limit
     items = items[: paging.limit]
     loans = {
         loan.id: loan
-        for loan in uow.session.scalars(
+        for loan in session.scalars(
             select(m.Loan).where(m.Loan.id.in_([row.loan_id for row in items]))
         )
     }
     copies = {
         copy.id: copy
-        for copy in uow.session.scalars(
+        for copy in session.scalars(
             select(BookCopy).where(BookCopy.id.in_([row.copy_id for row in items]))
         )
     }
     from lib_management.catalog.models import BookEdition
 
     titles = dict(
-        uow.session.execute(
+        session.execute(
             select(BookEdition.id, BookEdition.title).where(
                 BookEdition.id.in_({copy.edition_id for copy in copies.values()})
             )

@@ -53,6 +53,7 @@ _READER = (
     "catalog.read",
     "reader.read",
     "eligibility.read",
+    "loan.renew",  # YC#9: readers renew their own loans (scoped in the route)
     "reservation.read",
     "reservation.create",
     "reservation.cancel",

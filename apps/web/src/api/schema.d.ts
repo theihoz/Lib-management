@@ -9643,6 +9643,8 @@ export interface operations {
                 cursor?: string;
                 limit?: number;
                 query?: string;
+                /** @description OPEN = đang mượn; ALL = cả lịch sử (QĐ22) */
+                status?: "OPEN" | "ALL";
             };
             header?: never;
             path?: never;
@@ -9657,7 +9659,7 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        data: components["schemas"]["LoanItem"][];
+                        data: components["schemas"]["LoanLookupRow"][];
                         nextCursor: string | null;
                     };
                 };

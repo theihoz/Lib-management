@@ -87,6 +87,7 @@ class FineCharge(View):
     manual_reason: str | None = Field(default=None)
     assessed_by: UUID
     created_at: datetime
+    balance: str | None = Field(default=None, pattern="^[0-9]+$")
 
 
 class ReturnReceipt(View):

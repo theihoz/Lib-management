@@ -1961,6 +1961,8 @@ export interface components {
              * @description Thời điểm ghi nhận
              */
             created_at: string;
+            /** @description Còn nợ của khoản (VND), trong danh sách */
+            balance?: string | null;
         };
         Payment: {
             /**
@@ -3035,6 +3037,8 @@ export interface components {
             loan: components["schemas"]["Loan"];
             loanItem: components["schemas"]["LoanItem"];
             copy: components["schemas"]["BookCopy"];
+            /** @description Tên sách của bản mượn */
+            title?: string | null;
         };
         ReportResult: {
             /** Format: uuid */
@@ -5820,6 +5824,8 @@ export interface operations {
                 query?: string;
                 /** @description Chỉ staff có scope; portal dùng /me alias */
                 readerId?: string;
+                /** @description ACTIVE = QUEUED hoặc READY */
+                status?: "ACTIVE" | "QUEUED" | "READY" | "FULFILLED" | "CANCELLED" | "EXPIRED";
             };
             header?: never;
             path?: never;

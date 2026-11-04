@@ -597,12 +597,22 @@ def charges(
 ) -> dict[str, Any]:
     if not staff_reader_scope(principal):
         raise Forbidden("PERMISSION_DENIED", "Sử dụng mục tài khoản của tôi")
-    return paginate(
+    return with_balance(
         uow.session,
-        m.FineCharge,
-        paging,
-        *([m.FineCharge.reader_id == readerId] if readerId else []),
+        paginate(
+            uow.session,
+            m.FineCharge,
+            paging,
+            *([m.FineCharge.reader_id == readerId] if readerId else []),
+        ),
     )
+
+
+def with_balance(session: Session, page: dict[str, Any]) -> dict[str, Any]:
+    """YC#17 / BM06: what is still owed on each charge (VND string)."""
+    for row in page["data"]:
+        row["balance"] = str(charge_balance(session, UUID(str(row["id"]))))
+    return page
 
 
 @router.post(
@@ -1064,11 +1074,14 @@ def my_charges(
     paging: Paging,
     principal: Annotated[Principal, Depends(require_permission("finance.read"))],
 ) -> dict[str, Any]:
-    return paginate(
+    return with_balance(
         uow.session,
-        m.FineCharge,
-        paging,
-        m.FineCharge.reader_id == own_reader(principal),
+        paginate(
+            uow.session,
+            m.FineCharge,
+            paging,
+            m.FineCharge.reader_id == own_reader(principal),
+        ),
     )
 
 
@@ -1080,15 +1093,19 @@ def reservations(
     paging: Paging,
     principal: Annotated[Principal, Depends(require_permission("reservation.read"))],
     readerId: UUID | None = None,
+    status: Annotated[
+        str | None,
+        Query(pattern="^(ACTIVE|QUEUED|READY|FULFILLED|CANCELLED|EXPIRED)$"),
+    ] = None,
 ) -> dict[str, Any]:
     if not staff_reader_scope(principal):
         raise Forbidden("PERMISSION_DENIED", "Sử dụng mục tài khoản của tôi")
-    return paginate(
-        uow.session,
-        m.Reservation,
-        paging,
-        *([m.Reservation.reader_id == readerId] if readerId else []),
-    )
+    conditions = [m.Reservation.reader_id == readerId] if readerId else []
+    if status:
+        # ACTIVE = still waiting for the reader (QUEUED or READY).
+        wanted = ["QUEUED", "READY"] if status == "ACTIVE" else [status]
+        conditions.append(m.Reservation.status.in_(wanted))
+    return paginate(uow.session, m.Reservation, paging, *conditions)
 
 
 @router.get(
@@ -1356,12 +1373,22 @@ def lookup_loans(
             select(BookCopy).where(BookCopy.id.in_([row.copy_id for row in items]))
         )
     }
+    from lib_management.catalog.models import BookEdition
+
+    titles = dict(
+        uow.session.execute(
+            select(BookEdition.id, BookEdition.title).where(
+                BookEdition.id.in_({copy.edition_id for copy in copies.values()})
+            )
+        ).all()
+    )
     return {
         "data": [
             {
                 "loan": view(loans[item.loan_id]),
                 "loanItem": view(item),
                 "copy": view(copies[item.copy_id]),
+                "title": titles.get(copies[item.copy_id].edition_id),
             }
             for item in items
         ],

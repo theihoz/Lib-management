@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { Link, useNavigate, useParams } from "react-router";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServices, useSession } from "../../auth/session";
@@ -9,7 +9,8 @@ import { formatDateTime } from "../../lib/datetime";
 import { Badge, Button, Dialog, Field, Panel, Table } from "../../ui/components";
 import type { ScreenDefinition } from "../types";
 import { ApiFailure, LoadingSkeleton, MutationFeedback } from "./common";
-import { cardStatus, eligibilityReason } from "./labels";
+import { cardStatus, chargeReason, eligibilityReason } from "./labels";
+import { formatVnd } from "../../lib/money";
 
 function ReaderList() {
   const services = useServices();
@@ -283,7 +284,170 @@ function ReaderProfile() {
         />
       )}
       <ReaderCards readerId={readerId} canChange={session.permissions.includes("card.issue")} />
+      <ReaderActivity readerId={readerId} permissions={session.permissions} />
     </div>
+  );
+}
+
+const DAY = 86_400_000;
+const CLOSURE: Record<string, string> = { RETURNED: "Đã trả", LOST: "Báo mất", VOIDED: "Hủy" };
+const RESERVATION: Record<string, string> = { QUEUED: "Đang chờ", READY: "Sẵn sàng nhận" };
+
+/** YC#17 / BM12 / QĐ22: what the reader has now and has had. */
+function ReaderActivity({
+  readerId,
+  permissions,
+}: {
+  readerId: string;
+  permissions: readonly string[];
+}) {
+  const services = useServices();
+  const [now] = useState(() => Date.now());
+  const [cursor, setCursor] = useState<string>();
+  const loans = useQuery({
+    queryKey: ["reader", readerId, "loans"],
+    queryFn: async ({ signal }) =>
+      (
+        await services.circulation.get_loans({
+          params: { query: { readerId, status: "OPEN", limit: 100 } },
+          signal,
+        })
+      ).data!.data,
+  });
+  const fines = useQuery({
+    queryKey: ["reader", readerId, "fines"],
+    enabled: permissions.includes("finance.read"),
+    queryFn: async ({ signal }) =>
+      (
+        await services.finance.get_fine_charges({
+          params: { query: { readerId, limit: 100 } },
+          signal,
+        })
+      ).data!.data.filter((charge) => charge.balance !== "0"),
+  });
+  const holds = useQuery({
+    queryKey: ["reader", readerId, "reservations"],
+    enabled: permissions.includes("reservation.read"),
+    queryFn: async ({ signal }) =>
+      (
+        await services.circulation.get_reservations({
+          params: { query: { readerId, status: "ACTIVE", limit: 100 } },
+          signal,
+        })
+      ).data!.data,
+  });
+  const history = useQuery({
+    queryKey: ["reader", readerId, "history", cursor],
+    queryFn: async ({ signal }) =>
+      (
+        await services.circulation.get_readers_id_history({
+          params: { path: { id: readerId }, query: { cursor, limit: 20 } },
+          signal,
+        })
+      ).data!,
+    placeholderData: (previous) => previous,
+  });
+  const owed = (fines.data ?? []).reduce((sum, charge) => sum + BigInt(charge.balance ?? "0"), 0n);
+  const section = <T,>(
+    query: { isPending: boolean; error: unknown; refetch: () => unknown; data?: T },
+    render: (data: T) => ReactNode,
+  ) =>
+    query.isPending ? (
+      <LoadingSkeleton />
+    ) : query.error ? (
+      <ApiFailure error={query.error} retry={() => void query.refetch()} />
+    ) : (
+      render(query.data as T)
+    );
+  return (
+    <>
+      <Panel title="Đang mượn">
+        {section(loans, (rows) => (
+          <Table
+            caption="Sách đang mượn"
+            headers={["Phiếu", "Sách", "Mã vạch", "Hạn trả", "Quá hạn"]}
+            rows={rows.map((row) => {
+              const late = Math.floor((now - new Date(row.loanItem.due_at).getTime()) / DAY);
+              return [
+                row.loan.loan_no,
+                row.title ?? "—",
+                row.copy.barcode,
+                formatDateTime(row.loanItem.due_at),
+                late > 0 ? `${late} ngày` : "—",
+              ];
+            })}
+            empty={{ title: "Không có sách đang mượn", hint: "Độc giả đã trả hết sách." }}
+          />
+        ))}
+      </Panel>
+      {permissions.includes("finance.read") && (
+        <Panel title="Phạt chưa thu">
+          {section(fines, (rows) => (
+            <>
+              <Table
+                caption="Khoản phạt còn nợ"
+                headers={["Lý do", "Số tiền", "Còn nợ", "Ngày ghi nhận"]}
+                rows={rows.map((charge) => [
+                  chargeReason(charge.reason),
+                  formatVnd(charge.assessed_amount),
+                  formatVnd(charge.balance ?? "0"),
+                  formatDateTime(charge.created_at),
+                ])}
+                empty={{ title: "Không nợ phạt", hint: "Độc giả không còn khoản phạt nào." }}
+              />
+              <p>
+                Tổng còn nợ: <strong>{formatVnd(owed.toString())}</strong>
+              </p>
+            </>
+          ))}
+        </Panel>
+      )}
+      {permissions.includes("reservation.read") && (
+        <Panel title="Đặt trước đang chờ">
+          {section(holds, (rows) => (
+            <Table
+              caption="Đặt trước đang chờ"
+              headers={["Ấn bản", "Trạng thái", "Ngày đặt", "Hạn nhận"]}
+              rows={rows.map((row) => [
+                row.edition_id,
+                RESERVATION[row.status] ?? row.status,
+                formatDateTime(row.created_at),
+                row.ready_expires_at ? formatDateTime(row.ready_expires_at) : "—",
+              ])}
+              empty={{ title: "Không có đặt trước", hint: "Độc giả chưa đặt trước sách nào." }}
+            />
+          ))}
+        </Panel>
+      )}
+      <Panel title="Lịch sử mượn trả">
+        {section(history, (page) => (
+          <>
+            <Table
+              caption="Lịch sử mượn trả"
+              headers={["Ngày mượn", "Hạn trả", "Ngày trả", "Kết quả"]}
+              rows={page.data.map((item) => [
+                formatDateTime(item.issued_at),
+                formatDateTime(item.due_at),
+                item.closed_at ? formatDateTime(item.closed_at) : "Đang mượn",
+                item.closure_reason ? (CLOSURE[item.closure_reason] ?? item.closure_reason) : "—",
+              ])}
+            />
+            <div className="actions">
+              {cursor && (
+                <Button variant="secondary" onClick={() => setCursor(undefined)}>
+                  Về trang đầu
+                </Button>
+              )}
+              {page.nextCursor && (
+                <Button variant="secondary" onClick={() => setCursor(page.nextCursor ?? undefined)}>
+                  Trang sau
+                </Button>
+              )}
+            </div>
+          </>
+        ))}
+      </Panel>
+    </>
   );
 }
 type ReaderCardRow = components["schemas"]["ReaderCard"];

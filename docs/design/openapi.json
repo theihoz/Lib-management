@@ -4041,6 +4041,23 @@
               "format": "uuid"
             },
             "description": "Chỉ staff có scope; portal dùng /me alias"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ACTIVE",
+                "QUEUED",
+                "READY",
+                "FULFILLED",
+                "CANCELLED",
+                "EXPIRED"
+              ]
+            },
+            "description": "ACTIVE = QUEUED hoặc READY"
           }
         ],
         "responses": {
@@ -13093,6 +13110,14 @@
             "x-db-constraint": "DEFAULT now()",
             "type": "string",
             "format": "date-time"
+          },
+          "balance": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9]+$",
+            "description": "Còn nợ của khoản (VND), trong danh sách"
           }
         },
         "required": [
@@ -16157,6 +16182,13 @@
           },
           "copy": {
             "$ref": "#/components/schemas/BookCopy"
+          },
+          "title": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Tên sách của bản mượn"
           }
         },
         "required": [

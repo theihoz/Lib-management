@@ -1000,3 +1000,46 @@ def test_manual_fine_needs_propose_permission(client: TestClient):
         {"readerId": reader["id"], "proposedAmount": "1000", "reason": "x"},
     )
     assert denied.status_code == 403
+
+
+def test_reader_profile_data_for_yc17(client: TestClient, settings: Settings):
+    reader, copy, checkout, _ = setup_loan(client)
+    add_charge(client, settings, reader, checkout, 8000)
+    charges = client.get("/api/v1/fine-charges", params={"readerId": reader["id"]})
+    charge = charges.json()["data"][0]
+    assert charge["balance"] == "8000"
+    paid = post(
+        client,
+        "/payments",
+        {
+            "readerId": reader["id"],
+            "amount": "3000",
+            "method": "CASH",
+            "allocations": [{"chargeId": charge["id"], "amount": "3000"}],
+        },
+    )
+    assert paid.status_code == 201, paid.text
+    after = client.get("/api/v1/fine-charges", params={"readerId": reader["id"]})
+    assert after.json()["data"][0]["balance"] == "5000"
+    loans = client.get(
+        "/api/v1/loans", params={"readerId": reader["id"], "status": "OPEN"}
+    ).json()["data"]
+    assert len(loans) == 1 and loans[0]["title"].startswith("Concurrency in practice")
+    other = new_reader(client)
+    post(client, f"/readers/{other.json()['id']}/cards")
+    held = post(
+        client,
+        "/reservations",
+        {"readerId": other.json()["id"], "editionId": copy["edition_id"]},
+    )
+    assert held.status_code == 201, held.text
+    active = client.get(
+        "/api/v1/reservations",
+        params={"readerId": other.json()["id"], "status": "ACTIVE"},
+    )
+    assert [row["id"] for row in active.json()["data"]] == [held.json()["id"]]
+    none = client.get(
+        "/api/v1/reservations",
+        params={"readerId": other.json()["id"], "status": "EXPIRED"},
+    )
+    assert none.json()["data"] == []

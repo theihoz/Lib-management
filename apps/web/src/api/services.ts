@@ -8,6 +8,8 @@ export function createServices(client: ApiClient) {
     catalog: {
       get_copies_lookup: (options: FetchOptions<paths["/api/v1/copies/lookup"]["get"]>) =>
         client.GET("/api/v1/copies/lookup", options),
+      patch_copies_id: (options: FetchOptions<paths["/api/v1/copies/{id}"]["patch"]>) =>
+        client.PATCH("/api/v1/copies/{id}", options),
       get_locations: (options: FetchOptions<paths["/api/v1/locations"]["get"]>) =>
         client.GET("/api/v1/locations", options),
       post_locations: (options: FetchOptions<paths["/api/v1/locations"]["post"]>) =>
@@ -74,6 +76,10 @@ export function createServices(client: ApiClient) {
       get_readers_id_eligibility: (
         options: FetchOptions<paths["/api/v1/readers/{id}/eligibility"]["get"]>,
       ) => client.GET("/api/v1/readers/{id}/eligibility", options),
+      get_readers_id_cards: (options: FetchOptions<paths["/api/v1/readers/{id}/cards"]["get"]>) =>
+        client.GET("/api/v1/readers/{id}/cards", options),
+      patch_reader_cards_id: (options: FetchOptions<paths["/api/v1/reader-cards/{id}"]["patch"]>) =>
+        client.PATCH("/api/v1/reader-cards/{id}", options),
     },
     circulation: {
       post_loans: (options: FetchOptions<paths["/api/v1/loans"]["post"]>) =>
@@ -108,6 +114,9 @@ export function createServices(client: ApiClient) {
     finance: {
       get_fine_charges: (options: FetchOptions<paths["/api/v1/fine-charges"]["get"]>) =>
         client.GET("/api/v1/fine-charges", options),
+      post_charge_assessments: (
+        options: FetchOptions<paths["/api/v1/charge-assessments"]["post"]>,
+      ) => client.POST("/api/v1/charge-assessments", options),
       get_charge_assessments: (options: FetchOptions<paths["/api/v1/charge-assessments"]["get"]>) =>
         client.GET("/api/v1/charge-assessments", options),
       post_charge_assessments_id_decisions: (

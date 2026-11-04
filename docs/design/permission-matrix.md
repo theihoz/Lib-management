@@ -14,7 +14,8 @@ Nguồn: DOCX chính, Google Docs live và các quyết định đã duyệt tro
 | catalog.write / media.write | Không | Có | Có | Có | Không | F01–05/F15; guard tham chiếu |
 | reader.read / reader.write / card.issue | Chỉ own read | Có | Có | Có | Không | F06/F17/F18; mục đích phục vụ độc giả |
 | eligibility.read | Own | Có | Có | Có | Không | Preview không bảo đảm quyền checkout |
-| loan.checkout / return.create / loan.renew | Không | Có | Có | Có | Không | Return không chặn bởi debt/card/assessment |
+| loan.checkout / return.create | Không | Có | Có | Có | Không | Return không chặn bởi debt/card/assessment |
+| loan.renew | Own (YC#9) | Có | Có | Có | Không | Độc giả chỉ gia hạn phiếu của mình (404 với phiếu khác); cùng điều kiện C04 |
 | reservation.read / create / cancel | Own | Có | Có | Có | Không | readerId từ session khi own |
 | reservation.pickup | Không | Có | Có | Có | Không | READY đúng người, chưa expiry |
 | finance.read | Own dư/lịch sử | Có | Có | Có | Không | Không lộ độc giả khác |

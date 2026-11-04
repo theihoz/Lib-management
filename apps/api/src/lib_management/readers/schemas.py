@@ -104,3 +104,11 @@ class Eligibility(Schema):
     reasons: list[str] = Field()
     policy_version_id: uuid.UUID = Field(alias="policyVersionId")
     evaluated_at: datetime = Field(alias="evaluatedAt")
+
+
+class CardStatusRequest(Schema):
+    """YC#6: Hoạt động ↔ Tạm khóa; Hết hạn is derived from expires_at."""
+
+    expected_version: int = Field(alias="expectedVersion", ge=1)
+    status: Literal["ACTIVE", "BLOCKED"]
+    reason: str | None = Field(default=None, max_length=500)

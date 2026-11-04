@@ -148,6 +148,35 @@ def issue_card(id: uuid.UUID, key: Key, uow: Uow, actor: Issue) -> JSONResponse:
 
 
 @router.get(
+    "/readers/{id}/cards",
+    operation_id="get_readers_id_cards",
+    response_model=list[schemas.ReaderCard],
+)
+def list_cards(id: uuid.UUID, uow: Uow, actor: Read) -> list[models.ReaderCard]:
+    return service.cards(uow.session, id)
+
+
+@router.patch(
+    "/reader-cards/{id}",
+    operation_id="patch_reader_cards_id",
+    response_model=schemas.ReaderCard,
+)
+def set_card_status(
+    id: uuid.UUID, payload: schemas.CardStatusRequest, key: Key, uow: Uow, actor: Issue
+) -> JSONResponse:
+    return write(
+        uow,
+        actor,
+        "card.status",
+        lambda: schemas.ReaderCard.model_validate(
+            service.set_card_status(uow.session, id, payload, actor.account_id)
+        ).model_dump(mode="json"),
+        key=key,
+        payload={"id": str(id), **payload.model_dump(mode="json", by_alias=True)},
+    )
+
+
+@router.get(
     "/readers/{id}/eligibility",
     operation_id="get_readers_id_eligibility",
     response_model=schemas.Eligibility,

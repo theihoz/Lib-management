@@ -83,9 +83,24 @@ class HoldRequest(Input):
     readerId: UUID | None = Field(default=None)
 
 
+class CopyStatusRequest(Input):
+    expectedVersion: int = Field(ge=1)
+    status: Literal["AVAILABLE", "REPAIR", "MAINTENANCE", "LOST"]
+    reason: str | None = Field(default=None, max_length=500)
+
+
 class ReasonRequest(Input):
     reason: str = Field(min_length=1)
     expectedVersion: int | None = Field(default=None, ge=1)
+
+
+class ManualAssessmentRequest(Input):
+    """YC#11 / D2: a Librarian proposes a manual fine; a Manager decides it."""
+
+    readerId: UUID
+    loanItemId: UUID | None = Field(default=None)
+    proposedAmount: str = Field(pattern="^[0-9]+$", max_length=12)
+    reason: str = Field(min_length=1, max_length=500)
 
 
 class DecisionRequest(Input):

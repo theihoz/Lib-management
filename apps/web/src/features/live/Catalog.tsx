@@ -5,10 +5,11 @@ import { useServices, useSession } from "../../auth/session";
 import { createIdempotencyKey } from "../../api/idempotency";
 import type { components } from "../../api/schema";
 import { useDebounced } from "../../lib/useDebounced";
-import { Badge, BookCover, Button, Field, Notice, Panel, Table } from "../../ui/components";
+import { Badge, BookCover, Button, Dialog, Field, Notice, Panel, Table } from "../../ui/components";
 import type { Book } from "../../ui/components";
 import type { ScreenDefinition } from "../types";
 import { ApiFailure, LoadingSkeleton, MutationFeedback } from "./common";
+import { MANUAL_COPY_STATUS, copyStatus, type ManualCopyStatus } from "./labels";
 
 type Edition = components["schemas"]["PublicEdition"];
 function editionCover(item: Edition): Book {
@@ -32,13 +33,29 @@ function EditionList({ staff = false }: { staff?: boolean }) {
     title: "Không tìm thấy",
     hint: "Không có sách phù hợp với từ khóa. Thử tên sách, tác giả hoặc ISBN khác.",
   };
+  const [categoryId, setCategoryId] = useState("");
+  const filtered = !!query || !!categoryId;
+  const categories = useQuery({
+    queryKey: ["catalog", "categories", "filter"],
+    queryFn: async ({ signal }) =>
+      (await services.catalog.get_categories({ params: { query: { limit: 100 } }, signal })).data!
+        .data,
+    staleTime: 5 * 60_000,
+  });
   const result = useInfiniteQuery({
-    queryKey: ["catalog", "editions", query],
+    queryKey: ["catalog", "editions", query, categoryId],
     initialPageParam: undefined as string | undefined,
     queryFn: async ({ pageParam, signal }) =>
       (
         await services.catalog.get_book_editions({
-          params: { query: { query, cursor: pageParam, limit: 20 } },
+          params: {
+            query: {
+              query,
+              categoryId: categoryId || undefined,
+              cursor: pageParam,
+              limit: 20,
+            },
+          },
           signal,
         })
       ).data!,
@@ -56,6 +73,21 @@ function EditionList({ staff = false }: { staff?: boolean }) {
           value={search}
           onChange={(event) => setSearch(event.target.value)}
         />
+        <div className="field">
+          <label htmlFor="edition-category-filter">Thể loại</label>
+          <select
+            id="edition-category-filter"
+            value={categoryId}
+            onChange={(event) => setCategoryId(event.target.value)}
+          >
+            <option value="">Tất cả thể loại</option>
+            {categories.data?.map((category) => (
+              <option key={category.id} value={category.id}>
+                {category.code} · {category.name}
+              </option>
+            ))}
+          </select>
+        </div>
         {session.permissions.includes("catalog.write") && (
           <Link className="button button-primary" to="/staff/catalog/editions/new">
             Thêm ấn bản
@@ -75,7 +107,7 @@ function EditionList({ staff = false }: { staff?: boolean }) {
         <Panel>
           <Table
             headers={["Mã ấn bản", "Nhan đề", "Tác giả", "Năm", "Khả dụng"]}
-            empty={query ? notFound : undefined}
+            empty={filtered ? notFound : undefined}
             rows={items.map((item) => [
               item.id,
               item.title,
@@ -113,8 +145,8 @@ function EditionList({ staff = false }: { staff?: boolean }) {
       ) : (
         <Panel>
           <div className="empty-state">
-            <h2>{query ? notFound.title : "Chưa có ấn bản"}</h2>
-            <p>{query ? notFound.hint : "Các ấn bản sẽ xuất hiện tại đây khi có dữ liệu."}</p>
+            <h2>{filtered ? notFound.title : "Chưa có ấn bản"}</h2>
+            <p>{filtered ? notFound.hint : "Các ấn bản sẽ xuất hiện tại đây khi có dữ liệu."}</p>
           </div>
         </Panel>
       )}
@@ -136,6 +168,25 @@ function EditionDetail() {
   const { editionId = "" } = useParams();
   const services = useServices();
   const session = useSession();
+  const navigate = useNavigate();
+  const cache = useQueryClient();
+  const [confirm, setConfirm] = useState(false);
+  // D4: "xóa" means stop using; history is kept (Lab 3 RESTRICT).
+  const deactivate = useMutation({
+    mutationFn: async (version: number) =>
+      (
+        await services.catalog.patch_book_editions_id({
+          params: { path: { id: editionId } },
+          body: { expectedVersion: version, status: "INACTIVE" },
+        })
+      ).data!,
+    onSuccess: () => {
+      setConfirm(false);
+      void cache.invalidateQueries({ queryKey: ["catalog"] });
+      void navigate("/staff/catalog");
+    },
+    onError: () => setConfirm(false),
+  });
   const result = useQuery({
     queryKey: ["catalog", "edition", editionId],
     queryFn: async ({ signal }) =>
@@ -178,15 +229,43 @@ function EditionDetail() {
             </div>
           </dl>
           {session.permissions.includes("catalog.write") && (
-            <Link
-              className="button button-secondary"
-              to={`/staff/catalog/copies?edition=${book.id}`}
-            >
-              Quản lý bản sách
-            </Link>
+            <div className="actions">
+              <Link
+                className="button button-secondary"
+                to={`/staff/catalog/copies?edition=${book.id}`}
+              >
+                Quản lý bản sách
+              </Link>
+              <Button variant="secondary" onClick={() => setConfirm(true)}>
+                Ngừng dùng ấn bản
+              </Button>
+            </div>
           )}
+          <MutationFeedback error={deactivate.error} />
         </div>
       </div>
+      <Dialog
+        open={confirm}
+        title="Ngừng dùng ấn bản"
+        pending={deactivate.isPending}
+        onClose={() => setConfirm(false)}
+      >
+        <p>
+          Ấn bản <strong>{book.title}</strong> sẽ không còn hiện trong tra cứu. Lịch sử mượn trả
+          được giữ nguyên; không thể ngừng dùng khi còn bản sách đang mượn hoặc giữ chỗ.
+        </p>
+        <div className="actions">
+          <Button
+            disabled={deactivate.isPending}
+            onClick={() => deactivate.mutate(book.version ?? 1)}
+          >
+            Xác nhận ngừng dùng
+          </Button>
+          <Button variant="secondary" onClick={() => setConfirm(false)}>
+            Quay lại
+          </Button>
+        </div>
+      </Dialog>
     </div>
   );
 }
@@ -552,6 +631,35 @@ function Copies() {
       void cache.invalidateQueries({ queryKey: ["catalog"] });
     },
   });
+  const copies = result.data?.pages.flatMap((page) => page.data) ?? [];
+  const statusKey = useRef(createIdempotencyKey()).current;
+  const [target, setTarget] = useState<(typeof copies)[number]>();
+  const [next, setNext] = useState<ManualCopyStatus>("AVAILABLE");
+  const [reason, setReason] = useState("");
+  const locked = !!target && !(MANUAL_COPY_STATUS as readonly string[]).includes(target.status);
+  const change = useMutation({
+    mutationFn: async () => {
+      const body = {
+        expectedVersion: target!.version,
+        status: next,
+        reason: reason.trim() || null,
+      };
+      return (
+        await services.catalog.patch_copies_id({
+          params: {
+            path: { id: target!.id },
+            header: { "Idempotency-Key": statusKey.forPayload({ id: target!.id, ...body }) },
+          },
+          body,
+        })
+      ).data!;
+    },
+    onSuccess: () => {
+      statusKey.reset();
+      setTarget(undefined);
+      void cache.invalidateQueries({ queryKey: ["catalog"] });
+    },
+  });
   return (
     <div className="stack">
       <Field
@@ -567,13 +675,26 @@ function Copies() {
       ) : (
         <Panel>
           <Table
-            headers={["Barcode", "Tình trạng", "Lưu thông"]}
-            rows={
-              result.data?.pages
-                .flatMap((page) => page.data)
-                .map((copy) => [copy.barcode, copy.status, copy.location_id ?? "—"]) ?? []
-            }
+            caption="Bản sách của ấn bản"
+            headers={["Barcode", "Tình trạng", "Vị trí"]}
+            rows={copies.map((copy) => [
+              copy.barcode,
+              copyStatus(copy.status),
+              copy.location_id ?? "—",
+            ])}
+            onRow={(index) => {
+              const picked = copies[index];
+              if (!picked) return;
+              setTarget(picked);
+              setNext(picked.status === "AVAILABLE" ? "REPAIR" : "AVAILABLE");
+              setReason("");
+              change.reset();
+            }}
           />
+          <p className="muted">
+            Bấm mã vạch để đổi trạng thái (Sẵn sàng/Hỏng/Bảo trì/Mất). Bản đang mượn, đang giữ chỗ
+            hoặc đã thanh lý không đổi tay được.
+          </p>
           {result.hasNextPage && (
             <Button
               onClick={() => {
@@ -585,6 +706,62 @@ function Copies() {
           )}
         </Panel>
       )}
+      <MutationFeedback error={undefined} success={change.isSuccess}>
+        Đã đổi trạng thái bản sách.
+      </MutationFeedback>
+      <Dialog
+        open={!!target}
+        title={`Đổi trạng thái bản ${target?.barcode ?? ""}`}
+        pending={change.isPending}
+        onClose={() => setTarget(undefined)}
+      >
+        {locked ? (
+          <Notice tone="warning">
+            Bản sách đang ở trạng thái “{copyStatus(target.status)}”; trạng thái này chỉ đổi qua
+            mượn/trả/giữ chỗ hoặc thanh lý.
+          </Notice>
+        ) : (
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              change.mutate();
+            }}
+          >
+            <p>Hiện tại: {target ? copyStatus(target.status) : ""}</p>
+            <div className="field">
+              <label htmlFor="copy-next-status">Trạng thái mới</label>
+              <select
+                id="copy-next-status"
+                value={next}
+                onChange={(event) => setNext(event.target.value as ManualCopyStatus)}
+              >
+                {MANUAL_COPY_STATUS.filter((code) => code !== target?.status).map((code) => (
+                  <option key={code} value={code}>
+                    {copyStatus(code)}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <Field
+              label="Lý do"
+              required={next !== "AVAILABLE"}
+              maxLength={500}
+              value={reason}
+              hint={next === "AVAILABLE" ? "Không bắt buộc khi đưa về Sẵn sàng." : undefined}
+              onChange={(event) => setReason(event.target.value)}
+            />
+            <MutationFeedback error={change.error} />
+            <div className="actions">
+              <Button type="submit" disabled={change.isPending}>
+                {change.isPending ? "Đang lưu…" : "Lưu trạng thái"}
+              </Button>
+              <Button variant="secondary" onClick={() => setTarget(undefined)}>
+                Hủy
+              </Button>
+            </div>
+          </form>
+        )}
+      </Dialog>
       <Panel title="Thêm bản sách">
         <form
           onSubmit={(event) => {

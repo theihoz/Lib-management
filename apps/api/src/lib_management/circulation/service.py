@@ -132,7 +132,17 @@ def eligibility(session: Session, reader_id: UUID) -> dict[str, Any]:
         )
     )
     if card is None:
-        reasons.append("CARD_NOT_VALID")
+        blocked = session.scalar(
+            select(ReaderCard.id)
+            .where(
+                ReaderCard.reader_id == reader_id,
+                ReaderCard.status == "BLOCKED",
+                ReaderCard.expires_at > now,
+            )
+            .limit(1)
+        )
+        # YC#6: a locked card reads differently at the desk than an expired one.
+        reasons.append("CARD_BLOCKED" if blocked else "CARD_NOT_VALID")
     if outstanding(session, reader_id) > outstanding_limit(policy):
         reasons.append("OUTSTANDING_BALANCE")
     if session.scalar(

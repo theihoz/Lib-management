@@ -23,6 +23,7 @@ const PORTAL_PERMISSIONS = new Set([
   "catalog.read",
   "reader.read",
   "eligibility.read",
+  "loan.renew",
   "reservation.read",
   "reservation.create",
   "reservation.cancel",

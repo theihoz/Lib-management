@@ -29,7 +29,7 @@ Monorepo gồm backend FastAPI và frontend React, phát triển trong một Dev
 - Lõi thư viện (code, CI xanh; chưa nghiệm thu E2E): danh mục/bản sao/vị trí, độc giả và thẻ,
   eligibility, mượn/trả/gia hạn, phí (assessment, thu, miễn, đảo), quá hạn, báo cáo + CSV
   qua worker và storage private, policy có phiên bản (F14); CLI `link-reader-account`.
-  66/85 operation OpenAPI được phục vụ; 19 còn lại thuộc phase 2.
+  63/85 operation OpenAPI được phục vụ (`x-status` kiểm bằng `scripts/openapi_status.py` và drift test); 22 còn lại thuộc phase 2.
 - Frontend ([spec M0 frontend](docs/specs/M0-frontend-foundation.md)): Keycloak PKCE, client sinh từ
   OpenAPI, route/menu theo permission, 36 màn thuộc lõi; cấu hình runtime `/config.json` kiểm tra bằng Zod.
 - GitHub Pages triển khai **bản demo** tĩnh (mock API trong trình duyệt) sau khi toàn bộ CI đạt;

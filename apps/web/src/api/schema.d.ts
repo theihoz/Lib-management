@@ -209,7 +209,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** card.list */
+        get: operations["get_readers_id_cards"];
         put?: never;
         /** card.issue */
         post: operations["post_readers_id_cards"];
@@ -387,7 +388,8 @@ export interface paths {
         /** assessment.decide */
         get: operations["get_charge_assessments"];
         put?: never;
-        post?: never;
+        /** assessment.propose */
+        post: operations["post_charge_assessments"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1199,6 +1201,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/copies/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** copy.status */
+        patch: operations["patch_copies_id"];
+        trace?: never;
+    };
+    "/api/v1/reader-cards/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** card.status */
+        patch: operations["patch_reader_cards_id"];
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -1365,7 +1401,7 @@ export interface components {
              * @description Vị trí hiện tại
              */
             location_id?: string | null;
-            /** @description Trạng thái vật lý */
+            /** @description AVAILABLE/ON_LOAN/HELD/REPAIR/MAINTENANCE/LOST/RETIRED (Sẵn sàng/Đã mượn/Giữ chỗ/Hỏng/Bảo trì/Mất/Thanh lý) */
             status: string;
             /**
              * Format: date-time
@@ -1925,6 +1961,8 @@ export interface components {
              * @description Thời điểm ghi nhận
              */
             created_at: string;
+            /** @description Còn nợ của khoản (VND), trong danh sách */
+            balance?: string | null;
         };
         Payment: {
             /**
@@ -2410,6 +2448,8 @@ export interface components {
                 /** Format: date-time */
                 asOf: string;
             };
+            /** @description expectedVersion khi sửa/ngừng dùng */
+            version?: number;
         };
         AccountView: {
             /**
@@ -2559,16 +2599,24 @@ export interface components {
             id: string;
             /** Format: uuid */
             reader_id: string;
-            /** Format: uuid */
-            return_event_id: string;
+            /**
+             * Format: uuid
+             * @description Sự kiện trả; NULL với kind MANUAL
+             */
+            return_event_id?: string | null;
             /** @enum {string} */
-            kind: "DAMAGE" | "LOST";
+            kind: "DAMAGE" | "LOST" | "MANUAL";
             /** @enum {string} */
             status: "PENDING" | "ASSESSED" | "CLOSED_NO_CHARGE";
             proposed_amount: string;
             approved_amount?: string | null;
             reason: string;
             version: number;
+            /**
+             * Format: uuid
+             * @description Mục mượn liên quan (tùy chọn, MANUAL)
+             */
+            loan_item_id?: string | null;
         };
         DecisionRequest: {
             expectedVersion: number;
@@ -2991,6 +3039,8 @@ export interface components {
             loan: components["schemas"]["Loan"];
             loanItem: components["schemas"]["LoanItem"];
             copy: components["schemas"]["BookCopy"];
+            /** @description Tên sách của bản mượn */
+            title?: string | null;
         };
         ReportResult: {
             /** Format: uuid */
@@ -3068,6 +3118,34 @@ export interface components {
             damageLostAssessment: "MANUAL_APPROVAL";
             damageLostFees: components["schemas"]["DamageLostFees"];
         };
+        /** @description YC#2 / D1: đổi trạng thái bản sao bằng tay */
+        CopyStatusRequest: {
+            expectedVersion: number;
+            /**
+             * @description Sẵn sàng / Hỏng / Bảo trì / Mất
+             * @enum {string}
+             */
+            status: "AVAILABLE" | "REPAIR" | "MAINTENANCE" | "LOST";
+            /** @description Bắt buộc khi khác AVAILABLE */
+            reason?: string | null;
+        };
+        /** @description YC#6: Hoạt động ↔ Tạm khóa (Hết hạn suy ra từ expires_at) */
+        CardStatusRequest: {
+            expectedVersion: number;
+            /** @enum {string} */
+            status: "ACTIVE" | "BLOCKED";
+            /** @description Bắt buộc khi khóa */
+            reason?: string | null;
+        };
+        /** @description YC#11 / D2: Thủ thư đề xuất phạt thủ công, Quản lý duyệt */
+        ManualAssessmentRequest: {
+            /** Format: uuid */
+            readerId: string;
+            /** Format: uuid */
+            loanItemId?: string | null;
+            proposedAmount: string;
+            reason: string;
+        };
     };
     responses: never;
     parameters: never;
@@ -3082,7 +3160,10 @@ export interface operations {
             query?: {
                 cursor?: string;
                 limit?: number;
+                /** @description Tiêu đề, ISBN hoặc tên tác giả (YC#1); khoảng trắng bị bỏ qua (QĐ23) */
                 query?: string;
+                /** @description Lọc theo thể loại, gồm thể loại con */
+                categoryId?: string;
             };
             header?: never;
             path?: never;
@@ -5037,6 +5118,91 @@ export interface operations {
             };
         };
     };
+    get_readers_id_cards: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReaderCard"][];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found in scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict/version/idempotency */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation or eligibility */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Rate limit */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
     post_readers_id_cards: {
         parameters: {
             query?: never;
@@ -5663,6 +5829,8 @@ export interface operations {
                 query?: string;
                 /** @description Chỉ staff có scope; portal dùng /me alias */
                 readerId?: string;
+                /** @description ACTIVE = QUEUED hoặc READY */
+                status?: "ACTIVE" | "QUEUED" | "READY" | "FULFILLED" | "CANCELLED" | "EXPIRED";
             };
             header?: never;
             path?: never;
@@ -6139,6 +6307,95 @@ export interface operations {
                         data: components["schemas"]["ChargeAssessment"][];
                         nextCursor: string | null;
                     };
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found in scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict/version/idempotency */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation or eligibility */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Rate limit */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    post_charge_assessments: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ManualAssessmentRequest"];
+            };
+        };
+        responses: {
+            /** @description Success */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChargeAssessment"];
                 };
             };
             /** @description Unauthenticated */
@@ -9386,6 +9643,8 @@ export interface operations {
                 cursor?: string;
                 limit?: number;
                 query?: string;
+                /** @description OPEN = đang mượn; ALL = cả lịch sử (QĐ22) */
+                status?: "OPEN" | "ALL";
             };
             header?: never;
             path?: never;
@@ -9400,7 +9659,7 @@ export interface operations {
                 };
                 content: {
                     "application/json": {
-                        data: components["schemas"]["LoanItem"][];
+                        data: components["schemas"]["LoanLookupRow"][];
                         nextCursor: string | null;
                     };
                 };
@@ -10493,6 +10752,188 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PolicyVersion"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found in scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict/version/idempotency */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation or eligibility */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Rate limit */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    patch_copies_id: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CopyStatusRequest"];
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BookCopy"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found in scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict/version/idempotency */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation or eligibility */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Rate limit */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    patch_reader_cards_id: {
+        parameters: {
+            query?: never;
+            header: {
+                "Idempotency-Key": string;
+            };
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CardStatusRequest"];
+            };
+        };
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReaderCard"];
                 };
             };
             /** @description Unauthenticated */

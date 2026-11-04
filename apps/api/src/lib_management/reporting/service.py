@@ -218,7 +218,8 @@ SELECT e.id AS edition_id, e.title, count(*) AS total_copies,
  count(*) FILTER (WHERE c.status = 'AVAILABLE') AS available,
  count(*) FILTER (WHERE c.status = 'ON_LOAN') AS on_loan,
  count(*) FILTER (WHERE c.status = 'HELD') AS held,
- count(*) FILTER (WHERE c.status IN ('REPAIR','LOST','RETIRED')) AS unavailable
+ count(*) FILTER (WHERE c.status IN ('REPAIR','MAINTENANCE','LOST','RETIRED'))
+AS unavailable
 FROM book_edition e JOIN book_copy c ON c.edition_id = e.id
 GROUP BY e.id, e.title ORDER BY e.title, e.id
 """)

@@ -223,9 +223,16 @@ def list_book_editions(
     uow: Uow,
     paging: Paging,
     query: Annotated[str | None, Query(max_length=300)] = None,
+    categoryId: uuid.UUID | None = None,
 ) -> dict[str, Any]:
     result = service.page(
-        uow.session, models.BookEdition, paging, query, status="ACTIVE"
+        uow.session,
+        models.BookEdition,
+        paging,
+        query.strip() if query and query.strip() else None,
+        where=(service.edition_in_category(categoryId),) if categoryId else (),
+        also_match=service.edition_author_match,
+        status="ACTIVE",
     )
     result["data"] = service.public_editions(uow.session, result["data"])
     return result

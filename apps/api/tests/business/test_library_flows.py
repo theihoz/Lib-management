@@ -768,3 +768,382 @@ def test_export_without_data_creates_no_file(client, settings, tmp_path):
     link = client.get(f"/api/v1/export-jobs/{job_id}/download")
     assert link.status_code == 409, link.text
     assert link.json()["code"] == "NO_DATA"
+
+
+def patch_copy(client: TestClient, copy_id: str, key: str | None = None, **body):
+    return client.patch(
+        f"/api/v1/copies/{copy_id}",
+        json=body,
+        headers={"Idempotency-Key": key or uuid4().hex},
+    )
+
+
+def test_copy_status_transitions_follow_yc2(client: TestClient):
+    reader, copy, checkout, _ = setup_loan(client)
+    # On loan: locked until returned (D1).
+    locked = patch_copy(
+        client, copy["id"], expectedVersion=2, status="REPAIR", reason="x"
+    )
+    assert locked.status_code == 409 and locked.json()["code"] == "COPY_STATUS_LOCKED"
+    post(
+        client,
+        "/returns",
+        {"loanItemId": checkout["items"][0]["loanItemId"], "condition": "GOOD"},
+    )
+    current = client.get(f"/api/v1/book-editions/{copy['edition_id']}/copies").json()[
+        "data"
+    ][0]
+    assert current["status"] == "AVAILABLE"
+    no_reason = patch_copy(
+        client, copy["id"], expectedVersion=current["version"], status="MAINTENANCE"
+    )
+    assert no_reason.status_code == 422
+    key = uuid4().hex
+    body = {
+        "expectedVersion": current["version"],
+        "status": "MAINTENANCE",
+        "reason": "Bọc lại bìa",
+    }
+    moved = patch_copy(client, copy["id"], key, **body)
+    assert moved.status_code == 200, moved.text
+    assert moved.json()["status"] == "MAINTENANCE"
+    assert patch_copy(client, copy["id"], key, **body).json() == moved.json()
+    stale = patch_copy(client, copy["id"], **body)
+    assert stale.status_code == 409
+    lost = patch_copy(
+        client,
+        copy["id"],
+        expectedVersion=moved.json()["version"],
+        status="LOST",
+        reason="Không tìm thấy khi kiểm kê",
+    )
+    assert lost.status_code == 200, lost.text
+    found = patch_copy(
+        client, copy["id"], expectedVersion=lost.json()["version"], status="AVAILABLE"
+    )
+    assert found.status_code == 200 and found.json()["status"] == "AVAILABLE"
+
+
+def test_repaired_copy_goes_to_waiting_reservation(
+    client: TestClient, settings: Settings
+):
+    from lib_management.circulation.models import Reservation
+
+    reader, copy, checkout, _ = setup_loan(client)
+    other = new_reader(client)
+    assert post(client, f"/readers/{other.json()['id']}/cards").status_code == 201
+    held = post(
+        client,
+        "/reservations",
+        {"readerId": other.json()["id"], "editionId": copy["edition_id"]},
+    )
+    assert held.status_code == 201, held.text
+    assert held.json()["status"] == "QUEUED"
+    returned = post(
+        client,
+        "/returns",
+        {
+            "loanItemId": checkout["items"][0]["loanItemId"],
+            "condition": "DAMAGE",
+            "assessment": {"proposedAmount": "20000", "reason": "Rách bìa"},
+        },
+    )
+    assert returned.status_code == 201, returned.text
+    current = client.get(f"/api/v1/book-editions/{copy['edition_id']}/copies").json()[
+        "data"
+    ][0]
+    assert current["status"] == "REPAIR"
+    repaired = patch_copy(
+        client, copy["id"], expectedVersion=current["version"], status="AVAILABLE"
+    )
+    assert repaired.status_code == 200, repaired.text
+    engine = create_engine_from_settings(settings)
+    with create_session_factory(engine)() as session:
+        reservation = session.get(Reservation, held.json()["id"])
+        assert reservation is not None and reservation.status == "READY"
+    engine.dispose()
+
+
+def card_status(client: TestClient, card: dict, version: int, status: str, reason=None):
+    return client.patch(
+        f"/api/v1/reader-cards/{card['id']}",
+        json={"expectedVersion": version, "status": status, "reason": reason},
+        headers={"Idempotency-Key": uuid4().hex},
+    )
+
+
+def test_card_block_and_unblock_follow_yc6(client: TestClient):
+    reader, copy, checkout, card = setup_loan(client)
+    no_reason = card_status(client, card, card["version"], "BLOCKED")
+    assert no_reason.status_code == 422
+    blocked = card_status(
+        client, card, card["version"], "BLOCKED", "Mất thẻ, chờ cấp lại"
+    )
+    assert blocked.status_code == 200, blocked.text
+    assert blocked.json()["status"] == "BLOCKED"
+    assert "CARD_BLOCKED" in reasons(client, reader)
+    post(
+        client,
+        "/returns",
+        {"loanItemId": checkout["items"][0]["loanItemId"], "condition": "GOOD"},
+    )
+    refused = post(
+        client, "/loans", {"readerId": reader["id"], "copyIds": [copy["id"]]}
+    )
+    assert refused.status_code == 422
+    assert "CARD_BLOCKED" in refused.json()["details"][0]["reasons"]
+    same = card_status(client, card, blocked.json()["version"], "BLOCKED", "again")
+    assert same.status_code == 409
+    unblocked = card_status(client, card, blocked.json()["version"], "ACTIVE")
+    assert unblocked.status_code == 200, unblocked.text
+    assert "CARD_BLOCKED" not in reasons(client, reader)
+    listed = client.get(f"/api/v1/readers/{reader['id']}/cards")
+    assert listed.status_code == 200
+    assert [row["status"] for row in listed.json()] == ["ACTIVE"]
+
+
+def test_revoked_or_expired_card_cannot_be_unblocked(client, settings):
+    from uuid import UUID
+
+    from lib_management.readers.models import ReaderCard
+
+    reader, _, _, card = setup_loan(client)
+    reissued = post(client, f"/readers/{reader['id']}/cards")
+    assert reissued.status_code == 201
+    revoked = client.get(f"/api/v1/readers/{reader['id']}/cards").json()[-1]
+    assert revoked["id"] == card["id"] and revoked["status"] == "REVOKED"
+    assert card_status(client, revoked, revoked["version"], "ACTIVE").status_code == 409
+    current = reissued.json()
+    blocked = card_status(client, current, current["version"], "BLOCKED", "Tạm khóa")
+    engine = create_engine_from_settings(settings)
+    with create_session_factory(engine)() as session, session.begin():
+        row = session.get(ReaderCard, UUID(current["id"]))
+        assert row is not None
+        row.issued_at = datetime.now(UTC) - timedelta(days=200)
+        row.expires_at = datetime.now(UTC) - timedelta(days=1)
+    engine.dispose()
+    expired = card_status(client, current, blocked.json()["version"], "ACTIVE")
+    assert expired.status_code == 409 and expired.json()["code"] == "CARD_EXPIRED"
+
+
+def test_manual_fine_is_proposed_then_decided(client: TestClient):
+    # YC#11 / D2: the Librarian proposes, the Manager decides (like C03).
+    reader, copy, checkout, _ = setup_loan(client)
+    other, _, other_checkout, _ = setup_loan(client)
+    foreign = post(
+        client,
+        "/charge-assessments",
+        {
+            "readerId": reader["id"],
+            "loanItemId": other_checkout["items"][0]["loanItemId"],
+            "proposedAmount": "10000",
+            "reason": "Làm bẩn sách",
+        },
+    )
+    assert foreign.status_code == 422
+    assert (
+        post(
+            client,
+            "/charge-assessments",
+            {"readerId": reader["id"], "proposedAmount": "0", "reason": "x"},
+        ).status_code
+        == 422
+    )
+    proposed = post(
+        client,
+        "/charge-assessments",
+        {
+            "readerId": reader["id"],
+            "loanItemId": checkout["items"][0]["loanItemId"],
+            "proposedAmount": "15000",
+            "reason": "Viết vào sách",
+        },
+    )
+    assert proposed.status_code == 201, proposed.text
+    assert (
+        proposed.json()["kind"] == "MANUAL" and proposed.json()["status"] == "PENDING"
+    )
+    assert "PENDING_ASSESSMENT" in reasons(client, reader)
+    decided = post(
+        client,
+        f"/charge-assessments/{proposed.json()['id']}/decisions",
+        {"expectedVersion": 1, "amount": "15000", "reason": "Đúng quy định"},
+    )
+    assert decided.status_code == 201, decided.text
+    charges = client.get("/api/v1/fine-charges", params={"readerId": reader["id"]})
+    manual = [row for row in charges.json()["data"] if row["reason"] == "MANUAL"]
+    assert len(manual) == 1 and manual[0]["assessed_amount"] == "15000"
+    assert "PENDING_ASSESSMENT" not in reasons(client, reader)
+    unlinked = post(
+        client,
+        "/charge-assessments",
+        {"readerId": reader["id"], "proposedAmount": "5000", "reason": "Ồn ào"},
+    )
+    assert unlinked.status_code == 201, unlinked.text
+    closed = post(
+        client,
+        f"/charge-assessments/{unlinked.json()['id']}/decisions",
+        {"expectedVersion": 1, "amount": "0", "reason": "Nhắc nhở, không phạt"},
+    )
+    assert closed.status_code == 201 and closed.json()["status"] == "CLOSED_NO_CHARGE"
+
+
+def test_manual_fine_needs_propose_permission(client: TestClient):
+    reader, _, _, _ = setup_loan(client)
+    principal = client.test_principal
+    client.app.dependency_overrides[authenticated] = lambda: Principal(
+        principal.account, principal.permissions - {"assessment.propose"}
+    )
+    denied = post(
+        client,
+        "/charge-assessments",
+        {"readerId": reader["id"], "proposedAmount": "1000", "reason": "x"},
+    )
+    assert denied.status_code == 403
+
+
+def test_reader_profile_data_for_yc17(client: TestClient, settings: Settings):
+    reader, copy, checkout, _ = setup_loan(client)
+    add_charge(client, settings, reader, checkout, 8000)
+    charges = client.get("/api/v1/fine-charges", params={"readerId": reader["id"]})
+    charge = charges.json()["data"][0]
+    assert charge["balance"] == "8000"
+    paid = post(
+        client,
+        "/payments",
+        {
+            "readerId": reader["id"],
+            "amount": "3000",
+            "method": "CASH",
+            "allocations": [{"chargeId": charge["id"], "amount": "3000"}],
+        },
+    )
+    assert paid.status_code == 201, paid.text
+    after = client.get("/api/v1/fine-charges", params={"readerId": reader["id"]})
+    assert after.json()["data"][0]["balance"] == "5000"
+    loans = client.get(
+        "/api/v1/loans", params={"readerId": reader["id"], "status": "OPEN"}
+    ).json()["data"]
+    assert len(loans) == 1 and loans[0]["title"].startswith("Concurrency in practice")
+    other = new_reader(client)
+    post(client, f"/readers/{other.json()['id']}/cards")
+    held = post(
+        client,
+        "/reservations",
+        {"readerId": other.json()["id"], "editionId": copy["edition_id"]},
+    )
+    assert held.status_code == 201, held.text
+    active = client.get(
+        "/api/v1/reservations",
+        params={"readerId": other.json()["id"], "status": "ACTIVE"},
+    )
+    assert [row["id"] for row in active.json()["data"]] == [held.json()["id"]]
+    none = client.get(
+        "/api/v1/reservations",
+        params={"readerId": other.json()["id"], "status": "EXPIRED"},
+    )
+    assert none.json()["data"] == []
+
+
+def test_book_search_by_author_and_category_tree(client: TestClient):
+    tag = uuid4().hex[:6]
+    author = post(client, "/authors", {"name": f"Tác giả {tag}"})
+    assert author.status_code == 201, author.text
+    root = main_category(client, "B")
+    branch = post(
+        client,
+        "/categories",
+        {"code": "B-" + tag, "name": "Nhánh B " + tag, "parentId": root["id"]},
+    )
+    leaf = post(
+        client,
+        "/categories",
+        {"code": "BB-" + tag, "name": "Lá B " + tag, "parentId": branch.json()["id"]},
+    )
+    edition = post(
+        client,
+        "/book-editions",
+        {
+            "title": "Sách tìm kiếm " + tag,
+            "publicationYear": datetime.now(UTC).year,
+            "authorIds": [author.json()["id"]],
+            "categoryIds": [leaf.json()["id"]],
+        },
+    )
+    assert edition.status_code == 201, edition.text
+
+    def ids(**params: str) -> set[str]:
+        page = client.get("/api/v1/book-editions", params={"limit": 100, **params})
+        assert page.status_code == 200, page.text
+        return {row["id"] for row in page.json()["data"]}
+
+    assert edition.json()["id"] in ids(query=f"tác giả {tag}")
+    assert edition.json()["id"] in ids(categoryId=branch.json()["id"])
+    assert edition.json()["id"] in ids(categoryId=root["id"], query=tag)
+    other = main_category(client, "C")
+    assert edition.json()["id"] not in ids(categoryId=other["id"])
+
+
+def test_edition_deactivation_follows_d4(client: TestClient):
+    reader, copy, checkout, _ = setup_loan(client)
+    edition_id = copy["edition_id"]
+    busy = client.patch(
+        f"/api/v1/book-editions/{edition_id}",
+        json={"expectedVersion": 1, "status": "INACTIVE"},
+    )
+    assert busy.status_code == 409 and busy.json()["code"] == "EDITION_IN_USE"
+    post(
+        client,
+        "/returns",
+        {"loanItemId": checkout["items"][0]["loanItemId"], "condition": "GOOD"},
+    )
+    done = client.patch(
+        f"/api/v1/book-editions/{edition_id}",
+        json={"expectedVersion": 1, "status": "INACTIVE"},
+    )
+    assert done.status_code == 200, done.text
+    assert client.get(f"/api/v1/book-editions/{edition_id}").status_code == 404
+
+
+def as_reader(client: TestClient, settings: Settings, reader: dict) -> None:
+    from uuid import UUID
+
+    from lib_management.identity.rbac_seed import ROLES
+
+    engine = create_engine_from_settings(settings)
+    with create_session_factory(engine)() as session, session.begin():
+        account = Account(
+            issuer="test",
+            subject=uuid4().hex,
+            display_name="Reader",
+            status="ACTIVE",
+            reader_id=UUID(reader["id"]),
+        )
+        session.add(account)
+    with create_session_factory(engine)() as session:
+        account = session.scalar(select(Account).where(Account.id == account.id))
+    engine.dispose()
+    principal = Principal(account, frozenset(ROLES["READER"][1]))
+    client.app.dependency_overrides[authenticated] = lambda: principal
+
+
+def test_reader_renews_only_own_loan(client: TestClient, settings: Settings):
+    # YC#9 (Ai: Độc giả) with C06 scope.
+    reader, _, checkout, _ = setup_loan(client)
+    _, _, other_checkout, _ = setup_loan(client)
+    as_reader(client, settings, reader)
+    mine = client.get("/api/v1/me/loans").json()["data"]
+    assert [row["loan"]["id"] for row in mine] == [checkout["loanId"]]
+    assert mine[0]["title"].startswith("Concurrency in practice")
+    other = post(
+        client, f"/loans/{other_checkout['loanId']}/renewals", {"expectedVersion": 1}
+    )
+    assert other.status_code == 404
+    renewed = post(
+        client,
+        f"/loans/{checkout['loanId']}/renewals",
+        {"expectedVersion": mine[0]["loan"]["version"]},
+    )
+    assert renewed.status_code == 201, renewed.text
+    history = client.get("/api/v1/me/loans", params={"status": "ALL"}).json()["data"]
+    assert len(history) == 1

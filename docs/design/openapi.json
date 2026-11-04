@@ -24,7 +24,7 @@
           "F18"
         ],
         "x-permission": "catalog.read",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [],
         "parameters": [
           {
@@ -49,7 +49,18 @@
             "in": "query",
             "schema": {
               "type": "string"
-            }
+            },
+            "description": "Tiêu đề, ISBN hoặc tên tác giả (YC#1); khoảng trắng bị bỏ qua (QĐ23)"
+          },
+          {
+            "name": "categoryId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Lọc theo thể loại, gồm thể loại con"
           }
         ],
         "responses": {
@@ -165,7 +176,7 @@
           "F18"
         ],
         "x-permission": "catalog.write",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -297,7 +308,7 @@
           "F18"
         ],
         "x-permission": "catalog.read",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [],
         "parameters": [
           {
@@ -404,7 +415,7 @@
           "F18"
         ],
         "x-permission": "catalog.write",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -526,7 +537,7 @@
           "F04"
         ],
         "x-permission": "catalog.read",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [],
         "parameters": [
           {
@@ -666,7 +677,7 @@
           "F04"
         ],
         "x-permission": "catalog.write",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -797,7 +808,7 @@
           "F04"
         ],
         "x-permission": "catalog.read",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [],
         "parameters": [
           {
@@ -903,7 +914,7 @@
           "F04"
         ],
         "x-permission": "catalog.write",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -1025,7 +1036,7 @@
           "F05"
         ],
         "x-permission": "catalog.read",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [],
         "parameters": [
           {
@@ -1165,7 +1176,7 @@
           "F05"
         ],
         "x-permission": "catalog.write",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -1296,7 +1307,7 @@
           "F05"
         ],
         "x-permission": "catalog.read",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [],
         "parameters": [
           {
@@ -1402,7 +1413,7 @@
           "F05"
         ],
         "x-permission": "catalog.write",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -1524,7 +1535,7 @@
           "F03"
         ],
         "x-permission": "catalog.read",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [],
         "parameters": [
           {
@@ -1664,7 +1675,7 @@
           "F03"
         ],
         "x-permission": "catalog.write",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -1795,7 +1806,7 @@
           "F03"
         ],
         "x-permission": "catalog.read",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [],
         "parameters": [
           {
@@ -1901,7 +1912,7 @@
           "F03"
         ],
         "x-permission": "catalog.write",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -2023,7 +2034,7 @@
           "F02"
         ],
         "x-permission": "catalog.write",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -2161,7 +2172,7 @@
           "F02"
         ],
         "x-permission": "catalog.read",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -2317,7 +2328,7 @@
           "F18"
         ],
         "x-permission": "reader.read",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -2461,7 +2472,7 @@
           "F06"
         ],
         "x-permission": "reader.write",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -2592,7 +2603,7 @@
           "F06"
         ],
         "x-permission": "reader.read",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -2702,7 +2713,7 @@
           "F06"
         ],
         "x-permission": "reader.write",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -2824,7 +2835,7 @@
           "F06"
         ],
         "x-permission": "card.issue",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -2941,6 +2952,119 @@
             }
           }
         }
+      },
+      "get": {
+        "operationId": "get_readers_id_cards",
+        "summary": "card.list",
+        "tags": [
+          "F06"
+        ],
+        "x-functions": [
+          "F06"
+        ],
+        "x-permission": "reader.read",
+        "x-status": "implemented",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ReaderCard"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found in scope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict/version/idempotency",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation or eligibility",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/readers/{id}/eligibility": {
@@ -2954,7 +3078,7 @@
           "F12"
         ],
         "x-permission": "eligibility.read",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -3066,7 +3190,7 @@
           "F07"
         ],
         "x-permission": "loan.checkout",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -3195,7 +3319,7 @@
           "F09"
         ],
         "x-permission": "reader.read",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -3362,7 +3486,7 @@
           "F17"
         ],
         "x-permission": "reader.read",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -3474,7 +3598,7 @@
           "F08"
         ],
         "x-permission": "return.create",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -3620,7 +3744,7 @@
           "F09"
         ],
         "x-permission": "loan.renew",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -3760,7 +3884,7 @@
           "F10"
         ],
         "x-permission": "reservation.create",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -3889,7 +4013,7 @@
           "F10"
         ],
         "x-permission": "reservation.read",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -3928,6 +4052,23 @@
               "format": "uuid"
             },
             "description": "Chỉ staff có scope; portal dùng /me alias"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ACTIVE",
+                "QUEUED",
+                "READY",
+                "FULFILLED",
+                "CANCELLED",
+                "EXPIRED"
+              ]
+            },
+            "description": "ACTIVE = QUEUED hoặc READY"
           }
         ],
         "responses": {
@@ -4044,7 +4185,7 @@
           "F10"
         ],
         "x-permission": "reservation.cancel",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -4184,7 +4325,7 @@
           "F10"
         ],
         "x-permission": "reservation.pickup",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -4324,7 +4465,7 @@
           "F11"
         ],
         "x-permission": "finance.read",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -4479,7 +4620,7 @@
           "F11"
         ],
         "x-permission": "assessment.decide",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -4612,6 +4753,127 @@
             }
           }
         }
+      },
+      "post": {
+        "operationId": "post_charge_assessments",
+        "summary": "assessment.propose",
+        "tags": [
+          "F11"
+        ],
+        "x-functions": [
+          "F11"
+        ],
+        "x-permission": "assessment.propose",
+        "x-status": "implemented",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChargeAssessment"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found in scope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict/version/idempotency",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation or eligibility",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ManualAssessmentRequest"
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/charge-assessments/{id}/decisions": {
@@ -4625,7 +4887,7 @@
           "F11"
         ],
         "x-permission": "assessment.decide",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -4765,7 +5027,7 @@
           "F11"
         ],
         "x-permission": "payment.collect",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -4896,7 +5158,7 @@
           "F11"
         ],
         "x-permission": "charge.waive",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -5036,7 +5298,7 @@
           "F11"
         ],
         "x-permission": "ledger.reverse",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -5167,7 +5429,7 @@
           "F17"
         ],
         "x-permission": "reader.read",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -5322,7 +5584,7 @@
           "F19"
         ],
         "x-permission": "overdue.read",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -5478,7 +5740,7 @@
           "F13"
         ],
         "x-permission": "report.read",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -5610,7 +5872,7 @@
           "F20"
         ],
         "x-permission": "export.create",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -5743,7 +6005,7 @@
           "F20"
         ],
         "x-permission": "report.read",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -5855,7 +6117,7 @@
           "F20"
         ],
         "x-permission": "export.download",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -5978,7 +6240,7 @@
           "F14"
         ],
         "x-permission": "policy.write",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -6107,7 +6369,7 @@
           "F14"
         ],
         "x-permission": "policy.write",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -6253,7 +6515,7 @@
           "F14"
         ],
         "x-permission": "policy.approve",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -8370,7 +8632,7 @@
           "F22"
         ],
         "x-permission": "copy.dispose",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -9083,7 +9345,7 @@
           "F24"
         ],
         "x-permission": "job.read",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -9375,10 +9637,11 @@
           "F17"
         ],
         "x-functions": [
+          "F09",
           "F17"
         ],
         "x-permission": "reader.read",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -9408,6 +9671,20 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "OPEN",
+                "ALL"
+              ],
+              "default": "OPEN"
+            },
+            "description": "OPEN = đang mượn; ALL = cả lịch sử (QĐ22)"
           }
         ],
         "responses": {
@@ -9421,7 +9698,7 @@
                     "data": {
                       "type": "array",
                       "items": {
-                        "$ref": "#/components/schemas/LoanItem"
+                        "$ref": "#/components/schemas/LoanLookupRow"
                       }
                     },
                     "nextCursor": {
@@ -9524,7 +9801,7 @@
           "F10"
         ],
         "x-permission": "reservation.read",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -9674,7 +9951,7 @@
           "F11"
         ],
         "x-permission": "finance.read",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -10289,7 +10566,7 @@
           "F02"
         ],
         "x-permission": "catalog.read",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -10424,7 +10701,7 @@
           "F02"
         ],
         "x-permission": "catalog.write",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -10555,7 +10832,7 @@
           "F02"
         ],
         "x-permission": "catalog.read",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -10658,7 +10935,7 @@
           "F06"
         ],
         "x-permission": "reader.read",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -10788,7 +11065,7 @@
           "F13"
         ],
         "x-permission": "report.read",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -10917,7 +11194,7 @@
           "F20"
         ],
         "x-permission": "export.download",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -11029,7 +11306,7 @@
           "F14"
         ],
         "x-permission": "policy.write",
-        "x-status": "planned",
+        "x-status": "implemented",
         "security": [
           {
             "bearerAuth": []
@@ -11124,6 +11401,270 @@
                 "schema": {
                   "$ref": "#/components/schemas/ErrorResponse"
                 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/copies/{id}": {
+      "patch": {
+        "operationId": "patch_copies_id",
+        "summary": "copy.status",
+        "tags": [
+          "F02"
+        ],
+        "x-functions": [
+          "F02"
+        ],
+        "x-permission": "catalog.write",
+        "x-status": "implemented",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BookCopy"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found in scope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict/version/idempotency",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation or eligibility",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CopyStatusRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/reader-cards/{id}": {
+      "patch": {
+        "operationId": "patch_reader_cards_id",
+        "summary": "card.status",
+        "tags": [
+          "F06"
+        ],
+        "x-functions": [
+          "F06"
+        ],
+        "x-permission": "card.issue",
+        "x-status": "implemented",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReaderCard"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found in scope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict/version/idempotency",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation or eligibility",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CardStatusRequest"
               }
             }
           }
@@ -11500,7 +12041,7 @@
             "format": "uuid"
           },
           "status": {
-            "description": "Trạng thái vật lý",
+            "description": "AVAILABLE/ON_LOAN/HELD/REPAIR/MAINTENANCE/LOST/RETIRED (Sẵn sàng/Đã mượn/Giữ chỗ/Hỏng/Bảo trì/Mất/Thanh lý)",
             "x-db-constraint": "AVAILABLE/ON_LOAN/HELD/REPAIR/LOST/RETIRED",
             "type": "string",
             "maxLength": 16
@@ -12595,6 +13136,14 @@
             "x-db-constraint": "DEFAULT now()",
             "type": "string",
             "format": "date-time"
+          },
+          "balance": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "pattern": "^[0-9]+$",
+            "description": "Còn nợ của khoản (VND), trong danh sách"
           }
         },
         "required": [
@@ -13650,6 +14199,11 @@
               "asOf"
             ],
             "additionalProperties": false
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "expectedVersion khi sửa/ngừng dùng"
           }
         },
         "required": [
@@ -14102,14 +14656,19 @@
             "format": "uuid"
           },
           "return_event_id": {
-            "type": "string",
-            "format": "uuid"
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Sự kiện trả; NULL với kind MANUAL"
           },
           "kind": {
             "type": "string",
             "enum": [
               "DAMAGE",
-              "LOST"
+              "LOST",
+              "MANUAL"
             ]
           },
           "status": {
@@ -14138,12 +14697,19 @@
           "version": {
             "type": "integer",
             "minimum": 1
+          },
+          "loan_item_id": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid",
+            "description": "Mục mượn liên quan (tùy chọn, MANUAL)"
           }
         },
         "required": [
           "id",
           "reader_id",
-          "return_event_id",
           "kind",
           "status",
           "proposed_amount",
@@ -15647,6 +16213,13 @@
           },
           "copy": {
             "$ref": "#/components/schemas/BookCopy"
+          },
+          "title": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Tên sách của bản mượn"
           }
         },
         "required": [
@@ -15919,6 +16492,102 @@
           "readyHoldDays",
           "damageLostAssessment",
           "damageLostFees"
+        ],
+        "additionalProperties": false
+      },
+      "CopyStatusRequest": {
+        "type": "object",
+        "description": "YC#2 / D1: đổi trạng thái bản sao bằng tay",
+        "properties": {
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "AVAILABLE",
+              "REPAIR",
+              "MAINTENANCE",
+              "LOST"
+            ],
+            "description": "Sẵn sàng / Hỏng / Bảo trì / Mất"
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 500,
+            "description": "Bắt buộc khi khác AVAILABLE"
+          }
+        },
+        "required": [
+          "expectedVersion",
+          "status"
+        ],
+        "additionalProperties": false
+      },
+      "CardStatusRequest": {
+        "type": "object",
+        "description": "YC#6: Hoạt động ↔ Tạm khóa (Hết hạn suy ra từ expires_at)",
+        "properties": {
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "BLOCKED"
+            ]
+          },
+          "reason": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 500,
+            "description": "Bắt buộc khi khóa"
+          }
+        },
+        "required": [
+          "expectedVersion",
+          "status"
+        ],
+        "additionalProperties": false
+      },
+      "ManualAssessmentRequest": {
+        "type": "object",
+        "description": "YC#11 / D2: Thủ thư đề xuất phạt thủ công, Quản lý duyệt",
+        "properties": {
+          "readerId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "loanItemId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "uuid"
+          },
+          "proposedAmount": {
+            "type": "string",
+            "pattern": "^[0-9]+$",
+            "maxLength": 12
+          },
+          "reason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "readerId",
+          "proposedAmount",
+          "reason"
         ],
         "additionalProperties": false
       }

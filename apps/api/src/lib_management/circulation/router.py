@@ -110,6 +110,7 @@ def finish(
     operation: str,
     result: dict[str, Any],
     target: UUID | None = None,
+    status_code: int = 201,
 ) -> JSONResponse:
     audit.record(
         uow.session,
@@ -120,9 +121,9 @@ def finish(
         target_id=target,
         outcome="SUCCESS",
     )
-    idempotency.complete(uow.session, begun, 201, result)
+    idempotency.complete(uow.session, begun, status_code, result)
     uow.commit()
-    return JSONResponse(result, status_code=201)
+    return JSONResponse(result, status_code=status_code)
 
 
 def replay(begun: idempotency.Begin) -> JSONResponse:
@@ -508,6 +509,8 @@ def renew(
     from lib_management.catalog.models import BookCopy
 
     loan = get(uow.session, m.Loan, id)
+    if not staff_reader_scope(principal) and loan.reader_id != own_reader(principal):
+        raise NotFound()  # C06: a reader renews only their own loans (YC#9)
     copy_ids = list(
         uow.session.scalars(
             select(m.LoanItem.copy_id).where(
@@ -596,11 +599,73 @@ def charges(
 ) -> dict[str, Any]:
     if not staff_reader_scope(principal):
         raise Forbidden("PERMISSION_DENIED", "Sử dụng mục tài khoản của tôi")
-    return paginate(
+    return with_balance(
         uow.session,
-        m.FineCharge,
-        paging,
-        *([m.FineCharge.reader_id == readerId] if readerId else []),
+        paginate(
+            uow.session,
+            m.FineCharge,
+            paging,
+            *([m.FineCharge.reader_id == readerId] if readerId else []),
+        ),
+    )
+
+
+def with_balance(session: Session, page: dict[str, Any]) -> dict[str, Any]:
+    """YC#17 / BM06: what is still owed on each charge (VND string)."""
+    for row in page["data"]:
+        row["balance"] = str(charge_balance(session, UUID(str(row["id"]))))
+    return page
+
+
+@router.post(
+    "/charge-assessments",
+    operation_id="post_charge_assessments",
+    status_code=201,
+    response_model=v.ChargeAssessment,
+)
+def propose_manual(
+    body: s.ManualAssessmentRequest,
+    uow: Uow,
+    key: Key,
+    principal: Annotated[Principal, Depends(require_permission("assessment.propose"))],
+) -> JSONResponse:
+    amount = Decimal(body.proposedAmount)
+    if amount <= 0:
+        raise ValidationFailed("Số tiền phạt phải lớn hơn 0")
+    begun = start(
+        uow, principal, "assessment.propose", key, body.model_dump(mode="json")
+    )
+    if begun.replay:
+        return replay(begun)
+    reader_lock(uow.session, body.readerId)
+    if body.loanItemId is not None:
+        item = get(uow.session, m.LoanItem, body.loanItemId)
+        loan = get(uow.session, m.Loan, item.loan_id)
+        if loan.reader_id != body.readerId:
+            raise ValidationFailed("Mục mượn không thuộc độc giả này")
+    assessment = m.ChargeAssessment(
+        reader_id=body.readerId,
+        loan_item_id=body.loanItemId,
+        kind="MANUAL",
+        proposed_amount=amount,
+        reason=body.reason,
+        proposed_by=principal.account_id,
+        status="PENDING",
+    )
+    uow.session.add(assessment)
+    uow.session.flush()
+    projection = view(assessment)
+    for field in [
+        "proposed_by",
+        "decided_by",
+        "decided_at",
+        "decision_reason",
+        "fine_charge_id",
+        "created_at",
+    ]:
+        projection.pop(field, None)
+    return finish(
+        uow, principal, begun, "assessment.propose", projection, assessment.id
     )
 
 
@@ -652,16 +717,23 @@ def decide(
     version(assessment, body.expectedVersion)
     if assessment.status != "PENDING":
         raise Conflict("Hồ sơ đã được quyết định")
-    event = get(uow.session, m.ReturnEvent, assessment.return_event_id)
-    item = get(uow.session, m.LoanItem, event.loan_item_id)
+    if assessment.return_event_id is not None:
+        event = get(uow.session, m.ReturnEvent, assessment.return_event_id)
+        item = get(uow.session, m.LoanItem, event.loan_item_id)
+    elif assessment.loan_item_id is not None:
+        item = get(uow.session, m.LoanItem, assessment.loan_item_id)
+    else:
+        item = None
     approved_amount = Decimal(body.amount)
     if assessment.kind == "LOST" and approved_amount > 0:
         check_lost_fee(approved_amount)
     if approved_amount > 0:
         charge = m.FineCharge(
             reader_id=assessment.reader_id,
-            loan_item_id=item.id,
-            policy_version_id=item.policy_version_id,
+            loan_item_id=item.id if item else None,
+            policy_version_id=(
+                item.policy_version_id if item else active_policy(uow.session).id
+            ),
             reason=assessment.kind,
             assessed_amount=approved_amount,
             calculation={"assessmentId": str(id)},
@@ -978,20 +1050,22 @@ def own_reader(principal: Principal) -> UUID:
     return principal.account.reader_id
 
 
-@router.get("/me/loans", operation_id="get_me_loans", response_model=Page[v.LoanItem])
+@router.get("/me/loans", operation_id="get_me_loans")
 def my_loans(
     uow: Uow,
     paging: Paging,
     principal: Annotated[Principal, Depends(require_permission("reader.read"))],
+    status: Annotated[str, Query(pattern="^(OPEN|ALL)$")] = "OPEN",
 ) -> dict[str, Any]:
-    return paginate(
-        uow.session,
-        m.LoanItem,
-        paging,
-        m.LoanItem.loan_id.in_(
-            select(m.Loan.id).where(m.Loan.reader_id == own_reader(principal))
-        ),
+    """FE08 / QĐ22: the reader's own loans (OPEN) or whole history (ALL)."""
+    statement = (
+        select(m.LoanItem)
+        .join(m.Loan, m.Loan.id == m.LoanItem.loan_id)
+        .where(m.Loan.reader_id == own_reader(principal))
     )
+    if status == "OPEN":
+        statement = statement.where(m.LoanItem.closed_at.is_(None))
+    return loan_rows(uow.session, statement, paging)
 
 
 @router.get(
@@ -1004,11 +1078,14 @@ def my_charges(
     paging: Paging,
     principal: Annotated[Principal, Depends(require_permission("finance.read"))],
 ) -> dict[str, Any]:
-    return paginate(
+    return with_balance(
         uow.session,
-        m.FineCharge,
-        paging,
-        m.FineCharge.reader_id == own_reader(principal),
+        paginate(
+            uow.session,
+            m.FineCharge,
+            paging,
+            m.FineCharge.reader_id == own_reader(principal),
+        ),
     )
 
 
@@ -1020,15 +1097,19 @@ def reservations(
     paging: Paging,
     principal: Annotated[Principal, Depends(require_permission("reservation.read"))],
     readerId: UUID | None = None,
+    status: Annotated[
+        str | None,
+        Query(pattern="^(ACTIVE|QUEUED|READY|FULFILLED|CANCELLED|EXPIRED)$"),
+    ] = None,
 ) -> dict[str, Any]:
     if not staff_reader_scope(principal):
         raise Forbidden("PERMISSION_DENIED", "Sử dụng mục tài khoản của tôi")
-    return paginate(
-        uow.session,
-        m.Reservation,
-        paging,
-        *([m.Reservation.reader_id == readerId] if readerId else []),
-    )
+    conditions = [m.Reservation.reader_id == readerId] if readerId else []
+    if status:
+        # ACTIVE = still waiting for the reader (QUEUED or READY).
+        wanted = ["QUEUED", "READY"] if status == "ACTIVE" else [status]
+        conditions.append(m.Reservation.status.in_(wanted))
+    return paginate(uow.session, m.Reservation, paging, *conditions)
 
 
 @router.get(
@@ -1277,36 +1358,109 @@ def lookup_loans(
         )
     if status == "OPEN":
         statement = statement.where(m.LoanItem.closed_at.is_(None))
+    return loan_rows(uow.session, statement, paging)
+
+
+def loan_rows(session: Session, statement: Any, paging: PageParams) -> dict[str, Any]:
+    """Loan items with their loan, copy and book title, keyset-paged by item id."""
+    from lib_management.catalog.models import BookCopy
+
     if paging.cursor:
         statement = statement.where(m.LoanItem.id > paging.cursor.id)
     items = list(
-        uow.session.scalars(statement.order_by(m.LoanItem.id).limit(paging.limit + 1))
+        session.scalars(statement.order_by(m.LoanItem.id).limit(paging.limit + 1))
     )
     more = len(items) > paging.limit
     items = items[: paging.limit]
     loans = {
         loan.id: loan
-        for loan in uow.session.scalars(
+        for loan in session.scalars(
             select(m.Loan).where(m.Loan.id.in_([row.loan_id for row in items]))
         )
     }
     copies = {
         copy.id: copy
-        for copy in uow.session.scalars(
+        for copy in session.scalars(
             select(BookCopy).where(BookCopy.id.in_([row.copy_id for row in items]))
         )
     }
+    from lib_management.catalog.models import BookEdition
+
+    titles = dict(
+        session.execute(
+            select(BookEdition.id, BookEdition.title).where(
+                BookEdition.id.in_({copy.edition_id for copy in copies.values()})
+            )
+        ).all()
+    )
     return {
         "data": [
             {
                 "loan": view(loans[item.loan_id]),
                 "loanItem": view(item),
                 "copy": view(copies[item.copy_id]),
+                "title": titles.get(copies[item.copy_id].edition_id),
             }
             for item in items
         ],
         "nextCursor": encode_cursor([], items[-1].id) if more else None,
     }
+
+
+# YC#2 / D1: staff may move a copy between these; ON_LOAN/HELD change only through
+# circulation and RETIRED only through disposal (F22).
+MANUAL_COPY_STATUSES = {"AVAILABLE", "REPAIR", "MAINTENANCE", "LOST"}
+
+
+@router.patch(
+    "/copies/{id}",
+    operation_id="patch_copies_id",
+    response_model=v.BookCopy,
+)
+def change_copy_status(
+    id: UUID,
+    body: s.CopyStatusRequest,
+    uow: Uow,
+    key: Key,
+    principal: Annotated[Principal, Depends(require_permission("catalog.write"))],
+) -> JSONResponse:
+    from lib_management.catalog.models import BookCopy
+
+    if body.status != "AVAILABLE" and not body.reason:
+        raise ValidationFailed("Cần lý do khi chuyển bản sách sang Hỏng/Bảo trì/Mất")
+    begun = start(
+        uow, principal, "copy.status", key, {"id": str(id), **body.model_dump()}
+    )
+    if begun.replay:
+        return replay(begun)
+    copy = get(uow.session, BookCopy, id)
+    lock_editions(uow.session, [copy.edition_id])
+    copy = get(uow.session, BookCopy, id, lock=True)
+    version(copy, body.expectedVersion)
+    if copy.status not in MANUAL_COPY_STATUSES:
+        raise Conflict(
+            "Bản sách đang mượn, đang giữ chỗ hoặc đã thanh lý; không đổi tay được",
+            code="COPY_STATUS_LOCKED",
+        )
+    if copy.status == body.status:
+        raise Conflict("Bản sách đã ở trạng thái này", code="COPY_STATUS_UNCHANGED")
+    previous = copy.status
+    copy.status = body.status
+    copy.version += 1
+    audit.record(
+        uow.session,
+        actor_id=principal.account_id,
+        action="catalog.copy.status",
+        target_type="book_copy",
+        target_id=id,
+        outcome="SUCCESS",
+        metadata={"from": previous, "to": body.status, "reason": body.reason},
+    )
+    uow.session.flush()
+    if body.status == "AVAILABLE":
+        # A repaired or found copy goes to the reservation queue first.
+        allocate(uow.session, copy.edition_id)
+    return finish(uow, principal, begun, "copy.status", view(copy), id, 200)
 
 
 @router.post(
@@ -1334,7 +1488,7 @@ def dispose(
     copy = get(uow.session, BookCopy, id, lock=True)
     if body.expectedVersion:
         version(copy, body.expectedVersion)
-    if copy.status not in ["AVAILABLE", "REPAIR", "LOST"]:
+    if copy.status not in ["AVAILABLE", "REPAIR", "MAINTENANCE", "LOST"]:
         raise Conflict("Chỉ thanh lý bản sách không còn cho mượn hoặc giữ chỗ")
     copy.status = "RETIRED"
     copy.version += 1

@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router";
-import { useServices } from "../../auth/session";
+import { useServices, useSession } from "../../auth/session";
 import { createIdempotencyKey } from "../../api/idempotency";
 import { formatDateTime } from "../../lib/datetime";
 import { formatVnd } from "../../lib/money";
@@ -10,6 +10,7 @@ import type { ScreenDefinition } from "../types";
 import { ApiFailure, LoadingSkeleton, MutationFeedback } from "./common";
 import { ReaderPicker } from "./ReaderPicker";
 import type { Reader } from "./ReaderPicker";
+import { chargeReason } from "./labels";
 
 const VND = /^[0-9]+$/;
 
@@ -53,7 +54,75 @@ function ReaderStep({
   );
 }
 
+/** YC#11 / D2: a Librarian proposes a manual fine; a Manager confirms it (FE07.03). */
+function ManualFine({ reader }: { reader: Reader }) {
+  const services = useServices();
+  const cache = useQueryClient();
+  const key = useRef(createIdempotencyKey()).current;
+  const [amount, setAmount] = useState("");
+  const [reason, setReason] = useState("");
+  const invalid = !VND.test(amount) || Number(amount) <= 0 || !reason.trim();
+  const save = useMutation({
+    mutationFn: async () => {
+      const body = { readerId: reader.id, proposedAmount: amount, reason: reason.trim() };
+      return (
+        await services.finance.post_charge_assessments({
+          body,
+          params: { header: { "Idempotency-Key": key.forPayload(body) } },
+        })
+      ).data!;
+    },
+    onSuccess: () => {
+      key.reset();
+      setAmount("");
+      setReason("");
+      void cache.invalidateQueries({ queryKey: ["assessments"] });
+      void cache.invalidateQueries({ queryKey: ["reader", reader.id] });
+    },
+  });
+  return (
+    <Panel title="Đề xuất phạt thủ công">
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (!invalid) save.mutate();
+        }}
+      >
+        <div className="form-grid">
+          <Field
+            label="Số tiền (VND)"
+            inputMode="numeric"
+            required
+            value={amount}
+            onChange={(event) => setAmount(event.target.value)}
+          />
+          <Field
+            label="Lý do"
+            required
+            maxLength={500}
+            value={reason}
+            onChange={(event) => setReason(event.target.value)}
+          />
+        </div>
+        <Notice>
+          Khoản phạt chỉ ghi vào sổ sau khi Quản lý xác nhận; trong lúc chờ, độc giả tạm thời chưa
+          mượn thêm được.
+        </Notice>
+        <MutationFeedback error={save.error} success={save.isSuccess}>
+          Đã gửi đề xuất cho Quản lý.
+        </MutationFeedback>
+        <div className="actions">
+          <Button type="submit" disabled={save.isPending || invalid} aria-busy={save.isPending}>
+            Gửi đề xuất
+          </Button>
+        </div>
+      </form>
+    </Panel>
+  );
+}
+
 function Charges() {
+  const session = useSession();
   const [reader, setReader] = useState<Reader>();
   const charges = useReaderCharges(reader);
   return (
@@ -67,12 +136,15 @@ function Charges() {
             caption="Khoản phí của độc giả"
             headers={["Lý do", "Số tiền", "Ngày ghi nhận"]}
             rows={charges.data.map((charge) => [
-              charge.reason,
+              chargeReason(charge.reason),
               formatVnd(charge.assessed_amount),
               formatDateTime(charge.created_at),
             ])}
           />
         </Panel>
+      )}
+      {reader && session.permissions.includes("assessment.propose") && (
+        <ManualFine reader={reader} />
       )}
     </div>
   );
@@ -227,7 +299,7 @@ function useAssessments() {
   });
 }
 
-const KIND = { DAMAGE: "Hỏng", LOST: "Mất" } as const;
+const KIND = { DAMAGE: "Hỏng", LOST: "Mất", MANUAL: "Thủ công" } as const;
 const STATE = {
   PENDING: "Chờ quyết định",
   ASSESSED: "Đã tính phí",

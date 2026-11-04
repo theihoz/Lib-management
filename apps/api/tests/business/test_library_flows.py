@@ -1147,3 +1147,29 @@ def test_reader_renews_only_own_loan(client: TestClient, settings: Settings):
     assert renewed.status_code == 201, renewed.text
     history = client.get("/api/v1/me/loans", params={"status": "ALL"}).json()["data"]
     assert len(history) == 1
+
+
+def test_dashboard_lists_overdue_and_top_books(client: TestClient, settings: Settings):
+    # YC#19 / BM14.
+    reader, copy, checkout, _ = setup_loan(client)
+    item_id = checkout["items"][0]["loanItemId"]
+    engine = create_engine_from_settings(settings)
+    with create_session_factory(engine)() as session, session.begin():
+        item = session.get(LoanItem, item_id)
+        assert item is not None
+        item.issued_at = datetime.now(UTC) - timedelta(days=6)
+        item.due_at = datetime.now(UTC) - timedelta(days=2)
+    engine.dispose()
+    setup_loan(client)  # one loan issued today
+    board = client.get("/api/v1/dashboard")
+    assert board.status_code == 200, board.text
+    data = board.json()
+    assert data["overdueCount"] >= 1 and data["loansToday"] >= 1
+    assert len(data["overdueTop"]) <= 10 and len(data["topBooks30d"]) <= 5
+    counts = [row["loan_count"] for row in data["topBooks30d"]]
+    assert counts == sorted(counts, reverse=True)
+    principal = client.test_principal
+    client.app.dependency_overrides[authenticated] = lambda: Principal(
+        principal.account, principal.permissions - {"overdue.read"}
+    )
+    assert client.get("/api/v1/dashboard").status_code == 403

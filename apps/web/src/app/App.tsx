@@ -68,6 +68,10 @@ function LivePage({ screen }: { screen: ScreenDefinition }) {
 function StaffHome() {
   const session = useSession();
   if (session.status === "checking") return <LoadingSkeleton />;
+  // YC#19: staff who may see it land on the dashboard.
+  const dashboard = screens.find((item) => item.id === "FE09.00");
+  if (dashboard && canOpen(session.status, session.permissions, dashboard))
+    return <Navigate to={dashboard.path} replace />;
   const first = screens.find(
     (item) =>
       !item.path.includes(":") &&

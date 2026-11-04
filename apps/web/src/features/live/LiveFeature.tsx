@@ -9,6 +9,7 @@ const Records = lazy(() => import("./Records"));
 const Finance = lazy(() => import("./Finance"));
 const Reports = lazy(() => import("./Reports"));
 const Policies = lazy(() => import("./Policies"));
+const Dashboard = lazy(() => import("./Dashboard"));
 export default function LiveFeature({ screen }: { screen: ScreenDefinition }) {
   const View =
     screen.group === "02"
@@ -19,11 +20,13 @@ export default function LiveFeature({ screen }: { screen: ScreenDefinition }) {
           ? Circulation
           : screen.group === "07"
             ? Finance
-            : ["FE09.02", "FE09.03", "FE09.04"].includes(screen.id)
-              ? Reports
-              : ["FE09.05", "FE09.06"].includes(screen.id)
-                ? Policies
-                : Records;
+            : screen.id === "FE09.00"
+              ? Dashboard
+              : ["FE09.02", "FE09.03", "FE09.04"].includes(screen.id)
+                ? Reports
+                : ["FE09.05", "FE09.06"].includes(screen.id)
+                  ? Policies
+                  : Records;
   return (
     <Suspense fallback={<LoadingSkeleton books={screen.kind === "catalog"} />}>
       <View screen={screen} />

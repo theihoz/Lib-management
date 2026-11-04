@@ -299,6 +299,15 @@ export const screens: ScreenDefinition[] = [
   },
   {
     group: "09",
+    kind: "dashboard",
+    id: "FE09.00",
+    title: "Bảng điều khiển",
+    path: "/staff/dashboard",
+    permission: "overdue.read",
+    implemented: true,
+  },
+  {
+    group: "09",
     kind: "list",
     headers: ["Phiếu mượn", "Độc giả", "Hạn trả", "Số cuốn", "Phí đã ghi"],
     note: "Bấm số phiếu hoặc độc giả để mở hồ sơ phục vụ xử lý.",

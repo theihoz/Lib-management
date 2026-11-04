@@ -23,6 +23,7 @@ ExportCreate = Annotated[Principal, Depends(require_permission("export.create"))
 ExportDownload = Annotated[Principal, Depends(require_permission("export.download"))]
 Authenticated = Annotated[Principal, Depends(authenticated)]
 Paging = Annotated[PageParams, Depends(page_params)]
+OverdueRead = Annotated[Principal, Depends(require_permission("overdue.read"))]
 Key = Annotated[str, Header(alias="Idempotency-Key", min_length=1, max_length=128)]
 
 
@@ -167,3 +168,9 @@ def content(
             "X-Content-Type-Options": "nosniff",
         },
     )
+
+
+@router.get("/dashboard", operation_id="get_dashboard")
+def get_dashboard(uow: Uow, actor: OverdueRead) -> dict[str, object]:
+    """YC#19: overdue books and most-borrowed books for the staff landing page."""
+    return service.dashboard(uow.session)

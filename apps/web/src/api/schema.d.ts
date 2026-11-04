@@ -1235,6 +1235,23 @@ export interface paths {
         patch: operations["patch_reader_cards_id"];
         trace?: never;
     };
+    "/api/v1/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** dashboard.read */
+        get: operations["get_dashboard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -3145,6 +3162,41 @@ export interface components {
             loanItemId?: string | null;
             proposedAmount: string;
             reason: string;
+        };
+        DashboardOverdueRow: {
+            /** Format: uuid */
+            loan_item_id: string;
+            /** Format: uuid */
+            loan_id: string;
+            loan_no: string;
+            /** Format: uuid */
+            reader_id: string;
+            reader_code: string;
+            full_name: string;
+            title: string;
+            barcode: string;
+            /** Format: date-time */
+            due_at: string;
+            late_days: number;
+        };
+        DashboardTopBook: {
+            /** Format: uuid */
+            edition_id: string;
+            title: string;
+            categories: string;
+            loan_count: number;
+        };
+        /** @description YC#19 / BM14: bảng điều khiển nhân viên */
+        Dashboard: {
+            /** Format: date-time */
+            asOf: string;
+            overdueCount: number;
+            loansToday: number;
+            returnsToday: number;
+            copiesInStock: number;
+            copiesOnLoan: number;
+            overdueTop: components["schemas"]["DashboardOverdueRow"][];
+            topBooks30d: components["schemas"]["DashboardTopBook"][];
         };
     };
     responses: never;
@@ -10934,6 +10986,89 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReaderCard"];
+                };
+            };
+            /** @description Unauthenticated */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Forbidden */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Not found in scope */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Conflict/version/idempotency */
+            409: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Validation or eligibility */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Rate limit */
+            429: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+            /** @description Unavailable */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ErrorResponse"];
+                };
+            };
+        };
+    };
+    get_dashboard: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Success */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Dashboard"];
                 };
             };
             /** @description Unauthenticated */

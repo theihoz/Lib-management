@@ -26,7 +26,12 @@ function EditionList({ staff = false }: { staff?: boolean }) {
   const session = useSession();
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
-  const query = useDebounced(search);
+  // QĐ23: a blank or whitespace keyword is not a search; the list is browsed instead.
+  const query = useDebounced(search).trim() || undefined;
+  const notFound = {
+    title: "Không tìm thấy",
+    hint: "Không có sách phù hợp với từ khóa. Thử tên sách, tác giả hoặc ISBN khác.",
+  };
   const result = useInfiniteQuery({
     queryKey: ["catalog", "editions", query],
     initialPageParam: undefined as string | undefined,
@@ -70,6 +75,7 @@ function EditionList({ staff = false }: { staff?: boolean }) {
         <Panel>
           <Table
             headers={["Mã ấn bản", "Nhan đề", "Tác giả", "Năm", "Khả dụng"]}
+            empty={query ? notFound : undefined}
             rows={items.map((item) => [
               item.id,
               item.title,
@@ -107,8 +113,8 @@ function EditionList({ staff = false }: { staff?: boolean }) {
       ) : (
         <Panel>
           <div className="empty-state">
-            <h2>Chưa có ấn bản phù hợp</h2>
-            <p>Thử từ khóa khác hoặc thêm ấn bản mới nếu bạn có quyền.</p>
+            <h2>{query ? notFound.title : "Chưa có ấn bản"}</h2>
+            <p>{query ? notFound.hint : "Các ấn bản sẽ xuất hiện tại đây khi có dữ liệu."}</p>
           </div>
         </Panel>
       )}

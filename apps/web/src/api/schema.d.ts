@@ -2626,9 +2626,30 @@ export interface components {
             status: "QUEUED";
         };
         ReportRequest: {
-            reportType: string;
+            /**
+             * @description BM08 + Lab 3 ReportJob.report_type; LENDING_SUMMARY/OVERDUE giữ để tương thích
+             * @enum {string}
+             */
+            reportType: "OVERVIEW" | "LOAN_TREND" | "INVENTORY" | "TOP_BOOKS" | "ACTIVE_READERS" | "LOAN_CSV" | "FINE_CSV" | "LENDING_SUMMARY" | "OVERDUE";
             filters: {
-                [key: string]: unknown;
+                /** Format: date-time */
+                from: string;
+                /**
+                 * Format: date-time
+                 * @description Mốc cuối (không gồm); QĐ13: from < to ≤ 00:00 ngày mai giờ thư viện
+                 */
+                to: string;
+                /**
+                 * @description LOAN_TREND
+                 * @default day
+                 * @enum {string}
+                 */
+                granularity: "day" | "week" | "month";
+                /**
+                 * @description TOP_BOOKS, ACTIVE_READERS
+                 * @default 10
+                 */
+                limit: number;
             };
             /** Format: date-time */
             asOf?: string;
@@ -2985,6 +3006,11 @@ export interface components {
                 returns_received: number;
                 distinct_borrowers: number;
                 open_overdue_items: number;
+                copies_in_stock?: number;
+                copies_on_loan?: number;
+                overdue_items?: number;
+                /** @description Tổng tiền phạt phát sinh trong kỳ (VND) */
+                fines_assessed?: string;
             };
             rows: {
                 [key: string]: unknown;

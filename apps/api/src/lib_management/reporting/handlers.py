@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from lib_management.core import audit
 from lib_management.reporting.config import ReportingSettings
 from lib_management.reporting.models import MediaAsset, ReportJob
-from lib_management.reporting.service import csv_bytes, snapshot
+from lib_management.reporting.service import csv_bytes, csv_rows, snapshot
 from lib_management.reporting.storage import (
     ArtifactStorage,
     FileArtifactStorage,
@@ -53,6 +53,23 @@ def report_handler(
                     return
                 result = snapshot(session, report, as_of)
                 export = context.job_type == "export"
+                if export and not csv_rows(result):
+                    # QĐ26: no matching data, so no file; the UI reports it.
+                    report.as_of = as_of
+                    report.row_count = 0
+                    audit.record(
+                        session,
+                        action="export.no_data",
+                        target_type="report_job",
+                        target_id=report.id,
+                        actor_type="SYSTEM",
+                        outcome="SUCCESS",
+                        metadata={"row_count": 0},
+                    )
+                    if not context.heartbeat():
+                        raise JobError("REPORT_LEASE_LOST")
+                    session.commit()
+                    return
                 data = (
                     csv_bytes(result)
                     if export

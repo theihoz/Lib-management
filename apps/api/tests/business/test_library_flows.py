@@ -630,3 +630,141 @@ def test_category_name_is_unique(client: TestClient):
     )
     assert same.status_code == 409
     assert same.json()["code"] == "CATEGORY_NAME_TAKEN"
+
+
+def report_period(days: int = 1) -> dict[str, str]:
+    from zoneinfo import ZoneInfo
+
+    zone = ZoneInfo("Asia/Ho_Chi_Minh")
+    tomorrow = datetime.now(zone).replace(hour=0, minute=0, second=0, microsecond=0)
+    tomorrow += timedelta(days=1)
+    return {
+        "from": (tomorrow - timedelta(days=days)).isoformat(),
+        "to": tomorrow.isoformat(),
+    }
+
+
+def request_report(client: TestClient, report_type: str, export: bool = False, **f):
+    response = post(
+        client,
+        "/export-jobs" if export else "/report-jobs",
+        {"reportType": report_type, "filters": {**report_period(), **f}},
+    )
+    assert response.status_code == 202, response.text
+    return response.json()["jobId"]
+
+
+def run_report(settings: Settings, job_id: str, tmp_path, export: bool = False):
+    from uuid import UUID
+
+    from lib_management.platform.models import Job
+    from lib_management.reporting.handlers import report_handler
+    from lib_management.reporting.models import ReportJob
+    from lib_management.reporting.service import snapshot
+    from lib_management.reporting.storage import FileArtifactStorage
+    from lib_management.worker.registry import JobContext
+
+    engine = create_engine_from_settings(settings)
+    factory = create_session_factory(engine)
+    with factory() as session:
+        report = session.scalar(
+            select(ReportJob).where(ReportJob.job_id == UUID(job_id))
+        )
+        assert report is not None
+        result = snapshot(session, report, datetime.now(UTC))
+    handler = report_handler(factory, FileArtifactStorage(tmp_path), timedelta(hours=1))
+    handler(
+        JobContext(
+            job_id=job_id,
+            job_type="export" if export else "report",
+            attempt=1,
+            payload={"report_id": str(report.id)},
+            heartbeat=lambda: True,
+        )
+    )
+    with factory() as session, session.begin():
+        job = session.get(Job, UUID(job_id))
+        assert job is not None
+        job.status = "SUCCEEDED"  # what the runner does after the handler returns
+    engine.dispose()
+    return result
+
+
+def test_bm08_reports_rank_and_count_loans(client, settings, tmp_path):
+    reader, copy, checkout, _ = setup_loan(client)
+    add_charge(client, settings, reader, checkout, 3000)
+    overview = run_report(settings, request_report(client, "OVERVIEW"), tmp_path)
+    metrics = overview["metrics"]
+    assert metrics["loan_items_issued"] >= 1
+    assert metrics["copies_on_loan"] >= 1
+    assert int(metrics["fines_assessed"]) >= 3000
+    assert overview["rows"] == []
+    trend = run_report(
+        settings, request_report(client, "LOAN_TREND", granularity="day"), tmp_path
+    )["rows"]
+    assert trend and trend[-1]["loans_issued"] >= 1
+    top = run_report(settings, request_report(client, "TOP_BOOKS", limit=100), tmp_path)
+    counts = [row["loan_count"] for row in top["rows"]]
+    assert counts == sorted(counts, reverse=True)
+    assert copy["edition_id"] in {row["edition_id"] for row in top["rows"]}
+    readers = run_report(
+        settings, request_report(client, "ACTIVE_READERS", limit=100), tmp_path
+    )["rows"]
+    mine = next(row for row in readers if row["reader_id"] == reader["id"])
+    assert mine["loan_count"] == 1 and mine["fines_amount"] == "3000"
+    inventory = run_report(settings, request_report(client, "INVENTORY"), tmp_path)
+    line = next(r for r in inventory["rows"] if r["edition_id"] == copy["edition_id"])
+    assert line["total_copies"] == 1 and line["on_loan"] == 1
+    loans = run_report(
+        settings, request_report(client, "LOAN_CSV", export=True), tmp_path, export=True
+    )
+    assert any(row["reader_code"] == reader["reader_code"] for row in loans["rows"])
+    fines = run_report(
+        settings, request_report(client, "FINE_CSV", export=True), tmp_path, export=True
+    )
+    fine = next(
+        row for row in fines["rows"] if row["reader_code"] == reader["reader_code"]
+    )
+    assert fine["balance"] == "3000"
+
+
+def test_report_period_follows_qd13(client: TestClient):
+    period = report_period()
+    later = datetime.fromisoformat(period["to"]) + timedelta(days=1)
+    future = post(
+        client,
+        "/report-jobs",
+        {"reportType": "OVERVIEW", "filters": {**period, "to": later.isoformat()}},
+    )
+    assert future.status_code == 422
+    reversed_period = post(
+        client,
+        "/report-jobs",
+        {
+            "reportType": "OVERVIEW",
+            "filters": {"from": period["to"], "to": period["from"]},
+        },
+    )
+    assert reversed_period.status_code == 422
+
+
+def test_export_without_data_creates_no_file(client, settings, tmp_path):
+    # QĐ26: nothing matches, so no file is created and the download says so.
+    response = post(
+        client,
+        "/export-jobs",
+        {
+            "reportType": "FINE_CSV",
+            "filters": {
+                "from": "2001-01-01T00:00:00+07:00",
+                "to": "2001-01-02T00:00:00+07:00",
+            },
+        },
+    )
+    assert response.status_code == 202, response.text
+    job_id = response.json()["jobId"]
+    run_report(settings, job_id, tmp_path, export=True)
+    assert list(tmp_path.iterdir()) == []
+    link = client.get(f"/api/v1/export-jobs/{job_id}/download")
+    assert link.status_code == 409, link.text
+    assert link.json()["code"] == "NO_DATA"

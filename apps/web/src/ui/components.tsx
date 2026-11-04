@@ -108,11 +108,14 @@ export function Table({
   rows,
   caption = "Danh sách",
   onRow,
+  empty,
 }: {
   headers: string[];
   rows: string[][];
   caption?: string;
   onRow?: (index: number) => void;
+  /** Empty-state text, e.g. "Không tìm thấy" for a search with no match (QĐ23). */
+  empty?: { title: string; hint: string };
 }) {
   return (
     <div
@@ -154,8 +157,10 @@ export function Table({
               <td colSpan={headers.length}>
                 <div className="empty-state">
                   <Icon name="archive" size={30} />
-                  <strong>Chưa có dữ liệu</strong>
-                  <span className="muted">Các mục sẽ xuất hiện tại đây khi có dữ liệu.</span>
+                  <strong>{empty?.title ?? "Chưa có dữ liệu"}</strong>
+                  <span className="muted">
+                    {empty?.hint ?? "Các mục sẽ xuất hiện tại đây khi có dữ liệu."}
+                  </span>
                 </div>
               </td>
             </tr>

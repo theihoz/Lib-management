@@ -9,6 +9,7 @@ test("copy status Sẵn sàng → Bảo trì → Sẵn sàng (YC#2)", async ({ p
   await page.goto("/staff/catalog");
   await page.getByLabel("Tìm sách").fill("Mắt biếc");
   await page.getByRole("button", { name: "Mắt biếc", exact: true }).first().click();
+  await page.waitForURL(/\/catalog\/[0-9a-f-]{36}/);
   const edition = page.url().match(/[0-9a-f-]{36}/)![0];
   await page.goto(`/staff/catalog/copies?edition=${edition}`);
   await page.getByRole("row").filter({ hasText: "Sẵn sàng" }).first().getByRole("button").click();
@@ -39,7 +40,7 @@ test("new categories hang below A/B/C (QĐ04) and search finds authors (YC#1)", 
 
 test("Ctrl+K finds a screen and a reader (YC#18)", async ({ page }) => {
   await page.goto("/staff/dashboard");
-  await expect(page.getByRole("button", { name: /Tìm nhanh/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Tìm sách, độc giả, chức năng/ })).toBeVisible();
   await page.keyboard.press("Control+k");
   const box = page.getByRole("combobox", { name: /Từ khóa/ });
   await box.fill("muon sach");

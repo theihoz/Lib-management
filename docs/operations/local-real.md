@@ -1,10 +1,9 @@
 # Chạy bản thật trên máy cá nhân
 
-GitHub Pages chỉ là **bản demo**: dữ liệu giả lập ngay trong trình duyệt, chọn vai trò để
-"đăng nhập", không có máy chủ hay database. Bản **thật** chạy trên máy bạn bằng Docker:
-mọi thao tác đọc/ghi vào PostgreSQL local, đăng nhập thật qua Keycloak.
+Bản **thật** chạy trên máy bạn bằng Docker: mọi thao tác đọc/ghi vào PostgreSQL local, đăng
+nhập thật qua Keycloak. Bản build mock chỉ dùng nội bộ khi phát triển giao diện, không công bố.
 
-| | GitHub Pages (demo) | Máy cá nhân (thật) |
+| | Build mock (chỉ nội bộ) | Máy cá nhân (thật) |
 | --- | --- | --- |
 | Dữ liệu | Giả lập trong trình duyệt, mất khi tải lại | PostgreSQL 17, giữ qua các lần khởi động |
 | Đăng nhập | Chọn vai trò, không mật khẩu | Keycloak OIDC + PKCE, tài khoản thật |

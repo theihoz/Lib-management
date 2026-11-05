@@ -8,6 +8,13 @@ import { Button, Dialog, Field, Notice, Panel, Table } from "../../ui/components
 import { ApiFailure, LoadingSkeleton, MutationFeedback } from "./common";
 import { reservationStatus } from "./labels";
 import { ReaderPicker, type Reader } from "./ReaderPicker";
+import {
+  EditionPicker,
+  PickedItem,
+  editionAuthors,
+  useLinkedEdition,
+  type Edition,
+} from "./EditionPicker";
 
 type Row = components["schemas"]["Reservation"];
 
@@ -146,12 +153,12 @@ function ReserveForReader({ onDone }: { onDone: () => void }) {
   const services = useServices();
   const key = useRef(createIdempotencyKey()).current;
   const [reader, setReader] = useState<Reader>();
-  const [edition, setEdition] = useState(
-    new URLSearchParams(window.location.search).get("edition") ?? "",
-  );
+  const linked = useLinkedEdition(new URLSearchParams(window.location.search).get("edition"));
+  const [picked, setPicked] = useState<Edition | null>();
+  const book = picked === undefined ? linked.data : (picked ?? undefined);
   const save = useMutation({
     mutationFn: async () => {
-      const body = { readerId: reader!.id, editionId: edition.trim() };
+      const body = { readerId: reader!.id, editionId: book!.id };
       return (
         await services.circulation.post_reservations({
           body,
@@ -166,29 +173,35 @@ function ReserveForReader({ onDone }: { onDone: () => void }) {
   });
   return (
     <Panel title="Đặt trước cho độc giả">
-      {reader ? (
-        <p>
-          <strong>{reader.full_name}</strong> · {reader.reader_code}{" "}
-          <Button variant="ghost" onClick={() => setReader(undefined)}>
-            Đổi độc giả
-          </Button>
-        </p>
-      ) : (
-        <ReaderPicker onPick={setReader} />
-      )}
+      <div className="stack">
+        {reader ? (
+          <PickedItem
+            label="Độc giả"
+            title={reader.full_name}
+            detail={reader.reader_code}
+            onChange={() => setReader(undefined)}
+          />
+        ) : (
+          <ReaderPicker onPick={setReader} />
+        )}
+        {book ? (
+          <PickedItem
+            label="Ấn bản"
+            title={book.title}
+            detail={`${editionAuthors(book)} · ${book.publication_year}`}
+            onChange={() => setPicked(null)}
+          />
+        ) : (
+          <EditionPicker onPick={setPicked} />
+        )}
+      </div>
       <form
+        className="stack form-footer"
         onSubmit={(event) => {
           event.preventDefault();
-          if (reader && edition.trim()) save.mutate();
+          if (reader && book) save.mutate();
         }}
       >
-        <Field
-          label="Mã ấn bản"
-          required
-          value={edition}
-          placeholder="Mở từ trang chi tiết ấn bản"
-          onChange={(event) => setEdition(event.target.value)}
-        />
         <Notice>
           Chỉ đặt được sách khi mọi bản đều đang được mượn. Tổng số sách đang mượn và đang đặt không
           vượt quá giới hạn theo quy định.
@@ -196,7 +209,7 @@ function ReserveForReader({ onDone }: { onDone: () => void }) {
         <MutationFeedback error={save.error} success={save.isSuccess}>
           Đã đặt trước; độc giả được báo khi sách sẵn sàng.
         </MutationFeedback>
-        <Button type="submit" disabled={!reader || !edition.trim() || save.isPending}>
+        <Button type="submit" disabled={!reader || !book || save.isPending}>
           Đặt trước
         </Button>
       </form>

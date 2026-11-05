@@ -658,7 +658,7 @@ kbd {
   }
   .two-columns,
   .form-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 16px;
   }
   .toolbar > .field:first-child {

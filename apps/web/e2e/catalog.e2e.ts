@@ -8,10 +8,7 @@ test.beforeEach(async ({ page }) => {
 test("copy status Sẵn sàng → Bảo trì → Sẵn sàng (YC#2)", async ({ page }) => {
   await page.goto("/staff/catalog");
   await page.getByLabel("Tìm sách").fill("Mắt biếc");
-  await page
-    .getByRole("button", { name: /^[0-9a-f-]{36}$/ })
-    .first()
-    .click();
+  await page.getByRole("button", { name: "Mắt biếc", exact: true }).first().click();
   const edition = page.url().match(/[0-9a-f-]{36}/)![0];
   await page.goto(`/staff/catalog/copies?edition=${edition}`);
   await page.getByRole("row").filter({ hasText: "Sẵn sàng" }).first().getByRole("button").click();

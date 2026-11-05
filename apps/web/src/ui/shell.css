@@ -619,7 +619,7 @@
     background: var(--primary-soft);
   }
   .auth-page {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto 1fr;
   }
   .auth-aside {

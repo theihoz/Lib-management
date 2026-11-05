@@ -17,7 +17,7 @@ test("a reader renews their own loan and sees history and fines (YC#9, QĐ22)", 
     .first()
     .click();
   await expect(reader.getByText(/Đã gia hạn/)).toBeVisible();
-  await expect(reader.getByRole("cell", { name: "1 lần" })).toBeVisible();
+  await expect(reader.getByText(/Gia hạn 1 lần/).first()).toBeVisible();
   await reader.getByRole("tab", { name: "Lịch sử" }).click();
   await expect(reader.getByRole("table", { name: /Lịch sử/ })).toBeVisible();
   await reader.getByRole("tab", { name: "Phạt của tôi" }).click();

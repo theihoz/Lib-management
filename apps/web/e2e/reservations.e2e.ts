@@ -7,10 +7,7 @@ test("reserve, return, hand over (F10)", async ({ browser }) => {
   await login(desk, "librarian.dev");
   await desk.goto("/staff/catalog");
   await desk.getByLabel("Tìm sách").fill("Kinh tế học vi mô");
-  await desk
-    .getByRole("button", { name: /^[0-9a-f-]{36}$/ })
-    .first()
-    .click();
+  await desk.getByRole("button", { name: "Kinh tế học vi mô", exact: true }).first().click();
   const edition = desk.url().match(/[0-9a-f-]{36}/)![0];
   await desk.goto(`/staff/catalog/copies?edition=${edition}`);
   const row = desk.getByRole("row").filter({ hasText: "Sẵn sàng" }).first();

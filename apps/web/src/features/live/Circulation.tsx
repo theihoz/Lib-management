@@ -19,6 +19,7 @@ import { formatDateTime } from "../../lib/datetime";
 import type { ScreenDefinition } from "../types";
 import { ApiFailure, LoadingSkeleton, MutationFeedback } from "./common";
 import { copyStatus, eligibilityReason } from "./labels";
+import { PickedItem } from "./EditionPicker";
 import { ReaderPicker } from "./ReaderPicker";
 import type { Reader } from "./ReaderPicker";
 
@@ -35,7 +36,18 @@ function Checkout() {
   const services = useServices();
   const cache = useQueryClient();
   const key = useRef(createIdempotencyKey()).current;
-  const [reader, setReader] = useState<Reader>();
+  // A link from the reader profile (?reader=<id>) opens the desk with that reader chosen.
+  const linkedId = new URLSearchParams(window.location.search).get("reader");
+  const linked = useQuery({
+    queryKey: ["reader", linkedId],
+    enabled: !!linkedId,
+    queryFn: async ({ signal }) =>
+      (await services.readers.get_readers_id({ params: { path: { id: linkedId! } }, signal }))
+        .data!,
+  });
+  const [picked, setPicked] = useState<Reader | null>();
+  const reader = picked === undefined ? linked.data : (picked ?? undefined);
+  const setReader = (next: Reader | undefined) => setPicked(next ?? null);
   const [barcode, setBarcode] = useState("");
   const [scanned, setScanned] = useState<Scanned[]>([]);
   const [scanError, setScanError] = useState("");
@@ -111,20 +123,23 @@ function Checkout() {
       <ProgressSteps current={step} />
       <div className="counter-layout">
         <div className="stack">
-          <Panel title="Xác định độc giả">
+          <Panel title="Độc giả">
             {reader ? (
-              <div className="reader-strip" aria-live="polite">
-                <strong>{reader.full_name}</strong> · {reader.reader_code}
-                {!done && (
-                  <Button
-                    variant="ghost"
-                    onClick={() => {
+              <div aria-live="polite">
+                {done ? (
+                  <p>
+                    <strong>{reader.full_name}</strong> · {reader.reader_code}
+                  </p>
+                ) : (
+                  <PickedItem
+                    label="Người mượn"
+                    title={reader.full_name}
+                    detail={reader.reader_code}
+                    onChange={() => {
                       setReader(undefined);
                       setScanned([]);
                     }}
-                  >
-                    Đổi độc giả
-                  </Button>
+                  />
                 )}
               </div>
             ) : (
@@ -133,7 +148,7 @@ function Checkout() {
             {eligibility.error && <ApiFailure error={eligibility.error} />}
           </Panel>
           {reader && !done && (
-            <Panel title="Quét sách">
+            <Panel title="Sách mượn" subtitle="Quét hoặc nhập mã vạch trên từng cuốn.">
               <form
                 className="scan-form"
                 onSubmit={(event) => {
@@ -153,11 +168,13 @@ function Checkout() {
                   Thêm sách
                 </Button>
               </form>
+              {scanned.length === 0 && <p className="muted">Chưa có cuốn nào.</p>}
               <ul className="selected-copies">
                 {scanned.map((item) => (
                   <li key={item.copyId}>
                     <span>
-                      {item.title} <code>{item.barcode}</code>
+                      <strong>{item.title}</strong>
+                      <code>{item.barcode}</code>
                     </span>
                     <Button
                       variant="ghost"
@@ -173,7 +190,7 @@ function Checkout() {
             </Panel>
           )}
         </div>
-        <Panel title="Điều kiện mượn">
+        <Panel title="Điều kiện mượn" className="reader-eligibility">
           {reader ? (
             <>
               <div aria-live="polite">
@@ -327,31 +344,42 @@ function Returns() {
   };
   return (
     <div className="stack">
-      <Panel title="Tiếp nhận trả sách">
-        {!save.isSuccess && (
-          <form
-            className="scan-form"
-            onSubmit={(event) => {
-              event.preventDefault();
-              if (barcode.trim()) find.mutate(barcode.trim());
-            }}
-          >
-            <Field
-              label="Mã vạch bản sách"
-              required
-              value={barcode}
-              onChange={(event) => setBarcode(event.target.value)}
-            />
-            <Button type="submit" variant="secondary" aria-busy={find.isPending}>
-              Tìm khoản mượn
-            </Button>
-          </form>
-        )}
-        <MutationFeedback error={find.error} />
-        {find.isSuccess && !target && (
-          <Notice tone="warning">Bản sách này hiện không có khoản mượn đang mở.</Notice>
-        )}
-      </Panel>
+      <div className="counter-layout">
+        <Panel title="Quét sách trả" subtitle="Quét hoặc nhập mã vạch trên cuốn sách độc giả trả.">
+          {!save.isSuccess && (
+            <form
+              className="scan-form"
+              onSubmit={(event) => {
+                event.preventDefault();
+                if (barcode.trim()) find.mutate(barcode.trim());
+              }}
+            >
+              <Field
+                label="Mã vạch bản sách"
+                required
+                value={barcode}
+                onChange={(event) => setBarcode(event.target.value)}
+              />
+              <Button type="submit" variant="secondary" aria-busy={find.isPending}>
+                Tìm khoản mượn
+              </Button>
+            </form>
+          )}
+          <MutationFeedback error={find.error} />
+          {find.isSuccess && !target && (
+            <Notice tone="warning">Bản sách này hiện không có khoản mượn đang mở.</Notice>
+          )}
+        </Panel>
+        <Panel title="Các bước" className="guide-panel">
+          <ol className="guide-steps">
+            <li>Quét mã vạch để tìm khoản mượn.</li>
+            <li>Kiểm tra và chọn tình trạng sách: còn tốt, hư hỏng hoặc mất.</li>
+            <li>Nếu sách hỏng hoặc mất, đề xuất mức phí để quản lý xác nhận.</li>
+            <li>Xác nhận để in biên nhận cho độc giả.</li>
+          </ol>
+          <p className="muted">Việc trả sách không bị chặn bởi khoản nợ của độc giả.</p>
+        </Panel>
+      </div>
       {target && !save.isSuccess && (
         <Panel title="Khoản mượn">
           <dl className="detail-list">

@@ -2,7 +2,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { Link, NavLink } from "react-router";
 import { screens } from "../app/screens";
-import { useDocumentTitle, useLibraryName } from "../app/brand";
+import { PageTitleContext, useDocumentTitle, useLibraryName } from "../app/brand";
 import type { ScreenDefinition } from "../features/types";
 import { Button, Dialog } from "../ui/components";
 import { Icon } from "../ui/Icon";
@@ -40,11 +40,13 @@ export function Shell({
   const [drawer, setDrawer] = useState(false);
   const [logout, setLogout] = useState(false);
   const heading = useRef<HTMLHeadingElement>(null);
+  const [titleOverride, setTitleOverride] = useState<string>();
+  const title = titleOverride ?? screen.title;
   const sections = resolveNavigation(screens, allowed, portal);
   const current = findNavItem(sections, screen.id);
   const isDetail = current?.item.details?.includes(screen.id) ?? false;
   const tabs = current && !isDetail ? current.item.allowedTabs : [];
-  useDocumentTitle(screen.title);
+  useDocumentTitle(title);
   useEffect(() => {
     heading.current?.focus();
   }, [screen.id]);
@@ -115,7 +117,7 @@ export function Shell({
               current?.section.label && <span className="eyebrow">{current.section.label}</span>
             )}
             <h1 ref={heading} tabIndex={-1}>
-              {screen.title}
+              {title}
             </h1>
           </header>
           {tabs.length > 1 && (
@@ -127,9 +129,11 @@ export function Shell({
               ))}
             </nav>
           )}
-          <div className="page-enter" key={screen.id}>
-            {children}
-          </div>
+          <PageTitleContext.Provider value={setTitleOverride}>
+            <div className="page-enter" key={screen.id}>
+              {children}
+            </div>
+          </PageTitleContext.Provider>
         </main>
         <MobileBar
           sections={sections}

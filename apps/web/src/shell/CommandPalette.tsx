@@ -5,7 +5,8 @@ import { useServices, useSession } from "../auth/session";
 import { isStaff } from "../auth/session-state";
 import type { ScreenDefinition } from "../features/types";
 import { useDebounced } from "../lib/useDebounced";
-import { Button, Dialog } from "../ui/components";
+import { Dialog } from "../ui/components";
+import { Icon } from "../ui/Icon";
 import { isPaletteShortcut, matchScreens } from "./palette";
 
 type Item = { key: string; group: string; label: string; detail?: string; to: string };
@@ -60,7 +61,7 @@ export function CommandPalette({ screens }: { screens: ScreenDefinition[] }) {
   const items: Item[] = [
     ...matchScreens(text, screens).map((screen) => ({
       key: `screen-${screen.id}`,
-      group: "Điều hướng",
+      group: "Chức năng",
       label: screen.title,
       to: screen.path,
     })),
@@ -92,14 +93,18 @@ export function CommandPalette({ screens }: { screens: ScreenDefinition[] }) {
   const searching = keyword !== "" && (books.isFetching || readers.isFetching);
   return (
     <>
-      <Button
-        variant="ghost"
-        icon="search"
+      <button
+        type="button"
+        className="search-trigger"
         aria-keyshortcuts="Control+K"
         onClick={() => setOpen(true)}
       >
-        Tìm nhanh <kbd>Ctrl K</kbd>
-      </Button>
+        <Icon name="search" size={18} />
+        <span className="search-trigger-label">
+          {canReaders ? "Tìm sách, độc giả, chức năng…" : "Tìm sách hoặc chức năng…"}
+        </span>
+        <kbd>Ctrl K</kbd>
+      </button>
       <Dialog open={open} title="Tìm kiếm nhanh" onClose={close}>
         <div className="command-palette">
           <input
@@ -108,8 +113,8 @@ export function CommandPalette({ screens }: { screens: ScreenDefinition[] }) {
             aria-expanded={items.length > 0}
             aria-controls={listId}
             aria-activedescendant={items[active] ? `${listId}-${active}` : undefined}
-            aria-label="Từ khóa: tên sách, độc giả hoặc màn hình"
-            placeholder="Tên sách, mã độc giả hoặc màn hình…"
+            aria-label="Từ khóa: tên sách, độc giả hoặc chức năng"
+            placeholder="Tên sách, mã độc giả hoặc chức năng…"
             value={text}
             onChange={(event) => {
               setText(event.target.value);

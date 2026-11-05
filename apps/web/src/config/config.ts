@@ -12,6 +12,8 @@ export const RuntimeConfigSchema = z
     /** Empty string means same origin as the app. */
     apiBaseUrl: z.union([z.literal(""), httpUrl]),
     mock: z.boolean(),
+    /** Shown as the product name, e.g. "Thư viện Trường THPT Nguyễn Du"; defaults to "Thư viện". */
+    libraryName: z.string().trim().min(1).max(80).optional(),
   })
   .refine((c) => c.oidcUrl !== "" || (c.mock && import.meta.env.MODE !== "production"), {
     path: ["oidcUrl"],

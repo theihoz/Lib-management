@@ -1,17 +1,24 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { Link, NavLink } from "react-router";
-import { groups, screens } from "../app/screens";
+import { screens } from "../app/screens";
+import { useDocumentTitle, useLibraryName } from "../app/brand";
 import type { ScreenDefinition } from "../features/types";
-import { Badge, Button, Dialog } from "../ui/components";
+import { Button, Dialog } from "../ui/components";
 import { Icon } from "../ui/Icon";
 import { formatDateTime } from "../lib/datetime";
+import { findNavItem, resolveNavigation } from "./navigation";
+import type { ResolvedSection } from "./navigation";
 
 type Props = {
   screen: ScreenDefinition;
   children: ReactNode;
   accountName?: string;
-  ready?: boolean;
+  /** Accounts with only reader permissions get the portal navigation. */
+  portal?: boolean;
+  /** The API health check failed; data on screen may be stale. */
+  offline?: boolean;
+  onRetry?: () => void;
   onLogin?: () => void;
   onLogout?: () => void;
   allowed?: (screen: ScreenDefinition) => boolean;
@@ -22,7 +29,9 @@ export function Shell({
   screen,
   children,
   accountName,
-  ready,
+  portal = false,
+  offline = false,
+  onRetry,
   onLogin,
   onLogout,
   allowed = () => true,
@@ -31,60 +40,31 @@ export function Shell({
   const [drawer, setDrawer] = useState(false);
   const [logout, setLogout] = useState(false);
   const heading = useRef<HTMLHeadingElement>(null);
-  const group = groups.find((item) => item.id === screen.group);
-  const shown = screens.filter((item) => !item.path.includes(":") && allowed(item));
-  const destination = (item: ScreenDefinition) =>
-    item.path.includes(":") ? item.path.split("/:")[0]! : item.path;
+  const sections = resolveNavigation(screens, allowed, portal);
+  const current = findNavItem(sections, screen.id);
+  const isDetail = current?.item.details?.includes(screen.id) ?? false;
+  const tabs = current && !isDetail ? current.item.allowedTabs : [];
+  useDocumentTitle(screen.title);
   useEffect(() => {
     heading.current?.focus();
   }, [screen.id]);
-  const navigation = (
-    <>
-      <Link className="brand" to="/catalog" onClick={() => setDrawer(false)}>
-        <span className="brand-icon">
-          <Icon name="book" size={25} />
-        </span>
-        <span>
-          LIB / MANAGEMENT<small>THƯ VIỆN ĐƯƠNG ĐẠI</small>
-        </span>
-      </Link>
-      <div className="nav-section-label">KHÔNG GIAN THƯ VIỆN</div>
-      <nav aria-label="Điều hướng chính">
-        {groups.map((item) => {
-          const first = shown.find((entry) => entry.group === item.id);
-          if (!first) return null;
-          return (
-            <NavLink
-              key={item.id}
-              to={destination(first)}
-              onClick={() => setDrawer(false)}
-              className={`nav-item ${screen.group === item.id ? "nav-active" : ""}`}
-              aria-current={screen.group === item.id ? "page" : undefined}
-            >
-              <Icon name={item.icon} size={19} />
-              <span>{item.title}</span>
-              {screen.group === item.id && <Icon name="chevron" size={14} />}
-            </NavLink>
-          );
-        })}
-      </nav>
-      <div className="sidebar-footer">
-        <div className="sidebar-avatar">{accountName?.slice(0, 1).toUpperCase() ?? "K"}</div>
-        <div>
-          <strong>{accountName ?? "Khách thư viện"}</strong>
-          <small>{accountName ? "Phiên làm việc hiện tại" : "Danh mục công khai"}</small>
-        </div>
-      </div>
-    </>
-  );
+  const closeDrawer = () => setDrawer(false);
   return (
-    <div className={`app-shell ${screen.group === "08" ? "portal-shell" : ""}`}>
+    <div className={`app-shell ${portal || !accountName ? "portal-shell" : ""}`}>
       <a className="skip-link" href="#main-content">
         Bỏ qua tới nội dung
       </a>
-      <aside className="sidebar">{navigation}</aside>
-      <Dialog open={drawer} title="Điều hướng thư viện" onClose={() => setDrawer(false)}>
-        <div className="mobile-navigation">{navigation}</div>
+      <aside className="sidebar">
+        <SidebarContent sections={sections} activeKey={current?.item.key} onNavigate={closeDrawer} />
+      </aside>
+      <Dialog open={drawer} title="Điều hướng" onClose={closeDrawer}>
+        <div className="mobile-navigation">
+          <SidebarContent
+            sections={sections}
+            activeKey={current?.item.key}
+            onNavigate={closeDrawer}
+          />
+        </div>
       </Dialog>
       <div className="workspace">
         <header className="topbar">
@@ -95,17 +75,11 @@ export function Shell({
             onClick={() => setDrawer(true)}
             className="mobile-menu"
           />
-          <span className="topbar-label">Không gian làm việc</span>
+          <div className="topbar-search">{topbarExtra}</div>
           <div className="topbar-actions">
-            {topbarExtra}
             <span className="topbar-date">{formatDateTime(new Date().toISOString(), true)}</span>
-            <Badge tone={ready ? "success" : "neutral"}>
-              {ready ? "Đã kết nối" : "Đang kết nối"}
-            </Badge>
-            {onLogout ? (
-              <Button variant="ghost" icon="logout" onClick={() => setLogout(true)}>
-                Đăng xuất
-              </Button>
+            {onLogout && accountName ? (
+              <AccountMenu name={accountName} onLogout={() => setLogout(true)} />
             ) : onLogin ? (
               <Button variant="secondary" icon="key" onClick={onLogin}>
                 Đăng nhập
@@ -113,56 +87,45 @@ export function Shell({
             ) : null}
           </div>
         </header>
+        {offline && (
+          <div className="connection-banner" role="alert">
+            <Icon name="offline" size={18} />
+            <span>Không kết nối được máy chủ thư viện. Dữ liệu trên màn hình có thể chưa cập nhật.</span>
+            {onRetry && (
+              <Button variant="ghost" icon="refresh" onClick={onRetry}>
+                Thử lại
+              </Button>
+            )}
+          </div>
+        )}
         <main id="main-content" className="main-content">
-          <div className="breadcrumb">
-            <Link to="/catalog">Thư viện</Link>
-            <Icon name="chevron" size={13} />
-            <span>{group?.title}</span>
-          </div>
-          <div className="page-heading">
-            <div>
-              <span className="eyebrow">{group?.title.toLocaleUpperCase("vi")}</span>
-              <h1 ref={heading} tabIndex={-1}>
-                {screen.title}
-              </h1>
-            </div>
-            <span className="screen-number">{screen.id}</span>
-          </div>
-          <nav className="subnav" aria-label="Các trang trong nhóm">
-            {shown
-              .filter((item) => item.group === screen.group)
-              .map((item) => (
-                <NavLink
-                  key={item.id}
-                  to={destination(item)}
-                  className={screen.id === item.id ? "is-active" : ""}
-                  aria-current={screen.id === item.id ? "page" : undefined}
-                >
-                  {item.title}
+          <header className="page-header">
+            {isDetail && current ? (
+              <Link className="back-link" to={current.item.to}>
+                <Icon name="back" size={16} />
+                {current.item.label}
+              </Link>
+            ) : (
+              current?.section.label && <span className="eyebrow">{current.section.label}</span>
+            )}
+            <h1 ref={heading} tabIndex={-1}>
+              {screen.title}
+            </h1>
+          </header>
+          {tabs.length > 1 && (
+            <nav className="subnav" aria-label={current?.item.label}>
+              {tabs.map((tab) => (
+                <NavLink key={tab.id} to={tab.to} end>
+                  {tab.label}
                 </NavLink>
               ))}
-          </nav>
+            </nav>
+          )}
           <div className="page-enter" key={screen.id}>
             {children}
           </div>
-          <footer className="page-footer">
-            <span>LIB–MANAGEMENT / {screen.id}</span>
-            <span>THƯ VIỆN ĐƯƠNG ĐẠI</span>
-          </footer>
         </main>
-        <nav className="mobile-bottom" aria-label="Truy cập nhanh">
-          <Link to="/catalog">
-            <Icon name="book" size={20} />
-            Tìm sách
-          </Link>
-          <Link to="/me">
-            <Icon name="user" size={20} />
-            Của tôi
-          </Link>
-          <Button variant="ghost" icon="menu" onClick={() => setDrawer(true)}>
-            Menu
-          </Button>
-        </nav>
+        <MobileBar sections={sections} activeKey={current?.item.key} onMore={() => setDrawer(true)} />
       </div>
       <Dialog open={logout} title="Đăng xuất khỏi thư viện?" onClose={() => setLogout(false)}>
         <p>Bạn sẽ kết thúc phiên làm việc trên trình duyệt này.</p>
@@ -181,5 +144,145 @@ export function Shell({
         </div>
       </Dialog>
     </div>
+  );
+}
+
+function Brand({ onNavigate }: { onNavigate?: () => void }) {
+  const library = useLibraryName();
+  return (
+    <Link className="brand" to="/" onClick={onNavigate}>
+      <span className="brand-mark">
+        <Icon name="book" size={20} />
+      </span>
+      <span className="brand-name">{library}</span>
+    </Link>
+  );
+}
+
+function SidebarContent({
+  sections,
+  activeKey,
+  onNavigate,
+}: {
+  sections: ResolvedSection[];
+  activeKey?: string;
+  onNavigate: () => void;
+}) {
+  return (
+    <>
+      <Brand onNavigate={onNavigate} />
+      <nav aria-label="Điều hướng chính" className="nav">
+        {sections.map((section, index) => (
+          <div className="nav-section" key={section.label ?? index}>
+            {section.label && <span className="nav-section-label">{section.label}</span>}
+            {section.items.map((item) => (
+              <Link
+                key={item.key}
+                to={item.to}
+                onClick={onNavigate}
+                className={`nav-item ${item.key === activeKey ? "nav-active" : ""}`}
+                aria-current={item.key === activeKey ? "page" : undefined}
+              >
+                <Icon name={item.icon} size={18} />
+                <span>{item.label}</span>
+              </Link>
+            ))}
+          </div>
+        ))}
+      </nav>
+    </>
+  );
+}
+
+function AccountMenu({ name, onLogout }: { name: string; onLogout: () => void }) {
+  const [open, setOpen] = useState(false);
+  const menuId = useId();
+  const root = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onPointer = (event: PointerEvent) => {
+      if (!root.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointer);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onPointer);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+  return (
+    <div className="account-menu" ref={root}>
+      <button
+        type="button"
+        className="account-trigger"
+        aria-expanded={open}
+        aria-controls={menuId}
+        aria-label={`Tài khoản: ${name}`}
+        onClick={() => setOpen((value) => !value)}
+      >
+        <span className="avatar" aria-hidden="true">
+          {name.slice(0, 1).toLocaleUpperCase("vi")}
+        </span>
+        <span className="account-name">{name}</span>
+        <Icon name="down" size={16} />
+      </button>
+      {open && (
+        <div className="account-popover" id={menuId}>
+          <Link to="/me" onClick={() => setOpen(false)}>
+            <Icon name="user" size={18} />
+            Tài khoản của tôi
+          </Link>
+          <button
+            type="button"
+            onClick={() => {
+              setOpen(false);
+              onLogout();
+            }}
+          >
+            <Icon name="logout" size={18} />
+            Đăng xuất
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+const MOBILE_KEYS = ["checkout", "returns", "catalog", "me", "dashboard"];
+function MobileBar({
+  sections,
+  activeKey,
+  onMore,
+}: {
+  sections: ResolvedSection[];
+  activeKey?: string;
+  onMore: () => void;
+}) {
+  const items = sections
+    .flatMap((section) => section.items)
+    .filter((item) => MOBILE_KEYS.includes(item.key))
+    .sort((a, b) => MOBILE_KEYS.indexOf(a.key) - MOBILE_KEYS.indexOf(b.key))
+    .slice(0, 3);
+  return (
+    <nav className="mobile-bottom" aria-label="Truy cập nhanh">
+      {items.map((item) => (
+        <Link
+          key={item.key}
+          to={item.to}
+          className={item.key === activeKey ? "is-active" : undefined}
+          aria-current={item.key === activeKey ? "page" : undefined}
+        >
+          <Icon name={item.icon} size={20} />
+          {item.label}
+        </Link>
+      ))}
+      <button type="button" onClick={onMore}>
+        <Icon name="menu" size={20} />
+        Thêm
+      </button>
+    </nav>
   );
 }

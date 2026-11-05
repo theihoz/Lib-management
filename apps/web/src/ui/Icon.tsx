@@ -25,6 +25,13 @@ const paths: Record<string, string> = {
   print: "M6 9V3h12v6M6 18H3V9h18v9h-3M6 15h12v7H6v-7",
   download: "M12 3v12m-5-5 5 5 5-5M4 17v4h16v-4",
   bell: "M18 8a6 6 0 0 0-12 0v8l-2 2h16l-2-2V8Zm-8 13h4",
+  home: "M3 11 12 3l9 8M5 9.5V21h5v-6h4v6h5V9.5",
+  bookmark: "M6 3h12v18l-6-4-6 4V3Z",
+  file: "M14 3H6v18h12V7l-4-4Zm0 0v4h4M9 12h6m-6 4h6",
+  library: "M4 3v18m5-18v18M14 4l4 17M3 21h18",
+  back: "M15 5 8 12l7 7",
+  down: "m6 9 6 6 6-6",
+  offline: "M2 8.8a15 15 0 0 1 20 0M5.5 12.4a10 10 0 0 1 13 0M9 16a5 5 0 0 1 6 0m-3 4h.01M3 3l18 18",
 };
 export function Icon({ name, size = 20 }: { name: string; size?: number }) {
   return (

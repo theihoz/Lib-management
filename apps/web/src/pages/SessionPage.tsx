@@ -1,89 +1,91 @@
-import { useState } from "react";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { useSession } from "../auth/session";
 import type { SessionStatus } from "../auth/session-state";
-import { Badge, Button, Dialog, Notice, Panel } from "../ui/components";
+import { useDocumentTitle, useLibraryName } from "../app/brand";
+import { Button, Notice } from "../ui/components";
 import { Icon } from "../ui/Icon";
 import { ApiError } from "../api/errors";
 
 const messages: Record<SessionStatus, [string, string]> = {
-  anonymous: ["Đăng nhập thư viện", "Sử dụng tài khoản được nhân viên cấp hoặc liên kết."],
-  checking: ["Đang xác minh phiên", "Vui lòng chờ trong khi thư viện kiểm tra phiên đăng nhập."],
-  authenticated: ["Tài khoản thư viện", "Thông tin phiên làm việc và quyền truy cập hiện tại."],
-  expired: ["Phiên đăng nhập hết hạn", "Đăng nhập lại để tiếp tục làm việc."],
-  inactive: ["Tài khoản đã bị khóa", "Liên hệ quản trị viên để kiểm tra trạng thái tài khoản."],
+  anonymous: ["Đăng nhập", "Dùng tài khoản thư viện được cấp cho bạn để mượn, gia hạn và theo dõi sách."],
+  checking: ["Đang xác minh phiên", "Vui lòng chờ trong giây lát."],
+  authenticated: ["Đăng xuất khỏi thư viện?", "Bạn sẽ kết thúc phiên làm việc trên trình duyệt này."],
+  expired: ["Phiên đăng nhập đã hết hạn", "Đăng nhập lại để tiếp tục. Dữ liệu chưa gửi trên biểu mẫu vẫn được giữ."],
+  inactive: ["Tài khoản đã bị khóa", "Liên hệ quầy thư viện hoặc quản trị viên để được hỗ trợ."],
   not_linked: [
     "Tài khoản chưa được liên kết",
-    "Liên hệ nhân viên để liên kết tài khoản với hồ sơ thư viện.",
+    "Tài khoản của bạn chưa gắn với hồ sơ độc giả. Liên hệ quầy thư viện để được liên kết.",
   ],
-  offline: [
-    "Không thể kết nối",
-    "Kiểm tra kết nối mạng hoặc liên hệ nhân viên thư viện rồi thử lại.",
-  ],
+  offline: ["Không thể kết nối", "Kiểm tra kết nối mạng rồi thử lại."],
 };
-export function SessionPage({ forbidden = false }: { forbidden?: boolean }) {
+const stateIcon: Partial<Record<SessionStatus, string>> = {
+  checking: "clock",
+  expired: "clock",
+  inactive: "alert",
+  not_linked: "users",
+  offline: "offline",
+  authenticated: "logout",
+};
+
+export function SessionPage() {
   const session = useSession();
   const navigate = useNavigate();
-  const [logout, setLogout] = useState(false);
-  const [title, description] = forbidden
-    ? ["Bạn chưa có quyền truy cập", "Tài khoản hiện tại không có quyền thực hiện thao tác này."]
-    : messages[session.status];
+  const library = useLibraryName();
+  const [title, description] = messages[session.status];
+  useDocumentTitle(title);
   return (
-    <div className="auth-layout">
-      <div className="auth-editorial">
-        <span className="eyebrow">LIB / MANAGEMENT</span>
-        <Icon name="book" size={64} />
-        <h2>
+    <div className="auth-page">
+      <aside className="auth-aside">
+        <Link className="brand" to="/">
+          <span className="brand-mark">
+            <Icon name="book" size={20} />
+          </span>
+          <span className="brand-name">{library}</span>
+        </Link>
+        <p className="auth-quote">
           Một tài khoản.
           <br />
           <em>Cả thư viện.</em>
-        </h2>
-        <p>
-          Không gian cho những cuốn sách,
-          <br />
-          và những người yêu đọc.
         </p>
-      </div>
-      <Panel className="auth-card">
-        <Badge>TÀI KHOẢN THƯ VIỆN</Badge>
-        <h2>{title}</h2>
-        <p className="muted">{description}</p>
-        {session.status === "authenticated" && !forbidden ? (
-          <>
-            <dl className="detail-list">
-              <div>
-                <dt>Tên hiển thị</dt>
-                <dd>{session.account?.display_name}</dd>
-              </div>
-              <div>
-                <dt>Trạng thái</dt>
-                <dd>{session.account?.status}</dd>
-              </div>
-              <div>
-                <dt>Quyền hiện tại</dt>
-                <dd>{session.permissions.length} quyền</dd>
-              </div>
-            </dl>
-            <Button variant="secondary" icon="logout" onClick={() => setLogout(true)}>
-              Đăng xuất
-            </Button>
-          </>
-        ) : (
-          <div className="actions">
-            {session.status === "offline" ? (
-              <Button variant="secondary" icon="refresh" onClick={session.retry}>
+        <p className="auth-tagline">Tra cứu sách, mượn trả và theo dõi tài khoản ở cùng một nơi.</p>
+      </aside>
+      <main className="auth-main" id="main-content">
+        <div className="auth-card">
+          {stateIcon[session.status] && (
+            <span className={`auth-state auth-state-${session.status}`}>
+              <Icon name={stateIcon[session.status]!} size={22} />
+            </span>
+          )}
+          <h1 tabIndex={-1}>{title}</h1>
+          <p className="muted">{description}</p>
+          <div className="auth-actions">
+            {session.status === "authenticated" ? (
+              <>
+                <Button
+                  icon="logout"
+                  onClick={() => {
+                    void session.logout().then(() => navigate("/login"));
+                  }}
+                >
+                  Xác nhận đăng xuất
+                </Button>
+                <Button variant="secondary" onClick={() => void navigate("/")}>
+                  Ở lại
+                </Button>
+              </>
+            ) : session.status === "offline" ? (
+              <Button icon="refresh" onClick={session.retry}>
                 Thử lại
               </Button>
-            ) : session.personas && !forbidden ? (
+            ) : session.personas ? (
               <fieldset className="persona-picker" disabled={session.status === "checking"}>
-                <legend>Bản demo: chọn vai trò để đăng nhập</legend>
+                <legend>Chọn vai trò (môi trường phát triển)</legend>
                 {session.personas.map((persona) => (
                   <Button
                     key={persona.code}
                     variant="secondary"
-                    icon="key"
                     onClick={() => {
-                      void session.login(persona.code).then(() => navigate("/staff"));
+                      void session.login(persona.code).then(() => navigate("/"));
                     }}
                   >
                     {persona.label}
@@ -93,41 +95,25 @@ export function SessionPage({ forbidden = false }: { forbidden?: boolean }) {
             ) : (
               <Button
                 disabled={
-                  session.status === "checking" ||
-                  forbidden ||
-                  ["inactive", "not_linked"].includes(session.status)
+                  session.status === "checking" || ["inactive", "not_linked"].includes(session.status)
                 }
                 icon="key"
                 onClick={() => {
                   void session.login();
                 }}
               >
-                {session.status === "checking" ? "Đang xác minh…" : "Tiếp tục với SSO"}
+                {session.status === "checking" ? "Đang xác minh…" : "Đăng nhập bằng tài khoản thư viện"}
               </Button>
             )}
           </div>
-        )}
-        {session.error instanceof ApiError && session.error.requestId && (
-          <Notice tone="warning">Mã hỗ trợ: {session.error.requestId}</Notice>
-        )}
-        <p className="muted">Cần hỗ trợ? Liên hệ nhân viên thư viện.</p>
-      </Panel>
-      <Dialog open={logout} title="Đăng xuất khỏi thư viện?" onClose={() => setLogout(false)}>
-        <p>Bạn sẽ kết thúc phiên làm việc trên trình duyệt này.</p>
-        <div className="actions">
-          <Button
-            onClick={() => {
-              setLogout(false);
-              void session.logout();
-            }}
-          >
-            Xác nhận đăng xuất
-          </Button>
-          <Button variant="secondary" onClick={() => setLogout(false)}>
-            Ở lại
-          </Button>
+          {session.error instanceof ApiError && session.error.requestId && (
+            <Notice tone="warning">Mã hỗ trợ: {session.error.requestId}</Notice>
+          )}
+          <p className="auth-footnote">
+            <Link to="/catalog">Xem danh mục sách</Link> không cần đăng nhập.
+          </p>
         </div>
-      </Dialog>
+      </main>
     </div>
   );
 }

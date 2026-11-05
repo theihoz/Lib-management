@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(uv run *)",
+      "mcp__plugin_playwright_playwright__browser_navigate"
+    ]
+  }
+}

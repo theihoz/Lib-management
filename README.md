@@ -3,9 +3,7 @@
 Phần mềm quản lý thư viện: quầy mượn/trả cho nhân viên và portal cho độc giả.
 Monorepo gồm backend FastAPI và frontend React, phát triển trong một Dev Container chung.
 
-> **Demo hay bản thật?** Trang [GitHub Pages](https://theihoz.github.io/Lib-management/) chỉ là
-> **bản demo**: dữ liệu giả lập trong trình duyệt, chọn vai trò để đăng nhập, không có database.
-> Muốn dùng **bản thật** (PostgreSQL, Keycloak, API, worker) trên máy cá nhân, chạy một lệnh:
+> Chạy **bản thật** (PostgreSQL, Keycloak, API, worker) trên máy cá nhân bằng một lệnh:
 > `scripts/local.sh up` — xem [Bắt đầu](#bắt-đầu).
 
 | Phần | Công nghệ | Thư mục |
@@ -32,8 +30,8 @@ Monorepo gồm backend FastAPI và frontend React, phát triển trong một Dev
   63/85 operation OpenAPI được phục vụ (`x-status` kiểm bằng `scripts/openapi_status.py` và drift test); 22 còn lại thuộc phase 2.
 - Frontend ([spec M0 frontend](docs/specs/M0-frontend-foundation.md)): Keycloak PKCE, client sinh từ
   OpenAPI, route/menu theo permission, 36 màn thuộc lõi; cấu hình runtime `/config.json` kiểm tra bằng Zod.
-- GitHub Pages triển khai **bản demo** tĩnh (mock API trong trình duyệt) sau khi toàn bộ CI đạt;
-  bản thật chạy local bằng `scripts/local.sh up`.
+- GitHub Pages chỉ triển khai bản production (trỏ tới API và Keycloak có sẵn) khi đã đặt biến
+  `PAGES_OIDC_URL`; bản build mock không bao giờ được công bố. Bản thật chạy local bằng `scripts/local.sh up`.
 - Dev Container có Python, uv, Node 24, PostgreSQL và Keycloak dev; CI cho cả backend và frontend.
 
 **Chưa có**
@@ -131,13 +129,14 @@ Compose chạy `db` → `migrate` (một lần) → `api` + `worker`, không có
 `OIDC_ISSUER` để trống thì route cần đăng nhập trả 503, health vẫn chạy.
 Dùng chung database với Cách 1. Có thể [chạy API trên host](apps/api/README.md) bằng uv và DB Compose.
 
-### Bản demo trên GitHub Pages
+### Triển khai web lên GitHub Pages
 
-Workflow `Deploy web to GitHub Pages` build `npm run build:demo` và ghi `config.json` với
-`mock: true`: mọi lời gọi API được trả lời ngay trong trình duyệt theo OpenAPI, đăng nhập bằng
-cách chọn vai trò. Bản build production (`npm run build`) loại bỏ hoàn toàn code mock; CI kiểm
-tra điều này. Nếu đặt biến repository `PAGES_OIDC_URL` (và `PAGES_API_BASE_URL`), Pages build
-bản production trỏ tới API đó thay vì demo.
+Workflow `Deploy web to GitHub Pages` chỉ chạy khi đã đặt biến repository `PAGES_OIDC_URL`
+(và `PAGES_API_BASE_URL`): nó build `npm run build` (production, không chứa code mock; CI kiểm
+tra điều này) và ghi `config.json` trỏ tới API và Keycloak đó. Chưa đặt biến thì không triển khai gì.
+
+Bản build mock (`npm run build:demo`, `config.json` với `mock: true`) chỉ dùng nội bộ khi phát
+triển và kiểm thử giao diện: mọi lời gọi API được trả lời ngay trong trình duyệt theo OpenAPI.
 
 ## Kiểm tra trước khi mở PR
 

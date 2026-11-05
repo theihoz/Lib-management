@@ -40,7 +40,7 @@ test("new categories hang below A/B/C (QĐ04) and search finds authors (YC#1)", 
 
 test("Ctrl+K finds a screen and a reader (YC#18)", async ({ page }) => {
   await page.goto("/staff/dashboard");
-  await expect(page.getByRole("button", { name: /Tìm nhanh/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Tìm sách, độc giả, chức năng/ })).toBeVisible();
   await page.keyboard.press("Control+k");
   const box = page.getByRole("combobox", { name: /Từ khóa/ });
   await box.fill("muon sach");

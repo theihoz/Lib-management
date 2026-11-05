@@ -2,8 +2,8 @@ name: Deploy web to GitHub Pages
 
 # Publishes the static React build only. The API, PostgreSQL and the identity
 # provider are NOT hosted by Pages; point the build at an existing API through the
-# repository variables below. Without PAGES_OIDC_URL the site is published as the demo
-# build: a fake API generated from docs/design/openapi.json and a persona picker.
+# repository variables below. Only the production build is published: without
+# PAGES_OIDC_URL nothing is deployed (the mock build never goes public).
 on:
   push:
     branches: [main]
@@ -26,6 +26,7 @@ jobs:
 
   build:
     needs: ci
+    if: vars.PAGES_OIDC_URL != ''
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     defaults:
@@ -54,18 +55,18 @@ jobs:
       - name: Build for the Pages base path
         env:
           VITE_BASE: ${{ steps.pages.outputs.base_path }}/
-        run: npm run ${{ env.OIDC_URL && 'build' || 'build:demo' }}
+        run: npm run build
       - name: Write runtime config (public values only)
         run: |
           node -e '
             const fs = require("fs");
             const e = process.env;
             fs.writeFileSync("dist/config.json", JSON.stringify({
-              oidcUrl: e.OIDC_URL || "",
+              oidcUrl: e.OIDC_URL,
               oidcRealm: e.OIDC_REALM || "lib-management",
               oidcClientId: e.OIDC_CLIENT_ID || "lib-management-web",
               apiBaseUrl: e.API_BASE_URL || "",
-              mock: !e.OIDC_URL,
+              mock: false,
             }, null, 2));
           '
       - name: SPA fallback for deep links

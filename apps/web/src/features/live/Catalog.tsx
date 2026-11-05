@@ -9,7 +9,7 @@ import { Badge, BookCover, Button, Dialog, Field, Notice, Panel, Table } from ".
 import type { Book } from "../../ui/components";
 import type { ScreenDefinition } from "../types";
 import { ApiFailure, LoadingSkeleton, MutationFeedback } from "./common";
-import { MANUAL_COPY_STATUS, copyStatus, type ManualCopyStatus } from "./labels";
+import { MANUAL_COPY_STATUS, copyStatus, recordStatus, type ManualCopyStatus } from "./labels";
 
 type Edition = components["schemas"]["PublicEdition"];
 function editionCover(item: Edition): Book {
@@ -230,6 +230,9 @@ function EditionDetail() {
               <dd>{book.language ?? "—"}</dd>
             </div>
           </dl>
+          {session.account?.reader_id &&
+            session.permissions.includes("reservation.create") &&
+            !book.availability?.availableCount && <ReserveButton editionId={book.id} />}
           {session.permissions.includes("catalog.write") && (
             <div className="actions">
               <Link
@@ -268,6 +271,37 @@ function EditionDetail() {
           </Button>
         </div>
       </Dialog>
+    </div>
+  );
+}
+/** YC#10 / Lab 2 YC9: a reader reserves a book whose copies are all out. */
+function ReserveButton({ editionId }: { editionId: string }) {
+  const services = useServices();
+  const cache = useQueryClient();
+  const key = useRef(createIdempotencyKey()).current;
+  const reserve = useMutation({
+    mutationFn: async () => {
+      const body = { editionId };
+      return (
+        await services.circulation.post_reservations({
+          body,
+          params: { header: { "Idempotency-Key": key.forPayload(body) } },
+        })
+      ).data!;
+    },
+    onSuccess: () => {
+      key.reset();
+      void cache.invalidateQueries({ queryKey: ["me", "reservations"] });
+    },
+  });
+  return (
+    <div className="stack">
+      <Button disabled={reserve.isPending || reserve.isSuccess} onClick={() => reserve.mutate()}>
+        Đặt trước sách này
+      </Button>
+      <MutationFeedback error={reserve.error} success={reserve.isSuccess}>
+        Đã đặt trước. Theo dõi ở “Tài khoản của tôi → Đặt trước”.
+      </MutationFeedback>
     </div>
   );
 }
@@ -497,7 +531,7 @@ function ReferenceList({ type }: { type: "authors" | "publishers" | "categories"
   const rows =
     result.data?.pages
       .flatMap((page) => page.data)
-      .map((item) => [item.id, item.name, item.status]) ?? [];
+      .map((item) => [item.name, recordStatus(item.status)]) ?? [];
   return (
     <div className="stack">
       <Field
@@ -517,7 +551,7 @@ function ReferenceList({ type }: { type: "authors" | "publishers" | "categories"
         />
       ) : (
         <Panel>
-          <Table headers={["Mã", "Tên", "Trạng thái"]} rows={rows} />
+          <Table headers={["Tên", "Trạng thái"]} rows={rows} />
           {result.hasNextPage && (
             <Button
               variant="secondary"
@@ -678,7 +712,7 @@ function Copies() {
         <Panel>
           <Table
             caption="Bản sách của ấn bản"
-            headers={["Barcode", "Tình trạng", "Vị trí"]}
+            headers={["Mã vạch", "Tình trạng", "Vị trí"]}
             rows={copies.map((copy) => [
               copy.barcode,
               copyStatus(copy.status),

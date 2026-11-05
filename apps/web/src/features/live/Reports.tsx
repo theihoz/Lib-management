@@ -12,10 +12,10 @@ import { ApiFailure, LoadingSkeleton, MutationFeedback } from "./common";
 
 // BM08 sections (report) and requirement 20 CSVs (export only).
 const REPORT_TYPES = [
-  ["OVERVIEW", "Tổng quan (BM08 §I)"],
-  ["TOP_BOOKS", "Top sách được mượn nhiều (§II)"],
-  ["ACTIVE_READERS", "Độc giả tích cực (§III)"],
-  ["LOAN_TREND", "Lượt mượn theo thời gian (§IV)"],
+  ["OVERVIEW", "Tổng quan"],
+  ["TOP_BOOKS", "Sách được mượn nhiều nhất"],
+  ["ACTIVE_READERS", "Độc giả tích cực"],
+  ["LOAN_TREND", "Lượt mượn theo thời gian"],
   ["INVENTORY", "Tồn kho theo đầu sách"],
   ["OVERDUE", "Khoản mượn quá hạn"],
   ["LENDING_SUMMARY", "Tổng hợp mượn trả theo đầu sách"],
@@ -170,7 +170,7 @@ function RequestForm({
               reversed
                 ? "Ngày kết thúc phải từ ngày bắt đầu trở đi."
                 : future
-                  ? "Ngày kết thúc không được sau hôm nay (QĐ13)."
+                  ? "Ngày kết thúc không được sau hôm nay."
                   : undefined
             }
             onChange={(e) => setTo(e.target.value)}
@@ -417,7 +417,7 @@ function ExportPage() {
               )}
               {job.data.status === "SUCCEEDED" && noData && (
                 <Notice tone="warning">
-                  Không có dữ liệu phù hợp để xuất; hệ thống không tạo tệp (QĐ26).
+                  Không có dữ liệu phù hợp để xuất nên không có tệp nào được tạo.
                 </Notice>
               )}
               {job.data.status === "SUCCEEDED" && !noData && (

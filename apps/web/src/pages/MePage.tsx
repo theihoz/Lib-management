@@ -1,16 +1,14 @@
 import { useRef, useState } from "react";
-import { Link } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServices, useSession } from "../auth/session";
-import { canOpen, isStaff } from "../auth/session-state";
+import { isStaff } from "../auth/session-state";
 import { createIdempotencyKey } from "../api/idempotency";
 import { ApiError } from "../api/errors";
-import { screens } from "../app/screens";
 import { formatDateTime } from "../lib/datetime";
 import { formatVnd } from "../lib/money";
 import { Badge, Button, Notice, Panel, Table } from "../ui/components";
 import { ApiFailure, LoadingSkeleton } from "../features/live/common";
-import { chargeReason, eligibilityReason } from "../features/live/labels";
+import { chargeReason, eligibilityReason, reservationStatus } from "../features/live/labels";
 
 const DAY = 86_400_000;
 
@@ -32,12 +30,12 @@ function MyLibrary() {
   const services = useServices();
   const cache = useQueryClient();
   const key = useRef(createIdempotencyKey()).current;
-  const [tab, setTab] = useState<"OPEN" | "ALL" | "FINES">("OPEN");
+  const [tab, setTab] = useState<"OPEN" | "ALL" | "HOLDS" | "FINES">("OPEN");
   const [now] = useState(() => Date.now());
   const [message, setMessage] = useState<{ tone: "info" | "danger"; text: string }>();
   const loans = useQuery({
     queryKey: ["me", "loans", tab],
-    enabled: tab !== "FINES",
+    enabled: tab === "OPEN" || tab === "ALL",
     queryFn: async ({ signal }) =>
       (
         await services.circulation.get_me_loans({
@@ -52,6 +50,37 @@ function MyLibrary() {
     queryFn: async ({ signal }) =>
       (await services.finance.get_me_fine_charges({ params: { query: { limit: 100 } }, signal }))
         .data!.data,
+  });
+  const holds = useQuery({
+    queryKey: ["me", "reservations"],
+    enabled: tab === "HOLDS",
+    queryFn: async ({ signal }) =>
+      (
+        await services.circulation.get_me_reservations({
+          params: { query: { limit: 100 } },
+          signal,
+        })
+      ).data!.data.filter((row) => row.status === "QUEUED" || row.status === "READY"),
+  });
+  const cancel = useMutation({
+    mutationFn: async (row: { id: string; version: number }) => {
+      const body = { expectedVersion: row.version, reason: "Độc giả hủy trên portal" };
+      return (
+        await services.circulation.post_reservations_id_cancellations({
+          params: {
+            path: { id: row.id },
+            header: { "Idempotency-Key": key.forPayload({ cancel: row.id, ...body }) },
+          },
+          body,
+        })
+      ).data!;
+    },
+    onSuccess: () => {
+      key.reset();
+      setMessage({ tone: "info", text: "Đã hủy đặt trước." });
+      void cache.invalidateQueries({ queryKey: ["me", "reservations"] });
+    },
+    onError: (error) => setMessage({ tone: "danger", text: renewalError(error) }),
   });
   const renew = useMutation({
     mutationFn: async (loan: { id: string; version: number }) => {
@@ -76,6 +105,7 @@ function MyLibrary() {
   const tabs = [
     ["OPEN", "Đang mượn"],
     ["ALL", "Lịch sử"],
+    ["HOLDS", "Đặt trước"],
     ["FINES", "Phạt của tôi"],
   ] as const;
   return (
@@ -97,7 +127,42 @@ function MyLibrary() {
         ))}
       </div>
       {message && <Notice tone={message.tone}>{message.text}</Notice>}
-      {tab === "FINES" ? (
+      {tab === "HOLDS" ? (
+        holds.isPending ? (
+          <LoadingSkeleton />
+        ) : holds.error ? (
+          <ApiFailure error={holds.error} retry={() => void holds.refetch()} />
+        ) : (
+          <>
+            <Table
+              caption="Đặt trước của tôi"
+              headers={["Sách", "Trạng thái", "Ngày đặt", "Hạn nhận"]}
+              rows={holds.data.map((row) => [
+                row.title ?? row.edition_id,
+                reservationStatus(row.status),
+                formatDateTime(row.created_at),
+                row.ready_expires_at ? formatDateTime(row.ready_expires_at) : "—",
+              ])}
+              empty={{
+                title: "Không có đặt trước",
+                hint: "Đặt trước từ trang sách khi sách đang được mượn hết.",
+              }}
+            />
+            <div className="actions">
+              {holds.data.map((row) => (
+                <Button
+                  key={row.id}
+                  variant="secondary"
+                  disabled={cancel.isPending}
+                  onClick={() => cancel.mutate({ id: row.id, version: row.version })}
+                >
+                  Hủy đặt trước “{row.title ?? row.edition_id}”
+                </Button>
+              ))}
+            </div>
+          </>
+        )
+      ) : tab === "FINES" ? (
         fines.isPending ? (
           <LoadingSkeleton />
         ) : fines.error ? (
@@ -167,37 +232,9 @@ function MyLibrary() {
   );
 }
 
-const PERMISSION_GROUPS: [string, string][] = [
-  ["catalog.", "Danh mục"],
-  ["reader.", "Độc giả"],
-  ["card.", "Thẻ"],
-  ["loan.", "Mượn / gia hạn"],
-  ["return.", "Trả sách"],
-  ["assessment.", "Đánh giá phí"],
-  ["payment.", "Thu tiền"],
-  ["charge.", "Phí"],
-  ["finance.", "Tài chính"],
-  ["ledger.", "Sổ cái"],
-  ["overdue.", "Quá hạn"],
-  ["report.", "Báo cáo"],
-  ["export.", "Xuất dữ liệu"],
-  ["policy.", "Quy định"],
-];
-
-/** Account summary, shortcuts the account may use, and its permissions grouped by area. */
+/** Account summary and, for linked readers, their loans, history, reservations and fines. */
 export function MePage({ onLogout }: { onLogout: () => void }) {
   const session = useSession();
-  const shortcuts = screens.filter(
-    (item) =>
-      !item.path.includes(":") &&
-      item.permission &&
-      item.permission !== "session" &&
-      canOpen(session.status, session.permissions, item),
-  );
-  const grouped = PERMISSION_GROUPS.map(([prefix, label]) => ({
-    label,
-    codes: session.permissions.filter((code) => code.startsWith(prefix)),
-  })).filter((group) => group.codes.length);
   return (
     <div className="stack">
       <Panel title="Tài khoản">
@@ -232,39 +269,6 @@ export function MePage({ onLogout }: { onLogout: () => void }) {
         </div>
       </Panel>
       {session.account?.reader_id && <MyLibrary />}
-      <Panel
-        title="Lối tắt công việc"
-        subtitle="Chỉ hiển thị chức năng tài khoản này được phép dùng."
-      >
-        {shortcuts.length ? (
-          <ul className="shortcut-list">
-            {shortcuts.map((item) => (
-              <li key={item.id}>
-                <Link to={item.path}>{item.title}</Link>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="muted">
-            Tài khoản này chưa có chức năng nghiệp vụ. Bạn có thể{" "}
-            <Link to="/catalog">tìm sách trong danh mục</Link>.
-          </p>
-        )}
-      </Panel>
-      <Panel title="Quyền hiện tại" subtitle="Do máy chủ xác định; giao diện chỉ phản ánh.">
-        {grouped.length ? (
-          <dl className="detail-list">
-            {grouped.map((group) => (
-              <div key={group.label}>
-                <dt>{group.label}</dt>
-                <dd>{group.codes.join(", ")}</dd>
-              </div>
-            ))}
-          </dl>
-        ) : (
-          <p className="muted">Không có quyền nghiệp vụ ngoài tra cứu danh mục.</p>
-        )}
-      </Panel>
     </div>
   );
 }

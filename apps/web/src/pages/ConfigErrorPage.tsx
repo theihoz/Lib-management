@@ -6,7 +6,7 @@ type Props = {
 /** Shown before auth/API start when /config.json is missing or invalid. */
 export function ConfigErrorPage({ reason, issues }: Props) {
   return (
-    <main>
+    <main className="standalone">
       <h1>Không khởi động được ứng dụng</h1>
       <div role="alert">
         <p>{reason}</p>

@@ -61,7 +61,7 @@ export default function Dashboard() {
           empty={{ title: "Chưa có lượt mượn", hint: "Chưa có sách nào được mượn trong 30 ngày." }}
         />
         {session.permissions.includes("report.read") && (
-          <Link to="/manager/reports">Tạo báo cáo chi tiết (BM08)</Link>
+          <Link to="/manager/reports">Xem báo cáo chi tiết</Link>
         )}
       </Panel>
       <p className="muted">Cập nhật lúc {formatDateTime(data.asOf)}; tự làm mới mỗi phút.</p>

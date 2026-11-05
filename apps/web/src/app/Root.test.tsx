@@ -50,5 +50,7 @@ describe("Root", () => {
     );
     expect(screen.getByRole("heading", { name: "Khám phá sách", level: 1 })).toBeInTheDocument();
     expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(document.body.textContent).not.toMatch(/FE\d{2}\.\d{2}|LIB.?MANAGEMENT/i);
+    expect(document.title).toBe("Khám phá sách · Thư viện");
   });
 });

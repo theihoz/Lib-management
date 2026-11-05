@@ -164,6 +164,7 @@ class Reservation(View):
     applied_rules: dict[str, Any]
     version: int
     created_at: datetime
+    title: str | None = Field(default=None)
 
 
 class BookCopy(View):

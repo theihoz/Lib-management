@@ -298,23 +298,31 @@ def test_stale_reader_patch_and_invalid_policy(client: TestClient):
 
 
 def test_hold_ready_cancel_and_pickup(client: TestClient):
+    # Lab 2 YC9: reserve only a book that is out; the return makes it READY (FIFO).
     reader, copy, checkout, card = setup_loan(client)
+    other = new_reader(client)
+    assert post(client, f"/readers/{other.json()['id']}/cards").status_code == 201
+    held = post(
+        client,
+        "/reservations",
+        {"readerId": other.json()["id"], "editionId": copy["edition_id"]},
+    )
+    assert held.status_code == 201, held.text
+    assert held.json()["status"] == "QUEUED"
     post(
         client,
         "/returns",
         {"loanItemId": checkout["items"][0]["loanItemId"], "condition": "GOOD"},
     )
-    held = post(
-        client,
-        "/reservations",
-        {"readerId": reader["id"], "editionId": copy["edition_id"]},
-    )
-    assert held.status_code == 201, held.text
-    assert held.json()["status"] == "READY"
+    ready = client.get(
+        "/api/v1/reservations",
+        params={"readerId": other.json()["id"], "status": "READY"},
+    ).json()["data"]
+    assert [row["id"] for row in ready] == [held.json()["id"]]
     picked = post(
         client,
         f"/reservations/{held.json()['id']}/pickups",
-        {"expectedVersion": held.json()["version"]},
+        {"expectedVersion": ready[0]["version"]},
     )
     assert picked.status_code == 201, picked.text
     assert picked.json()["items"][0]["copyId"] == copy["id"]
@@ -1173,3 +1181,79 @@ def test_dashboard_lists_overdue_and_top_books(client: TestClient, settings: Set
         principal.account, principal.permissions - {"overdue.read"}
     )
     assert client.get("/api/v1/dashboard").status_code == 403
+
+
+def test_reservation_needs_all_copies_out_and_respects_limit(client: TestClient):
+    reader, copy, checkout, _ = setup_loan(client)
+    post(
+        client,
+        "/returns",
+        {"loanItemId": checkout["items"][0]["loanItemId"], "condition": "GOOD"},
+    )
+    available = post(
+        client,
+        "/reservations",
+        {"readerId": reader["id"], "editionId": copy["edition_id"]},
+    )
+    assert available.status_code == 409
+    assert available.json()["code"] == "COPY_AVAILABLE"
+    # D3: on loan + reserved < maxActiveLoansAndHolds (4).
+    holder = new_reader(client)
+    assert post(client, f"/readers/{holder.json()['id']}/cards").status_code == 201
+    editions = []
+    for _ in range(5):
+        _, out, _, _ = setup_loan(client)  # someone else holds the only copy
+        editions.append(out["edition_id"])
+    codes = [
+        post(
+            client,
+            "/reservations",
+            {"readerId": holder.json()["id"], "editionId": edition},
+        )
+        for edition in editions
+    ]
+    assert [r.status_code for r in codes[:4]] == [201] * 4
+    assert codes[4].status_code == 422 and codes[4].json()["code"] == "HOLD_LIMIT"
+
+
+def test_ready_reservation_expires_and_passes_on(
+    client: TestClient, settings: Settings
+):
+    from uuid import UUID
+
+    from lib_management.circulation.models import Reservation
+    from lib_management.circulation.router import expire_ready_reservations
+
+    reader, copy, checkout, _ = setup_loan(client)
+    first, second = new_reader(client), new_reader(client)
+    for who in (first, second):
+        assert post(client, f"/readers/{who.json()['id']}/cards").status_code == 201
+    holds = [
+        post(
+            client,
+            "/reservations",
+            {"readerId": who.json()["id"], "editionId": copy["edition_id"]},
+        ).json()
+        for who in (first, second)
+    ]
+    post(
+        client,
+        "/returns",
+        {"loanItemId": checkout["items"][0]["loanItemId"], "condition": "GOOD"},
+    )
+    engine = create_engine_from_settings(settings)
+    factory = create_session_factory(engine)
+    with factory() as session, session.begin():
+        ready = session.get(Reservation, UUID(holds[0]["id"]))
+        assert ready is not None and ready.status == "READY"
+        ready.ready_at = datetime.now(UTC) - timedelta(days=4)
+        ready.ready_expires_at = datetime.now(UTC) - timedelta(minutes=1)
+    with factory() as session, session.begin():
+        assert expire_ready_reservations(session) >= 1
+    with factory() as session:
+        statuses = [
+            session.get(Reservation, UUID(hold["id"])).status  # type: ignore[union-attr]
+            for hold in holds
+        ]
+    engine.dispose()
+    assert statuses == ["EXPIRED", "READY"]

@@ -64,7 +64,8 @@ Ký hiệu: **G** = khoảng thiếu thuộc lõi 10 tuần (làm trước), **P
 | G7 | Xong (`/staff/dashboard`, trang mặc định của nhân viên) | `ccacda3` |
 | G8 | Xong (Ctrl+K / ⌘K) | `9447108` |
 | Q2 | Xong (Playwright `apps/web/e2e`, job CI `e2e`) | `49ef0aa` |
-| P1, P2, P4–P7 | Chưa làm | — |
+| P1 | Xong (quy tắc Lab 2, sweep hết hạn trong worker, FE06.02 + portal) | (commit P1) |
+| P2, P4–P7 | Chưa làm | — |
 
 ## Quy ước chung
 

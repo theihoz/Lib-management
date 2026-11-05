@@ -4,6 +4,7 @@ import { useServices } from "../../auth/session";
 import type { components } from "../../api/schema";
 import { Button, Field, Notice, Table } from "../../ui/components";
 import { MutationFeedback } from "./common";
+import { recordStatus } from "./labels";
 
 export type Reader = components["schemas"]["Reader"];
 
@@ -49,7 +50,7 @@ export function ReaderPicker({ onPick }: { onPick: (reader: Reader) => void }) {
         <Table
           caption="Kết quả tìm độc giả"
           headers={["Mã độc giả", "Họ tên", "Trạng thái"]}
-          rows={rows.map((row) => [row.reader_code, row.full_name, row.status])}
+          rows={rows.map((row) => [row.reader_code, row.full_name, recordStatus(row.status)])}
           onRow={(index) => {
             const picked = rows[index];
             if (picked) onPick(picked);

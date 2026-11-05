@@ -9,7 +9,7 @@ import { formatDateTime } from "../../lib/datetime";
 import { Badge, Button, Dialog, Field, Panel, Table } from "../../ui/components";
 import type { ScreenDefinition } from "../types";
 import { ApiFailure, LoadingSkeleton, MutationFeedback } from "./common";
-import { cardStatus, chargeReason, eligibilityReason } from "./labels";
+import { cardStatus, chargeReason, eligibilityReason, readerType, recordStatus } from "./labels";
 import { formatVnd } from "../../lib/money";
 
 function ReaderList() {
@@ -64,8 +64,8 @@ function ReaderList() {
               reader.reader_code,
               reader.full_name,
               reader.email ?? "—",
-              reader.reader_type,
-              reader.status,
+              readerType(reader.reader_type),
+              recordStatus(reader.status),
             ])}
             onRow={(index) => {
               void navigate(`/staff/readers/${readers[index]!.id}`);
@@ -148,7 +148,7 @@ function ReaderForm() {
             type="date"
             value={body.birthDate}
             max={new Date().toISOString().slice(0, 10)}
-            hint="Độc giả từ 12 đến 55 tuổi (QĐ01)."
+            hint="Độc giả phải từ 12 đến 55 tuổi."
             onChange={(event) => setBody({ ...body, birthDate: event.target.value })}
           />
           <div className="field">
@@ -231,14 +231,14 @@ function ReaderProfile() {
     <div className="stack">
       <Panel title={reader.data.full_name} subtitle={reader.data.reader_code}>
         <Badge tone={reader.data.status === "ACTIVE" ? "success" : "warning"}>
-          {reader.data.status}
+          {recordStatus(reader.data.status)}
         </Badge>
         <dl className="detail-list">
           {[
             ["Email", reader.data.email],
             ["Điện thoại", reader.data.phone],
             ["Ngày sinh", reader.data.birth_date],
-            ["Loại độc giả", reader.data.reader_type],
+            ["Loại độc giả", readerType(reader.data.reader_type)],
             ["Địa chỉ", reader.data.address],
           ].map(([label, value]) => (
             <div key={label}>

@@ -38,6 +38,7 @@ RULES: dict[str, Any] = {
     "allowedOutstandingBalance": "50000",
     "publicationYearWindow": 8,
     "readyHoldDays": 3,
+    "maxActiveLoansAndHolds": 4,
     "damageLostAssessment": "MANUAL_APPROVAL",
     "damageLostFees": {
         "MINOR_DAMAGE": "20000",

@@ -20,7 +20,7 @@ test("QĐ13: the period may not end after today", async ({ page }) => {
   const tomorrow = new Date(Date.parse(today()) + 86_400_000).toISOString().slice(0, 10);
   await page.getByLabel("Từ ngày").fill(today());
   await page.getByLabel(/Đến ngày/).fill(tomorrow);
-  await expect(page.getByText("Ngày kết thúc không được sau hôm nay (QĐ13).")).toBeVisible();
+  await expect(page.getByText("Ngày kết thúc không được sau hôm nay.")).toBeVisible();
 });
 
 test("QĐ26: an empty export creates no file", async ({ page }) => {
@@ -46,7 +46,7 @@ test("loans CSV downloads", async ({ page }) => {
 
 test("policy draft validates QĐ17 before saving", async ({ page }) => {
   await page.goto("/manager/policies/new");
-  const threshold = page.getByLabel("Ngưỡng chặn nợ phạt (QĐ12)");
+  const threshold = page.getByLabel("Ngưỡng chặn nợ phạt", { exact: true });
   await threshold.fill("0");
   await expect(page.getByText("Tối thiểu 1.")).toBeVisible();
   await threshold.fill("60000");

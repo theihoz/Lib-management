@@ -38,5 +38,7 @@ test("reserve, return, hand over (F10)", async ({ browser }) => {
   await expect(desk.getByText("Đã cập nhật đặt trước.")).toBeVisible();
 
   await reader.goto("/me");
-  await expect(reader.getByRole("cell", { name: "Kinh tế học vi mô" })).toBeVisible();
+  await expect(
+    reader.getByRole("list", { name: "Sách đang mượn" }).getByText("Kinh tế học vi mô"),
+  ).toBeVisible();
 });

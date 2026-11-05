@@ -1,11 +1,9 @@
 import { useRef, useState } from "react";
-import { Link } from "react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServices, useSession } from "../auth/session";
-import { canOpen, isStaff } from "../auth/session-state";
+import { isStaff } from "../auth/session-state";
 import { createIdempotencyKey } from "../api/idempotency";
 import { ApiError } from "../api/errors";
-import { screens } from "../app/screens";
 import { formatDateTime } from "../lib/datetime";
 import { formatVnd } from "../lib/money";
 import { Badge, Button, Notice, Panel, Table } from "../ui/components";
@@ -234,37 +232,9 @@ function MyLibrary() {
   );
 }
 
-const PERMISSION_GROUPS: [string, string][] = [
-  ["catalog.", "Danh mục"],
-  ["reader.", "Độc giả"],
-  ["card.", "Thẻ"],
-  ["loan.", "Mượn / gia hạn"],
-  ["return.", "Trả sách"],
-  ["assessment.", "Đánh giá phí"],
-  ["payment.", "Thu tiền"],
-  ["charge.", "Phí"],
-  ["finance.", "Tài chính"],
-  ["ledger.", "Sổ cái"],
-  ["overdue.", "Quá hạn"],
-  ["report.", "Báo cáo"],
-  ["export.", "Xuất dữ liệu"],
-  ["policy.", "Quy định"],
-];
-
-/** Account summary, shortcuts the account may use, and its permissions grouped by area. */
+/** Account summary and, for linked readers, their loans, history, reservations and fines. */
 export function MePage({ onLogout }: { onLogout: () => void }) {
   const session = useSession();
-  const shortcuts = screens.filter(
-    (item) =>
-      !item.path.includes(":") &&
-      item.permission &&
-      item.permission !== "session" &&
-      canOpen(session.status, session.permissions, item),
-  );
-  const grouped = PERMISSION_GROUPS.map(([prefix, label]) => ({
-    label,
-    codes: session.permissions.filter((code) => code.startsWith(prefix)),
-  })).filter((group) => group.codes.length);
   return (
     <div className="stack">
       <Panel title="Tài khoản">
@@ -299,39 +269,6 @@ export function MePage({ onLogout }: { onLogout: () => void }) {
         </div>
       </Panel>
       {session.account?.reader_id && <MyLibrary />}
-      <Panel
-        title="Lối tắt công việc"
-        subtitle="Chỉ hiển thị chức năng tài khoản này được phép dùng."
-      >
-        {shortcuts.length ? (
-          <ul className="shortcut-list">
-            {shortcuts.map((item) => (
-              <li key={item.id}>
-                <Link to={item.path}>{item.title}</Link>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p className="muted">
-            Tài khoản này chưa có chức năng nghiệp vụ. Bạn có thể{" "}
-            <Link to="/catalog">tìm sách trong danh mục</Link>.
-          </p>
-        )}
-      </Panel>
-      <Panel title="Quyền hiện tại" subtitle="Do máy chủ xác định; giao diện chỉ phản ánh.">
-        {grouped.length ? (
-          <dl className="detail-list">
-            {grouped.map((group) => (
-              <div key={group.label}>
-                <dt>{group.label}</dt>
-                <dd>{group.codes.join(", ")}</dd>
-              </div>
-            ))}
-          </dl>
-        ) : (
-          <p className="muted">Không có quyền nghiệp vụ ngoài tra cứu danh mục.</p>
-        )}
-      </Panel>
     </div>
   );
 }

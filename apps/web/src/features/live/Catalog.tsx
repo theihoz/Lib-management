@@ -9,7 +9,7 @@ import { Badge, BookCover, Button, Dialog, Field, Notice, Panel, Table } from ".
 import type { Book } from "../../ui/components";
 import type { ScreenDefinition } from "../types";
 import { ApiFailure, LoadingSkeleton, MutationFeedback } from "./common";
-import { MANUAL_COPY_STATUS, copyStatus, type ManualCopyStatus } from "./labels";
+import { MANUAL_COPY_STATUS, copyStatus, recordStatus, type ManualCopyStatus } from "./labels";
 
 type Edition = components["schemas"]["PublicEdition"];
 function editionCover(item: Edition): Book {
@@ -531,7 +531,7 @@ function ReferenceList({ type }: { type: "authors" | "publishers" | "categories"
   const rows =
     result.data?.pages
       .flatMap((page) => page.data)
-      .map((item) => [item.id, item.name, item.status]) ?? [];
+      .map((item) => [item.name, recordStatus(item.status)]) ?? [];
   return (
     <div className="stack">
       <Field
@@ -551,7 +551,7 @@ function ReferenceList({ type }: { type: "authors" | "publishers" | "categories"
         />
       ) : (
         <Panel>
-          <Table headers={["Mã", "Tên", "Trạng thái"]} rows={rows} />
+          <Table headers={["Tên", "Trạng thái"]} rows={rows} />
           {result.hasNextPage && (
             <Button
               variant="secondary"
@@ -712,7 +712,7 @@ function Copies() {
         <Panel>
           <Table
             caption="Bản sách của ấn bản"
-            headers={["Barcode", "Tình trạng", "Vị trí"]}
+            headers={["Mã vạch", "Tình trạng", "Vị trí"]}
             rows={copies.map((copy) => [
               copy.barcode,
               copyStatus(copy.status),

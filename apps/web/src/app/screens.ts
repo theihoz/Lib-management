@@ -310,7 +310,7 @@ export const screens: ScreenDefinition[] = [
     group: "09",
     kind: "dashboard",
     id: "FE09.00",
-    title: "Bảng điều khiển",
+    title: "Tổng quan",
     path: "/staff/dashboard",
     permission: "overdue.read",
     implemented: true,

@@ -97,7 +97,10 @@ function Forbidden({ home }: { home: string }) {
     <div className="panel empty-state">
       <Icon name="key" size={30} />
       <h2>Bạn chưa có quyền truy cập trang này</h2>
-      <p>Tài khoản hiện tại không được phép dùng chức năng này. Liên hệ quản lý thư viện nếu bạn cần quyền.</p>
+      <p>
+        Tài khoản hiện tại không được phép dùng chức năng này. Liên hệ quản lý thư viện nếu bạn cần
+        quyền.
+      </p>
       <Link className="button button-secondary" to={home}>
         Về trang chính
       </Link>

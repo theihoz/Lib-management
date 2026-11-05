@@ -228,7 +228,7 @@ function ChargeAction({ mode }: { mode: "payment" | "waiver" }) {
                   <option value="">Chọn khoản phí…</option>
                   {charges.data?.map((charge) => (
                     <option key={charge.id} value={charge.id}>
-                      {charge.reason} — {formatVnd(charge.assessed_amount)}
+                      {chargeReason(charge.reason)} — {formatVnd(charge.assessed_amount)}
                     </option>
                   ))}
                 </select>

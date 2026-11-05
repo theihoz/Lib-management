@@ -118,9 +118,7 @@ function PolicyList() {
           <dl className="detail-list">
             {RULE_FIELDS.map((field) => (
               <div key={field.key}>
-                <dt>
-                  {field.label} <span className="muted">({field.source})</span>
-                </dt>
+                <dt>{field.label}</dt>
                 <dd>{showRule(field.kind, readRule(current.rules, field.key))}</dd>
               </div>
             ))}
@@ -230,7 +228,7 @@ function PolicyDraftForm({
           {RULE_FIELDS.map((field) => (
             <Field
               key={field.key}
-              label={`${field.label} (${field.source})`}
+              label={field.label}
               inputMode={field.kind === "text" ? undefined : "numeric"}
               required
               value={draft[field.key] ?? ""}

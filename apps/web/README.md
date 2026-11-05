@@ -20,13 +20,14 @@ Thiếu trường, sai URL hoặc có khóa lạ thì app chỉ hiện trang l�
 động auth hay gọi API. Bản dev nằm ở `public/config.json`; bản cho môi trường triển khai
 được sinh lúc deploy (INT03). Tệp chỉ chứa giá trị công khai, không có secret.
 
-| Trường         | Ý nghĩa                                             |
-| -------------- | --------------------------------------------------- |
-| `oidcUrl`      | URL gốc Keycloak, ví dụ `http://localhost:8080`     |
-| `oidcRealm`    | Realm, `lib-management`                             |
-| `oidcClientId` | Public client PKCE, `lib-management-web`            |
-| `apiBaseUrl`   | Rỗng = cùng origin; hoặc URL http(s) tuyệt đối      |
-| `mock`         | Bật chế độ mock (chỉ hiệu lực ngoài bản production) |
+| Trường         | Ý nghĩa                                                                       |
+| -------------- | ----------------------------------------------------------------------------- |
+| `oidcUrl`      | URL gốc Keycloak, ví dụ `http://localhost:8080`                               |
+| `oidcRealm`    | Realm, `lib-management`                                                       |
+| `oidcClientId` | Public client PKCE, `lib-management-web`                                      |
+| `apiBaseUrl`   | Rỗng = cùng origin; hoặc URL http(s) tuyệt đối                                |
+| `mock`         | Bật chế độ mock (chỉ hiệu lực ngoài bản production)                           |
+| `libraryName`  | Tùy chọn. Tên thư viện hiển thị ở sidebar và tiêu đề tab, mặc định "Thư viện" |
 
 Trong dev, Vite proxy `/api` và `/health` sang `http://localhost:8000`
 (đổi bằng biến `API_PROXY_TARGET`), nên backend không cần CORS.

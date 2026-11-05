@@ -7,10 +7,19 @@ import { Icon } from "../ui/Icon";
 import { ApiError } from "../api/errors";
 
 const messages: Record<SessionStatus, [string, string]> = {
-  anonymous: ["Đăng nhập", "Dùng tài khoản thư viện được cấp cho bạn để mượn, gia hạn và theo dõi sách."],
+  anonymous: [
+    "Đăng nhập",
+    "Dùng tài khoản thư viện được cấp cho bạn để mượn, gia hạn và theo dõi sách.",
+  ],
   checking: ["Đang xác minh phiên", "Vui lòng chờ trong giây lát."],
-  authenticated: ["Đăng xuất khỏi thư viện?", "Bạn sẽ kết thúc phiên làm việc trên trình duyệt này."],
-  expired: ["Phiên đăng nhập đã hết hạn", "Đăng nhập lại để tiếp tục. Dữ liệu chưa gửi trên biểu mẫu vẫn được giữ."],
+  authenticated: [
+    "Đăng xuất khỏi thư viện?",
+    "Bạn sẽ kết thúc phiên làm việc trên trình duyệt này.",
+  ],
+  expired: [
+    "Phiên đăng nhập đã hết hạn",
+    "Đăng nhập lại để tiếp tục. Dữ liệu chưa gửi trên biểu mẫu vẫn được giữ.",
+  ],
   inactive: ["Tài khoản đã bị khóa", "Liên hệ quầy thư viện hoặc quản trị viên để được hỗ trợ."],
   not_linked: [
     "Tài khoản chưa được liên kết",
@@ -95,14 +104,17 @@ export function SessionPage() {
             ) : (
               <Button
                 disabled={
-                  session.status === "checking" || ["inactive", "not_linked"].includes(session.status)
+                  session.status === "checking" ||
+                  ["inactive", "not_linked"].includes(session.status)
                 }
                 icon="key"
                 onClick={() => {
                   void session.login();
                 }}
               >
-                {session.status === "checking" ? "Đang xác minh…" : "Đăng nhập bằng tài khoản thư viện"}
+                {session.status === "checking"
+                  ? "Đang xác minh…"
+                  : "Đăng nhập bằng tài khoản thư viện"}
               </Button>
             )}
           </div>

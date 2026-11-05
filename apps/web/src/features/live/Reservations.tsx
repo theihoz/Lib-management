@@ -165,7 +165,7 @@ function ReserveForReader({ onDone }: { onDone: () => void }) {
     },
   });
   return (
-    <Panel title="Đặt trước cho độc giả (BM04)">
+    <Panel title="Đặt trước cho độc giả">
       {reader ? (
         <p>
           <strong>{reader.full_name}</strong> · {reader.reader_code}{" "}
@@ -190,8 +190,8 @@ function ReserveForReader({ onDone }: { onDone: () => void }) {
           onChange={(event) => setEdition(event.target.value)}
         />
         <Notice>
-          Chỉ đặt được sách đang được mượn hết; tổng sách đang mượn và đang đặt không quá giới hạn
-          quy định (Lab 2).
+          Chỉ đặt được sách khi mọi bản đều đang được mượn. Tổng số sách đang mượn và đang đặt không
+          vượt quá giới hạn theo quy định.
         </Notice>
         <MutationFeedback error={save.error} success={save.isSuccess}>
           Đã đặt trước; độc giả được báo khi sách sẵn sàng.

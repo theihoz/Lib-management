@@ -55,7 +55,11 @@ export function Shell({
         Bỏ qua tới nội dung
       </a>
       <aside className="sidebar">
-        <SidebarContent sections={sections} activeKey={current?.item.key} onNavigate={closeDrawer} />
+        <SidebarContent
+          sections={sections}
+          activeKey={current?.item.key}
+          onNavigate={closeDrawer}
+        />
       </aside>
       <Dialog open={drawer} title="Điều hướng" onClose={closeDrawer}>
         <div className="mobile-navigation">
@@ -90,7 +94,9 @@ export function Shell({
         {offline && (
           <div className="connection-banner" role="alert">
             <Icon name="offline" size={18} />
-            <span>Không kết nối được máy chủ thư viện. Dữ liệu trên màn hình có thể chưa cập nhật.</span>
+            <span>
+              Không kết nối được máy chủ thư viện. Dữ liệu trên màn hình có thể chưa cập nhật.
+            </span>
             {onRetry && (
               <Button variant="ghost" icon="refresh" onClick={onRetry}>
                 Thử lại
@@ -125,7 +131,11 @@ export function Shell({
             {children}
           </div>
         </main>
-        <MobileBar sections={sections} activeKey={current?.item.key} onMore={() => setDrawer(true)} />
+        <MobileBar
+          sections={sections}
+          activeKey={current?.item.key}
+          onMore={() => setDrawer(true)}
+        />
       </div>
       <Dialog open={logout} title="Đăng xuất khỏi thư viện?" onClose={() => setLogout(false)}>
         <p>Bạn sẽ kết thúc phiên làm việc trên trình duyệt này.</p>
@@ -276,7 +286,7 @@ function MobileBar({
           aria-current={item.key === activeKey ? "page" : undefined}
         >
           <Icon name={item.icon} size={20} />
-          {item.label}
+          {item.shortLabel ?? item.label}
         </Link>
       ))}
       <button type="button" onClick={onMore}>

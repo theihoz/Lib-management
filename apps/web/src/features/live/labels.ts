@@ -25,10 +25,10 @@ export function cardStatus(card: { status: string; expires_at: string }, now = D
 
 export const ELIGIBILITY_REASON: Record<string, string> = {
   READER_INACTIVE: "Độc giả không hoạt động",
-  CARD_NOT_VALID: "Không có thẻ còn hạn (QĐ02)",
+  CARD_NOT_VALID: "Không có thẻ còn hạn",
   CARD_BLOCKED: "Thẻ đang tạm khóa",
-  OUTSTANDING_BALANCE: "Nợ phạt vượt ngưỡng (QĐ12)",
-  OVERDUE_ITEMS: "Đang có sách quá hạn (QĐ08)",
+  OUTSTANDING_BALANCE: "Nợ phạt vượt ngưỡng cho phép",
+  OVERDUE_ITEMS: "Đang có sách quá hạn",
   PENDING_ASSESSMENT: "Có khoản phí chờ Quản lý xác nhận",
 };
 
@@ -57,4 +57,19 @@ export const RESERVATION_STATUS: Record<string, string> = {
 
 export function reservationStatus(code: string): string {
   return RESERVATION_STATUS[code] ?? code;
+}
+
+export const RECORD_STATUS: Record<string, string> = {
+  ACTIVE: "Đang hoạt động",
+  INACTIVE: "Ngừng hoạt động",
+  DISABLED: "Đã vô hiệu hóa",
+  BLOCKED: "Tạm khóa",
+};
+
+export function recordStatus(code: string): string {
+  return RECORD_STATUS[code] ?? code;
+}
+
+export function readerType(code: string): string {
+  return `Loại ${code}`;
 }

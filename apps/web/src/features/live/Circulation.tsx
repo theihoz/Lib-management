@@ -18,7 +18,7 @@ import {
 import { formatDateTime } from "../../lib/datetime";
 import type { ScreenDefinition } from "../types";
 import { ApiFailure, LoadingSkeleton, MutationFeedback } from "./common";
-import { eligibilityReason } from "./labels";
+import { copyStatus, eligibilityReason } from "./labels";
 import { ReaderPicker } from "./ReaderPicker";
 import type { Reader } from "./ReaderPicker";
 
@@ -64,7 +64,9 @@ function Checkout() {
         return setScanError(`Mỗi phiếu tối đa ${MAX_COPIES} bản sách.`);
       if (found.loanItem) return setScanError("Bản sách đang được mượn.");
       if (found.copy.status !== "AVAILABLE")
-        return setScanError(`Bản sách không sẵn sàng cho mượn (${found.copy.status}).`);
+        return setScanError(
+          `Bản sách không sẵn sàng cho mượn (${copyStatus(found.copy.status).toLocaleLowerCase("vi")}).`,
+        );
       setScanned([
         ...scanned,
         { copyId: found.copy.id, barcode: found.copy.barcode, title: found.edition.title },
@@ -399,7 +401,7 @@ function Returns() {
             {!canAssess && <p className="muted">Ghi nhận sách hỏng / mất cần quyền đề xuất phí.</p>}
             {condition === "DAMAGE" && (
               <fieldset className="condition-selector">
-                <legend>Mức hỏng (khung phí BM09)</legend>
+                <legend>Mức hư hỏng</legend>
                 {(Object.keys(DAMAGE_LABELS) as DamageLevel[]).map((value) => (
                   <label key={value}>
                     <input
@@ -426,7 +428,7 @@ function Returns() {
                   value={amount}
                   hint={
                     condition === "LOST"
-                      ? "Theo QĐ07: từ 100.000 đến 600.000 ₫ tùy loại sách."
+                      ? "Từ 100.000 đến 600.000 ₫ tùy loại sách."
                       : "Gợi ý theo khung phí; Quản lý xác nhận số tiền cuối cùng."
                   }
                   onChange={(event) => setAmount(event.target.value)}

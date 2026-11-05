@@ -11,16 +11,24 @@ export type NavItem = {
   details?: string[];
   /** Shown only to accounts without staff permissions (the reader portal). */
   portalOnly?: boolean;
+  /** Shorter label for the mobile bottom bar. */
+  shortLabel?: string;
 };
 export type NavSection = { label?: string; items: NavItem[] };
 
 export const navigation: NavSection[] = [
   {
     items: [
-      { key: "dashboard", label: "Tổng quan", icon: "home", tabs: [{ id: "FE09.00", label: "Tổng quan" }] },
+      {
+        key: "dashboard",
+        label: "Tổng quan",
+        icon: "home",
+        tabs: [{ id: "FE09.00", label: "Tổng quan" }],
+      },
       {
         key: "catalog",
         label: "Khám phá sách",
+        shortLabel: "Tìm sách",
         icon: "search",
         tabs: [{ id: "FE02.01", label: "Khám phá sách" }],
         details: ["FE02.02"],
@@ -37,9 +45,24 @@ export const navigation: NavSection[] = [
   {
     label: "Lưu thông",
     items: [
-      { key: "checkout", label: "Mượn sách", icon: "scan", tabs: [{ id: "FE04.01", label: "Mượn sách" }] },
-      { key: "returns", label: "Trả sách", icon: "return", tabs: [{ id: "FE05.01", label: "Trả sách" }] },
-      { key: "renewals", label: "Gia hạn", icon: "clock", tabs: [{ id: "FE06.04", label: "Gia hạn" }] },
+      {
+        key: "checkout",
+        label: "Mượn sách",
+        icon: "scan",
+        tabs: [{ id: "FE04.01", label: "Mượn sách" }],
+      },
+      {
+        key: "returns",
+        label: "Trả sách",
+        icon: "return",
+        tabs: [{ id: "FE05.01", label: "Trả sách" }],
+      },
+      {
+        key: "renewals",
+        label: "Gia hạn",
+        icon: "clock",
+        tabs: [{ id: "FE06.04", label: "Gia hạn" }],
+      },
       {
         key: "reservations",
         label: "Đặt trước",
@@ -53,7 +76,12 @@ export const navigation: NavSection[] = [
         tabs: [{ id: "FE04.04", label: "Phiếu mượn" }],
         details: ["FE04.05"],
       },
-      { key: "overdue", label: "Quá hạn", icon: "alert", tabs: [{ id: "FE09.01", label: "Quá hạn" }] },
+      {
+        key: "overdue",
+        label: "Quá hạn",
+        icon: "alert",
+        tabs: [{ id: "FE09.01", label: "Quá hạn" }],
+      },
     ],
   },
   {

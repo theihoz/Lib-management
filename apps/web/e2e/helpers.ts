@@ -6,14 +6,14 @@ export const PASSWORD = process.env.KEYCLOAK_DEV_USER_PASSWORD ?? "";
 export async function login(page: Page, username: string): Promise<void> {
   expect(PASSWORD, "set KEYCLOAK_DEV_USER_PASSWORD").not.toBe("");
   await page.goto("/login");
-  await page.getByRole("button", { name: /Tiếp tục với SSO/ }).click();
+  await page.getByRole("button", { name: "Đăng nhập bằng tài khoản thư viện" }).click();
   await page.locator("#username").fill(username);
   await page.locator("#password").fill(PASSWORD);
   await page.locator("#kc-login").click();
   await page.waitForURL(
     (url) => !url.pathname.startsWith("/session") && !url.port.endsWith("8080"),
   );
-  await expect(page.getByText("Đã kết nối")).toBeVisible();
+  await expect(page.getByRole("button", { name: /^Tài khoản:/ })).toBeVisible();
 }
 
 /** Library-local date (YYYY-MM-DD). */

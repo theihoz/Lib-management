@@ -31,7 +31,8 @@ const paths: Record<string, string> = {
   library: "M4 3v18m5-18v18M14 4l4 17M3 21h18",
   back: "M15 5 8 12l7 7",
   down: "m6 9 6 6 6-6",
-  offline: "M2 8.8a15 15 0 0 1 20 0M5.5 12.4a10 10 0 0 1 13 0M9 16a5 5 0 0 1 6 0m-3 4h.01M3 3l18 18",
+  offline:
+    "M2 8.8a15 15 0 0 1 20 0M5.5 12.4a10 10 0 0 1 13 0M9 16a5 5 0 0 1 6 0m-3 4h.01M3 3l18 18",
 };
 export function Icon({ name, size = 20 }: { name: string; size?: number }) {
   return (

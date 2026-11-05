@@ -4,14 +4,16 @@ import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tansta
 import { useServices, useSession } from "../../auth/session";
 import { createIdempotencyKey } from "../../api/idempotency";
 import type { components } from "../../api/schema";
+import type { Edition } from "./EditionPicker";
 import { useDebounced } from "../../lib/useDebounced";
-import { Badge, BookCover, Button, Dialog, Field, Notice, Panel, Table } from "../../ui/components";
+import { BookCover, Button, Dialog, Field, Notice, Panel, Table } from "../../ui/components";
 import type { Book } from "../../ui/components";
 import type { ScreenDefinition } from "../types";
+import { usePageTitle } from "../../app/brand";
 import { ApiFailure, LoadingSkeleton, MutationFeedback } from "./common";
+import { EditionPicker, PickedItem, editionAuthors, useLinkedEdition } from "./EditionPicker";
 import { MANUAL_COPY_STATUS, copyStatus, recordStatus, type ManualCopyStatus } from "./labels";
 
-type Edition = components["schemas"]["PublicEdition"];
 function editionCover(item: Edition): Book {
   return {
     id: item.id,
@@ -108,12 +110,12 @@ function EditionList({ staff = false }: { staff?: boolean }) {
       ) : staff ? (
         <Panel>
           <Table
-            headers={["Mã ấn bản", "Nhan đề", "Tác giả", "Năm", "Khả dụng"]}
+            headers={["Nhan đề", "Tác giả", "ISBN", "Năm", "Khả dụng"]}
             empty={filtered ? notFound : undefined}
             rows={items.map((item) => [
-              item.id,
               item.title,
               item.authors?.map((author) => author.name).join(", ") ?? "—",
+              item.isbn ?? "—",
               String(item.publication_year),
               String(item.availability?.availableCount ?? 0),
             ])}
@@ -124,23 +126,17 @@ function EditionList({ staff = false }: { staff?: boolean }) {
           />
         </Panel>
       ) : items.length ? (
-        <div className="book-grid">
+        <div className="book-grid" aria-label="Kết quả tra cứu">
           {items.map((item) => (
             <article key={item.id} className="book-tile">
-              <Link
-                className="cover-button"
-                to={`/catalog/${item.id}`}
-                aria-label={`Xem ${item.title}`}
-              >
+              <Link className="cover-button" to={`/catalog/${item.id}`} tabIndex={-1} aria-hidden>
                 <BookCover book={editionCover(item)} />
               </Link>
               <Link className="book-title" to={`/catalog/${item.id}`}>
                 {item.title}
               </Link>
               <p className="muted">{editionCover(item).author}</p>
-              <Badge tone={item.availability?.availableCount ? "success" : "warning"}>
-                {item.availability?.availableCount ?? 0} bản khả dụng
-              </Badge>
+              <Availability count={item.availability?.availableCount ?? 0} />
             </article>
           ))}
         </div>
@@ -164,6 +160,14 @@ function EditionList({ staff = false }: { staff?: boolean }) {
         </Button>
       )}
     </div>
+  );
+}
+function Availability({ count }: { count: number }) {
+  return (
+    <span className={`availability ${count ? "is-available" : "is-out"}`}>
+      <span className="status-dot" />
+      {count ? `Còn ${count} bản có thể mượn` : "Đã được mượn hết"}
+    </span>
   );
 }
 function EditionDetail() {
@@ -195,6 +199,7 @@ function EditionDetail() {
       (await services.catalog.get_book_editions_id({ params: { path: { id: editionId } }, signal }))
         .data!,
   });
+  usePageTitle(result.data?.title);
   if (result.isPending) return <LoadingSkeleton />;
   if (result.error)
     return (
@@ -210,17 +215,15 @@ function EditionDetail() {
     <div className="stack">
       <div className="book-detail">
         <BookCover book={editionCover(book)} large />
-        <div>
-          <span className="eyebrow">ẤN BẢN THƯ VIỆN</span>
-          <h2 className="book-detail-title">{book.title}</h2>
-          <p className="book-byline">
-            {editionCover(book).author} · {book.publication_year}
-          </p>
-          <Badge tone={book.availability?.availableCount ? "success" : "warning"}>
-            {book.availability?.availableCount ?? 0} bản sẵn có
-          </Badge>
+        <div className="book-detail-body">
+          <p className="book-byline">{editionCover(book).author}</p>
+          <Availability count={book.availability?.availableCount ?? 0} />
           <p className="book-description">{book.description || "Chưa có mô tả cho ấn bản này."}</p>
           <dl className="metadata">
+            <div>
+              <dt>Năm xuất bản</dt>
+              <dd>{book.publication_year}</dd>
+            </div>
             <div>
               <dt>ISBN</dt>
               <dd>{book.isbn ?? "—"}</dd>
@@ -624,11 +627,24 @@ function Copies() {
   const services = useServices();
   const cache = useQueryClient();
   const key = useRef(createIdempotencyKey()).current;
-  const [edition, setEdition] = useState(
-    new URLSearchParams(window.location.search).get("edition") ?? "",
-  );
+  const linked = useLinkedEdition(new URLSearchParams(window.location.search).get("edition"));
+  // undefined: use the edition from the link; null: staff chose to pick another one.
+  const [picked, setPicked] = useState<Edition | null>();
+  const current = picked === undefined ? linked.data : (picked ?? undefined);
+  const edition = current?.id ?? "";
   const [barcodes, setBarcodes] = useState("");
   const [location, setLocation] = useState("");
+  const locations = useQuery({
+    queryKey: ["catalog", "locations"],
+    queryFn: async ({ signal }) =>
+      (await services.catalog.get_locations({ params: { query: { limit: 100 } }, signal })).data!
+        .data,
+    staleTime: 5 * 60_000,
+  });
+  const locationName = (id?: string | null) => {
+    const found = locations.data?.find((item) => item.id === id);
+    return found ? `${found.code} · ${found.name}` : "—";
+  };
   const result = useInfiniteQuery({
     queryKey: ["catalog", "copies", edition],
     initialPageParam: undefined as string | undefined,
@@ -698,13 +714,21 @@ function Copies() {
   });
   return (
     <div className="stack">
-      <Field
-        label="Mã ấn bản"
-        value={edition}
-        onChange={(event) => setEdition(event.target.value)}
-        placeholder="Chọn từ trang chi tiết ấn bản"
-      />
-      {result.isFetching ? (
+      <Panel title="Ấn bản">
+        {current ? (
+          <PickedItem
+            label="Đang xem bản sách của"
+            title={current.title}
+            detail={`${editionAuthors(current)} · ${current.publication_year}`}
+            onChange={() => setPicked(null)}
+          />
+        ) : linked.isFetching ? (
+          <LoadingSkeleton />
+        ) : (
+          <EditionPicker onPick={setPicked} />
+        )}
+      </Panel>
+      {!edition ? null : result.isFetching ? (
         <LoadingSkeleton />
       ) : result.error ? (
         <ApiFailure error={result.error} />
@@ -716,7 +740,7 @@ function Copies() {
             rows={copies.map((copy) => [
               copy.barcode,
               copyStatus(copy.status),
-              copy.location_id ?? "—",
+              locationName(copy.location_id),
             ])}
             onRow={(index) => {
               const picked = copies[index];
@@ -727,9 +751,9 @@ function Copies() {
               change.reset();
             }}
           />
-          <p className="muted">
-            Bấm mã vạch để đổi trạng thái (Sẵn sàng/Hỏng/Bảo trì/Mất). Bản đang mượn, đang giữ chỗ
-            hoặc đã thanh lý không đổi tay được.
+          <p className="table-footnote muted">
+            Chọn mã vạch để đổi tình trạng (sẵn sàng, hỏng, bảo trì, mất). Bản đang mượn, đang giữ
+            chỗ hoặc đã thanh lý không đổi trực tiếp được.
           </p>
           {result.hasNextPage && (
             <Button
@@ -798,33 +822,48 @@ function Copies() {
           </form>
         )}
       </Dialog>
-      <Panel title="Thêm bản sách">
-        <form
-          onSubmit={(event) => {
-            event.preventDefault();
-            save.mutate();
-          }}
-        >
-          <div className="form-grid">
-            <Field
-              label="Barcode, phân cách bằng dấu phẩy"
-              required
-              value={barcodes}
-              onChange={(event) => setBarcodes(event.target.value)}
-            />
-            <Field
-              label="Mã vị trí trong kho"
-              required
-              value={location}
-              onChange={(event) => setLocation(event.target.value)}
-            />
-          </div>
-          <MutationFeedback error={save.error} success={save.isSuccess} />
-          <Button type="submit" disabled={save.isPending || !edition}>
-            Thêm bản sách
-          </Button>
-        </form>
-      </Panel>
+      {edition && (
+        <Panel title="Thêm bản sách" subtitle={`Cho ấn bản “${current?.title ?? ""}”`}>
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              save.mutate();
+            }}
+          >
+            <div className="form-grid">
+              <Field
+                label="Mã vạch"
+                hint="Nhiều mã vạch thì phân cách bằng dấu phẩy."
+                required
+                value={barcodes}
+                onChange={(event) => setBarcodes(event.target.value)}
+              />
+              <div className="field">
+                <label htmlFor="copy-location">Vị trí trong kho</label>
+                <select
+                  id="copy-location"
+                  required
+                  value={location}
+                  onChange={(event) => setLocation(event.target.value)}
+                >
+                  <option value="">Chọn vị trí…</option>
+                  {locations.data
+                    ?.filter((item) => item.status === "ACTIVE")
+                    .map((item) => (
+                      <option key={item.id} value={item.id}>
+                        {item.code} · {item.name}
+                      </option>
+                    ))}
+                </select>
+              </div>
+            </div>
+            <MutationFeedback error={save.error} success={save.isSuccess} />
+            <Button type="submit" disabled={save.isPending || !edition}>
+              Thêm bản sách
+            </Button>
+          </form>
+        </Panel>
+      )}
     </div>
   );
 }

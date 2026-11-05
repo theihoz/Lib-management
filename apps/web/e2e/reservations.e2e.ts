@@ -7,13 +7,8 @@ test("reserve, return, hand over (F10)", async ({ browser }) => {
   await login(desk, "librarian.dev");
   await desk.goto("/staff/catalog");
   await desk.getByLabel("Tìm sách").fill("Kinh tế học vi mô");
-  // Wait for the debounced search to narrow the list before opening the edition.
-  await desk
-    .getByRole("row")
-    .filter({ hasText: "Kinh tế học vi mô" })
-    .getByRole("button")
-    .first()
-    .click();
+  await desk.getByRole("button", { name: "Kinh tế học vi mô", exact: true }).first().click();
+  await desk.waitForURL(/\/catalog\/[0-9a-f-]{36}/);
   const edition = desk.url().match(/[0-9a-f-]{36}/)![0];
   await desk.goto(`/staff/catalog/copies?edition=${edition}`);
   const row = desk.getByRole("row").filter({ hasText: "Sẵn sàng" }).first();
@@ -43,5 +38,7 @@ test("reserve, return, hand over (F10)", async ({ browser }) => {
   await expect(desk.getByText("Đã cập nhật đặt trước.")).toBeVisible();
 
   await reader.goto("/me");
-  await expect(reader.getByRole("cell", { name: "Kinh tế học vi mô" })).toBeVisible();
+  await expect(
+    reader.getByRole("list", { name: "Sách đang mượn" }).getByText("Kinh tế học vi mô"),
+  ).toBeVisible();
 });

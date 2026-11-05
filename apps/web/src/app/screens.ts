@@ -98,7 +98,7 @@ export const screens: ScreenDefinition[] = [
     note: "Năm xuất bản từ năm hiện tại − 8 đến năm hiện tại, gồm cả hai biên.",
     action: "Lưu ấn bản",
     id: "FE02.04",
-    title: "Tạo / sửa ấn bản",
+    title: "Thêm ấn bản",
     path: "/staff/catalog/editions/new",
     fields: ["Nhan đề", "Tác giả", "Nhà xuất bản", "Năm xuất bản", "ISBN", "Thể loại"],
     permission: "catalog.write",

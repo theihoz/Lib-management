@@ -9,6 +9,9 @@ import { formatDateTime } from "../../lib/datetime";
 import { Badge, Button, Dialog, Field, Panel, Table } from "../../ui/components";
 import type { ScreenDefinition } from "../types";
 import { ApiFailure, LoadingSkeleton, MutationFeedback } from "./common";
+import { PickedItem } from "./EditionPicker";
+import { ReaderPicker, type Reader } from "./ReaderPicker";
+import { usePageTitle } from "../../app/brand";
 import { cardStatus, chargeReason, eligibilityReason, readerType, recordStatus } from "./labels";
 import { formatVnd } from "../../lib/money";
 
@@ -225,64 +228,67 @@ function ReaderProfile() {
     enabled: session.permissions.includes("eligibility.read"),
     staleTime: 0,
   });
+  usePageTitle(reader.data?.full_name);
   if (reader.isPending) return <LoadingSkeleton />;
   if (reader.error) return <ApiFailure error={reader.error} />;
   return (
     <div className="stack">
-      <Panel title={reader.data.full_name} subtitle={reader.data.reader_code}>
-        <Badge tone={reader.data.status === "ACTIVE" ? "success" : "warning"}>
-          {recordStatus(reader.data.status)}
-        </Badge>
-        <dl className="detail-list">
-          {[
-            ["Email", reader.data.email],
-            ["Điện thoại", reader.data.phone],
-            ["Ngày sinh", reader.data.birth_date],
-            ["Loại độc giả", readerType(reader.data.reader_type)],
-            ["Địa chỉ", reader.data.address],
-          ].map(([label, value]) => (
-            <div key={label}>
-              <dt>{label}</dt>
-              <dd>{value ?? "—"}</dd>
-            </div>
-          ))}
-        </dl>
-        <div className="live-data-links">
-          {session.permissions.includes("card.issue") && (
-            <Link
-              className="button button-secondary"
-              to={`/staff/readers/cards/new?reader=${readerId}`}
-            >
-              Cấp thẻ thư viện
-            </Link>
-          )}
-          {session.permissions.includes("loan.checkout") && (
-            <Link className="button button-primary" to={`/staff/checkout?reader=${readerId}`}>
-              Lập phiếu mượn
-            </Link>
-          )}
-        </div>
-      </Panel>
-      {eligibility.data && (
-        <Panel title="Điều kiện mượn">
-          <Badge tone={eligibility.data.allowed ? "success" : "warning"}>
-            {eligibility.data.allowed ? "Đủ điều kiện" : "Chưa đủ điều kiện"}
+      <div className="profile-layout">
+        <Panel title="Thông tin độc giả" subtitle={`Mã độc giả ${reader.data.reader_code}`}>
+          <Badge tone={reader.data.status === "ACTIVE" ? "success" : "warning"}>
+            {recordStatus(reader.data.status)}
           </Badge>
-          <ul>
-            {eligibility.data.reasons.map((reason) => (
-              <li key={reason}>{eligibilityReason(reason)}</li>
+          <dl className="detail-list">
+            {[
+              ["Email", reader.data.email],
+              ["Điện thoại", reader.data.phone],
+              ["Ngày sinh", reader.data.birth_date],
+              ["Loại độc giả", readerType(reader.data.reader_type)],
+              ["Địa chỉ", reader.data.address],
+            ].map(([label, value]) => (
+              <div key={label}>
+                <dt>{label}</dt>
+                <dd>{value ?? "—"}</dd>
+              </div>
             ))}
-          </ul>
+          </dl>
+          <div className="live-data-links">
+            {session.permissions.includes("card.issue") && (
+              <Link
+                className="button button-secondary"
+                to={`/staff/readers/cards/new?reader=${readerId}`}
+              >
+                Cấp thẻ thư viện
+              </Link>
+            )}
+            {session.permissions.includes("loan.checkout") && (
+              <Link className="button button-primary" to={`/staff/checkout?reader=${readerId}`}>
+                Lập phiếu mượn
+              </Link>
+            )}
+          </div>
         </Panel>
-      )}
-      {eligibility.error && (
-        <ApiFailure
-          error={eligibility.error}
-          retry={() => {
-            void eligibility.refetch();
-          }}
-        />
-      )}
+        {eligibility.data && (
+          <Panel title="Điều kiện mượn" className="reader-eligibility">
+            <Badge tone={eligibility.data.allowed ? "success" : "warning"}>
+              {eligibility.data.allowed ? "Đủ điều kiện" : "Chưa đủ điều kiện"}
+            </Badge>
+            <ul>
+              {eligibility.data.reasons.map((reason) => (
+                <li key={reason}>{eligibilityReason(reason)}</li>
+              ))}
+            </ul>
+          </Panel>
+        )}
+        {eligibility.error && (
+          <ApiFailure
+            error={eligibility.error}
+            retry={() => {
+              void eligibility.refetch();
+            }}
+          />
+        )}
+      </div>
       <ReaderCards readerId={readerId} canChange={session.permissions.includes("card.issue")} />
       <ReaderActivity readerId={readerId} permissions={session.permissions} />
     </div>
@@ -408,12 +414,14 @@ function ReaderActivity({
             <Table
               caption="Đặt trước đang chờ"
               headers={["Ấn bản", "Trạng thái", "Ngày đặt", "Hạn nhận"]}
-              rows={rows.map((row) => [
-                row.edition_id,
-                RESERVATION[row.status] ?? row.status,
-                formatDateTime(row.created_at),
-                row.ready_expires_at ? formatDateTime(row.ready_expires_at) : "—",
-              ])}
+              rows={rows
+                .filter((row) => row.status === "QUEUED" || row.status === "READY")
+                .map((row) => [
+                  row.title ?? "—",
+                  RESERVATION[row.status] ?? row.status,
+                  formatDateTime(row.created_at),
+                  row.ready_expires_at ? formatDateTime(row.ready_expires_at) : "—",
+                ])}
               empty={{ title: "Không có đặt trước", hint: "Độc giả chưa đặt trước sách nào." }}
             />
           ))}
@@ -569,9 +577,17 @@ function IssueCard() {
   const services = useServices();
   const cache = useQueryClient();
   const key = useRef(createIdempotencyKey()).current;
-  const [reader, setReader] = useState(
-    new URLSearchParams(window.location.search).get("reader") ?? "",
-  );
+  const linkedId = new URLSearchParams(window.location.search).get("reader");
+  const linked = useQuery({
+    queryKey: ["reader", linkedId],
+    enabled: !!linkedId,
+    queryFn: async ({ signal }) =>
+      (await services.readers.get_readers_id({ params: { path: { id: linkedId! } }, signal }))
+        .data!,
+  });
+  const [picked, setPicked] = useState<Reader | null>();
+  const chosen = picked === undefined ? linked.data : (picked ?? undefined);
+  const reader = chosen?.id ?? "";
   const save = useMutation({
     mutationFn: async () =>
       (
@@ -589,27 +605,36 @@ function IssueCard() {
   });
   return (
     <Panel title="Cấp thẻ thư viện">
+      <div className="stack">
+        {chosen ? (
+          <PickedItem
+            label="Độc giả"
+            title={chosen.full_name}
+            detail={chosen.reader_code}
+            onChange={() => setPicked(null)}
+          />
+        ) : linked.isFetching ? (
+          <LoadingSkeleton />
+        ) : (
+          <ReaderPicker onPick={setPicked} />
+        )}
+      </div>
       <form
+        className="form-footer"
         onSubmit={(event) => {
           event.preventDefault();
           save.mutate();
         }}
       >
-        <Field
-          label="Mã định danh độc giả"
-          value={reader}
-          onChange={(event) => setReader(event.target.value)}
-          required
-          placeholder="Chọn từ hồ sơ độc giả"
-        />
         <p className="data-description">
           Ngày hết hạn do hệ thống xác định theo quy định đang áp dụng.
         </p>
         <MutationFeedback error={save.error} success={save.isSuccess}>
-          {save.data && `Đã cấp thẻ ${save.data.card_no}. Hạn thẻ: ${save.data.expires_at}.`}
+          {save.data &&
+            `Đã cấp thẻ ${save.data.card_no}. Hạn thẻ: ${formatDateTime(save.data.expires_at, true)}.`}
         </MutationFeedback>
         <div className="actions">
-          <Button type="submit" disabled={save.isPending}>
+          <Button type="submit" disabled={save.isPending || !reader}>
             Xác nhận cấp thẻ
           </Button>
         </div>

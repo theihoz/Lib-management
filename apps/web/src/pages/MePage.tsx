@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import type { ReactNode } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServices, useSession } from "../auth/session";
 import { isStaff } from "../auth/session-state";
@@ -6,7 +7,7 @@ import { createIdempotencyKey } from "../api/idempotency";
 import { ApiError } from "../api/errors";
 import { formatDateTime } from "../lib/datetime";
 import { formatVnd } from "../lib/money";
-import { Badge, Button, Notice, Panel, Table } from "../ui/components";
+import { Badge, Button, Notice, Panel, Stats, Table } from "../ui/components";
 import { ApiFailure, LoadingSkeleton } from "../features/live/common";
 import { chargeReason, eligibilityReason, reservationStatus } from "../features/live/labels";
 
@@ -23,6 +24,54 @@ function renewalError(error: unknown): string {
     )
     .map(eligibilityReason);
   return reasons.length ? reasons.join("; ") : error.message;
+}
+
+type Item = { key: string; title: string; meta: string; status: ReactNode; action: ReactNode };
+function ItemList({ label, empty, items }: { label: string; empty: string; items: Item[] }) {
+  if (!items.length) return <p className="empty-state">{empty}</p>;
+  return (
+    <ul className="item-list" aria-label={label}>
+      {items.map((item) => (
+        <li key={item.key}>
+          <div className="item-main">
+            <strong className="item-title">{item.title}</strong>
+            <span className="muted">{item.meta}</span>
+          </div>
+          <div className="item-status">{item.status}</div>
+          <div className="item-action">{item.action}</div>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** Counts shown above the tabs; reuses the open-loans query of the first tab. */
+function Summary() {
+  const services = useServices();
+  const [now] = useState(() => Date.now());
+  const loans = useQuery({
+    queryKey: ["me", "loans", "OPEN"],
+    queryFn: async ({ signal }) =>
+      (
+        await services.circulation.get_me_loans({
+          params: { query: { status: "OPEN", limit: 100 } },
+          signal,
+        })
+      ).data!.data,
+  });
+  if (!loans.data) return null;
+  const due = loans.data.map((row) => new Date(row.loanItem.due_at).getTime());
+  const overdue = due.filter((time) => time < now).length;
+  const soon = due.filter((time) => time >= now && time - now <= 2 * DAY).length;
+  return (
+    <Stats
+      items={[
+        { label: "Đang mượn", value: String(loans.data.length) },
+        { label: "Sắp đến hạn", value: String(soon), note: "Trong 2 ngày tới" },
+        { label: "Quá hạn", value: String(overdue) },
+      ]}
+    />
+  );
 }
 
 /** YC#9 / QĐ22: the reader's own loans, renewals, history and fines (FE08). */
@@ -109,21 +158,21 @@ function MyLibrary() {
     ["FINES", "Phạt của tôi"],
   ] as const;
   return (
-    <Panel title="Thư viện của tôi">
-      <div className="actions" role="tablist" aria-label="Thư viện của tôi">
+    <Panel title="Thư viện của tôi" className="my-library">
+      <div className="tabs" role="tablist" aria-label="Thư viện của tôi">
         {tabs.map(([value, label]) => (
-          <Button
+          <button
             key={value}
+            type="button"
             role="tab"
             aria-selected={tab === value}
-            variant={tab === value ? "primary" : "secondary"}
             onClick={() => {
               setTab(value);
               setMessage(undefined);
             }}
           >
             {label}
-          </Button>
+          </button>
         ))}
       </div>
       {message && <Notice tone={message.tone}>{message.text}</Notice>}
@@ -133,34 +182,36 @@ function MyLibrary() {
         ) : holds.error ? (
           <ApiFailure error={holds.error} retry={() => void holds.refetch()} />
         ) : (
-          <>
-            <Table
-              caption="Đặt trước của tôi"
-              headers={["Sách", "Trạng thái", "Ngày đặt", "Hạn nhận"]}
-              rows={holds.data.map((row) => [
-                row.title ?? row.edition_id,
-                reservationStatus(row.status),
-                formatDateTime(row.created_at),
-                row.ready_expires_at ? formatDateTime(row.ready_expires_at) : "—",
-              ])}
-              empty={{
-                title: "Không có đặt trước",
-                hint: "Đặt trước từ trang sách khi sách đang được mượn hết.",
-              }}
-            />
-            <div className="actions">
-              {holds.data.map((row) => (
+          <ItemList
+            label="Đặt trước của tôi"
+            empty="Bạn chưa đặt trước cuốn nào. Đặt trước từ trang sách khi sách đang được mượn hết."
+            items={holds.data.map((row) => ({
+              key: row.id,
+              title: row.title ?? "Ấn bản đã đặt",
+              meta: `Đặt ngày ${formatDateTime(row.created_at, true)}`,
+              status:
+                row.status === "READY" ? (
+                  <Badge tone="success">
+                    Sẵn sàng nhận
+                    {row.ready_expires_at
+                      ? ` đến ${formatDateTime(row.ready_expires_at, true)}`
+                      : ""}
+                  </Badge>
+                ) : (
+                  <Badge>{reservationStatus(row.status)}</Badge>
+                ),
+              action: (
                 <Button
-                  key={row.id}
                   variant="secondary"
                   disabled={cancel.isPending}
+                  aria-label={`Hủy đặt trước “${row.title ?? ""}”`}
                   onClick={() => cancel.mutate({ id: row.id, version: row.version })}
                 >
-                  Hủy đặt trước “{row.title ?? row.edition_id}”
+                  Hủy đặt trước
                 </Button>
-              ))}
-            </div>
-          </>
+              ),
+            }))}
+          />
         )
       ) : tab === "FINES" ? (
         fines.isPending ? (
@@ -175,7 +226,7 @@ function MyLibrary() {
               chargeReason(charge.reason),
               formatVnd(charge.assessed_amount),
               formatVnd(charge.balance ?? "0"),
-              formatDateTime(charge.created_at),
+              formatDateTime(charge.created_at, true),
             ])}
             empty={{ title: "Không có khoản phạt", hint: "Bạn không nợ khoản phạt nào." }}
           />
@@ -184,49 +235,53 @@ function MyLibrary() {
         <LoadingSkeleton />
       ) : loans.error ? (
         <ApiFailure error={loans.error} retry={() => void loans.refetch()} />
+      ) : tab === "OPEN" ? (
+        <ItemList
+          label="Sách đang mượn"
+          empty="Bạn không mượn cuốn nào. Tìm sách trong danh mục rồi mượn tại quầy thư viện."
+          items={loans.data.map((row) => {
+            const days = Math.ceil((new Date(row.loanItem.due_at).getTime() - now) / DAY);
+            return {
+              key: row.loanItem.id,
+              title: row.title ?? row.copy.barcode,
+              meta: `Phiếu ${row.loan.loan_no} · Gia hạn ${row.loan.renewal_count} lần`,
+              status: (
+                <span className="due">
+                  <span>Hạn trả {formatDateTime(row.loanItem.due_at, true)}</span>
+                  <Badge tone={days < 0 ? "danger" : days <= 2 ? "warning" : "success"}>
+                    {days < 0
+                      ? `Quá hạn ${-days} ngày`
+                      : days === 0
+                        ? "Đến hạn hôm nay"
+                        : `Còn ${days} ngày`}
+                  </Badge>
+                </span>
+              ),
+              action: (
+                <Button
+                  variant="secondary"
+                  disabled={renew.isPending}
+                  aria-label={`Gia hạn phiếu ${row.loan.loan_no}`}
+                  onClick={() => renew.mutate({ id: row.loan.id, version: row.loan.version })}
+                >
+                  Gia hạn
+                </Button>
+              ),
+            };
+          })}
+        />
       ) : (
         <Table
-          caption={tab === "OPEN" ? "Sách đang mượn" : "Lịch sử mượn trả"}
-          headers={
-            tab === "OPEN"
-              ? ["Sách", "Phiếu", "Hạn trả", "Đã gia hạn"]
-              : ["Sách", "Ngày mượn", "Hạn trả", "Ngày trả"]
-          }
-          rows={loans.data.map((row) => {
-            const late = now > new Date(row.loanItem.due_at).getTime();
-            return tab === "OPEN"
-              ? [
-                  row.title ?? row.copy.barcode,
-                  row.loan.loan_no,
-                  `${formatDateTime(row.loanItem.due_at)}${late ? ` (quá hạn ${Math.floor((now - new Date(row.loanItem.due_at).getTime()) / DAY)} ngày)` : ""}`,
-                  `${row.loan.renewal_count} lần`,
-                ]
-              : [
-                  row.title ?? row.copy.barcode,
-                  formatDateTime(row.loanItem.issued_at),
-                  formatDateTime(row.loanItem.due_at),
-                  row.loanItem.closed_at ? formatDateTime(row.loanItem.closed_at) : "Đang mượn",
-                ];
-          })}
-          empty={{
-            title: tab === "OPEN" ? "Không có sách đang mượn" : "Chưa có lịch sử",
-            hint: "Mượn sách tại quầy thư viện.",
-          }}
+          caption="Lịch sử mượn trả"
+          headers={["Sách", "Ngày mượn", "Hạn trả", "Ngày trả"]}
+          rows={loans.data.map((row) => [
+            row.title ?? row.copy.barcode,
+            formatDateTime(row.loanItem.issued_at, true),
+            formatDateTime(row.loanItem.due_at, true),
+            row.loanItem.closed_at ? formatDateTime(row.loanItem.closed_at, true) : "Đang mượn",
+          ])}
+          empty={{ title: "Chưa có lịch sử", hint: "Các lần mượn trả sẽ hiện tại đây." }}
         />
-      )}
-      {tab === "OPEN" && loans.data && loans.data.length > 0 && (
-        <div className="actions">
-          {[...new Map(loans.data.map((row) => [row.loan.id, row])).values()].map((row) => (
-            <Button
-              key={row.loan.id}
-              variant="secondary"
-              disabled={renew.isPending}
-              onClick={() => renew.mutate({ id: row.loan.id, version: row.loan.version })}
-            >
-              Gia hạn phiếu {row.loan.loan_no}
-            </Button>
-          ))}
-        </div>
       )}
     </Panel>
   );
@@ -235,40 +290,55 @@ function MyLibrary() {
 /** Account summary and, for linked readers, their loans, history, reservations and fines. */
 export function MePage({ onLogout }: { onLogout: () => void }) {
   const session = useSession();
+  const linked = !!session.account?.reader_id;
+  const name = session.account?.display_name ?? "";
   return (
-    <div className="stack">
-      <Panel title="Tài khoản">
+    <div className="me-layout">
+      <div className="stack">
+        {linked && (
+          <>
+            <p className="greeting">
+              Xin chào, <strong>{name}</strong>
+            </p>
+            <Summary />
+            <MyLibrary />
+          </>
+        )}
+        {!linked && !isStaff(session.permissions) && (
+          <Notice tone="warning">
+            Tài khoản chưa gắn với hồ sơ độc giả nên chưa xem được sách đang mượn. Liên hệ quầy thư
+            viện để được liên kết.
+          </Notice>
+        )}
+      </div>
+      <Panel title="Tài khoản" className="account-card">
+        <div className="account-identity">
+          <span className="avatar avatar-large" aria-hidden="true">
+            {name.slice(0, 1).toLocaleUpperCase("vi")}
+          </span>
+          <div>
+            <strong>{name || "—"}</strong>
+            <Badge tone={session.account?.status === "ACTIVE" ? "success" : "warning"}>
+              {session.account?.status === "ACTIVE" ? "Đang hoạt động" : "Tạm khóa"}
+            </Badge>
+          </div>
+        </div>
         <dl className="detail-list">
-          <div>
-            <dt>Tên hiển thị</dt>
-            <dd>{session.account?.display_name ?? "—"}</dd>
-          </div>
-          <div>
-            <dt>Trạng thái</dt>
-            <dd>
-              <Badge tone={session.account?.status === "ACTIVE" ? "success" : "warning"}>
-                {session.account?.status === "ACTIVE" ? "Đang hoạt động" : session.account?.status}
-              </Badge>
-            </dd>
-          </div>
           <div>
             <dt>Hồ sơ độc giả</dt>
             <dd>
-              {session.account?.reader_id
+              {linked
                 ? "Đã liên kết"
                 : isStaff(session.permissions)
-                  ? "Không áp dụng (tài khoản nhân viên)"
-                  : "Chưa liên kết — liên hệ thủ thư"}
+                  ? "Tài khoản nhân viên"
+                  : "Chưa liên kết"}
             </dd>
           </div>
         </dl>
-        <div className="actions">
-          <Button variant="secondary" icon="logout" onClick={onLogout}>
-            Đăng xuất
-          </Button>
-        </div>
+        <Button variant="secondary" icon="logout" onClick={onLogout}>
+          Đăng xuất
+        </Button>
       </Panel>
-      {session.account?.reader_id && <MyLibrary />}
     </div>
   );
 }

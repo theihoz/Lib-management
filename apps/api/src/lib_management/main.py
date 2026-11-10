@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from typing import Literal
 
 from fastapi import APIRouter, FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict
 
@@ -81,6 +82,22 @@ def create_app(
     app = FastAPI(title="Lib-management API", version="0.1.0", lifespan=lifespan)
     install_performance(app)
     app.add_middleware(RequestIdMiddleware)
+    if configuration.cors_origins:
+        # Added last so it runs first and answers preflights before other middleware.
+        # Bearer tokens travel in a header, so no cookies/credentials are needed.
+        app.add_middleware(
+            CORSMiddleware,
+            allow_origins=configuration.cors_origins,
+            allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE"],
+            allow_headers=[
+                "Authorization",
+                "Content-Type",
+                "Idempotency-Key",
+                "X-Request-ID",
+            ],
+            expose_headers=["Location", "X-Request-ID"],
+            max_age=600,
+        )
     install_error_handlers(app)
 
     @app.get("/health/live", operation_id="health_live", response_model=LiveHealth)

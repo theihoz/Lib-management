@@ -131,9 +131,19 @@ Dùng chung database với Cách 1. Có thể [chạy API trên host](apps/api/R
 
 ### Triển khai web lên GitHub Pages
 
-Workflow `Deploy web to GitHub Pages` chỉ chạy khi đã đặt biến repository `PAGES_OIDC_URL`
-(và `PAGES_API_BASE_URL`): nó build `npm run build` (production, không chứa code mock; CI kiểm
-tra điều này) và ghi `config.json` trỏ tới API và Keycloak đó. Chưa đặt biến thì không triển khai gì.
+Workflow `Deploy web to GitHub Pages` build `npm run build` (production, không chứa code mock; CI
+kiểm tra điều này) và ghi `config.json` trỏ tới API và Keycloak công khai (HTTPS). Pages chỉ chứa
+file tĩnh nên cần có sẵn server. Các bước bật:
+
+1. Biến repository (Settings → Secrets and variables → Actions → Variables), chỉ giá trị công khai:
+   `PAGES_OIDC_URL` (gốc Keycloak, ví dụ `https://auth.example.com`), `PAGES_API_BASE_URL` (gốc API,
+   ví dụ `https://api.example.com`), tùy chọn `PAGES_OIDC_REALM`, `PAGES_OIDC_CLIENT_ID`.
+2. API: đặt `CORS_ALLOW_ORIGINS=https://theihoz.github.io` để trình duyệt được gọi API từ Pages.
+3. Keycloak, client `lib-management-web`: thêm Valid redirect URI
+   `https://theihoz.github.io/Lib-management/*` và Web origin `https://theihoz.github.io`.
+
+Chưa đặt `PAGES_OIDC_URL` thì workflow không triển khai và ghi cảnh báo trong lần chạy; trang
+đang công khai (nếu có) giữ nguyên bản cũ cho đến lần triển khai kế tiếp.
 
 Bản build mock (`npm run build:demo`, `config.json` với `mock: true`) chỉ dùng nội bộ khi phát
 triển và kiểm thử giao diện: mọi lời gọi API được trả lời ngay trong trình duyệt theo OpenAPI.

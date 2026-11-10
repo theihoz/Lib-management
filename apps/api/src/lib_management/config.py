@@ -1,7 +1,15 @@
 """Environment configuration for the API and worker."""
 
+import re
+
 from pydantic import Field, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+_ORIGIN = re.compile(r"https?://[A-Za-z0-9.-]+(:\d{1,5})?")
+
+
+def _split_origins(value: str) -> list[str]:
+    return [o.strip().rstrip("/") for o in value.split(",") if o.strip()]
 
 
 class Settings(BaseSettings):
@@ -29,6 +37,10 @@ class Settings(BaseSettings):
     oidc_jwks_url: str | None = None
     oidc_clock_skew_seconds: int = Field(default=30, ge=0, le=300)
 
+    # Comma-separated browser origins allowed to call the API from another site,
+    # e.g. the GitHub Pages build. Empty keeps CORS off (same-origin deployments).
+    cors_allow_origins: str = ""
+
     idempotency_ttl_hours: int = Field(default=24, ge=1, le=24 * 30)
     worker_lease_seconds: int = Field(default=60, ge=5, le=3600)
     worker_max_attempts: int = Field(default=5, ge=1, le=50)
@@ -39,6 +51,21 @@ class Settings(BaseSettings):
         if not value.get_secret_value():
             raise ValueError("DB_PASSWORD must be non-empty")
         return value
+
+    @field_validator("cors_allow_origins")
+    @classmethod
+    def check_origins(cls, value: str) -> str:
+        for origin in _split_origins(value):
+            if not _ORIGIN.fullmatch(origin):
+                raise ValueError(
+                    f"CORS_ALLOW_ORIGINS entry {origin!r} must be scheme://host[:port] "
+                    "with no path or wildcard"
+                )
+        return value
+
+    @property
+    def cors_origins(self) -> list[str]:
+        return _split_origins(self.cors_allow_origins)
 
     @property
     def jwks_url(self) -> str | None:
